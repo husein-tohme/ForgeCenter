@@ -27,6 +27,9 @@ body {
   background: var(--page);
   color: var(--ink);
   font: 18px/1.6 var(--body);
+  /* Pixelify Sans draws "fi" as one odd glyph. Unlike font-variant-ligatures, this
+     setting isn't reset by the font shorthand, so it reaches buttons and headings. */
+  font-feature-settings: "liga" 0, "clig" 0;
 }
 
 h1, h2, h3 { font-family: var(--display); font-weight: 700; line-height: 1.15; margin: 0 0 .5em; }
@@ -516,3 +519,104 @@ fieldset.commands legend { font-weight: 700; padding: 0 6px; }
 .attention li { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
 .attention li > span:nth-child(2) { flex: 1; min-width: 180px; }
 @media (max-width: 900px) { .overview-grid { grid-template-columns: 1fr; } }
+
+/* ---------- Wallet: the balance as an item stack ---------- */
+.stack { display: inline-flex; align-items: flex-end; position: relative; }
+.stack-gem { width: 34px; height: 34px; padding: 4px; background: var(--slot); box-shadow: inset 2px 2px 0 #373737, inset -2px -2px 0 var(--hi); }
+/* Like a stack count in an inventory slot: white pixel numerals with a hard shadow, bottom right. */
+.stack-count {
+  /* The hyperlegible face, because Pixelify's 5 reads as an S in money amounts. */
+  font: 700 .95rem/1 var(--body); color: #fff; white-space: nowrap;
+  text-shadow: 2px 2px 0 #2a2a2a, -1px 0 0 #2a2a2a, 1px 0 0 #2a2a2a, 0 -1px 0 #2a2a2a, 0 1px 0 #2a2a2a;
+  margin-left: -8px; margin-bottom: -5px;
+}
+.wallet-chip { text-decoration: none; display: inline-flex; padding: 2px 4px; }
+.wallet-chip:hover .stack-count, .wallet-chip:focus-visible .stack-count { color: var(--gold); }
+.stack-big .stack-gem { width: 84px; height: 84px; padding: 12px; box-shadow: inset 4px 4px 0 #373737, inset -4px -4px 0 var(--hi); }
+.stack-big .stack-count {
+  font-size: 1.9rem; margin-left: -18px; margin-bottom: -10px;
+  text-shadow: 3px 3px 0 #2a2a2a, -2px 0 0 #2a2a2a, 2px 0 0 #2a2a2a, 0 -2px 0 #2a2a2a, 0 2px 0 #2a2a2a;
+}
+.num { font-family: var(--body); font-weight: 700; }
+
+.wallet { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 20px 32px; align-items: center; }
+.wallet-balance { display: flex; flex-direction: column; gap: 10px; }
+.wallet-add h3 { margin: 0 0 10px; }
+.amounts { display: flex; flex-wrap: wrap; gap: 8px; align-items: flex-end; }
+.amounts .custom { display: flex; align-items: flex-end; gap: 8px; font-weight: 700; }
+.amounts .custom input { width: 110px; margin: 6px 0 0; }
+.ledger { list-style: none; padding: 0; margin: 12px 0 0; display: grid; gap: 4px; max-width: 720px; }
+.ledger li { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 16px; padding: 8px 12px; background: #d4d4d4; }
+.ledger .amount { font-weight: 700; font-variant-numeric: tabular-nums; }
+.ledger .plus { color: var(--emerald-dark); }
+.ledger .small { grid-column: 1 / -1; }
+@media (max-width: 640px) { .wallet { grid-template-columns: 1fr; } }
+
+/* ---------- Gate dialogs (birthday, age check, payment choice) ---------- */
+dialog.gate { max-width: min(500px, calc(100% - 32px)); color: var(--ink); padding: 28px; }
+dialog.gate::backdrop { background: rgba(20, 22, 26, .75); }
+dialog.gate h2 { font-size: 1.6rem; }
+.gate-icon { display: block; width: 56px; height: 56px; margin-bottom: 12px; }
+.choices { display: grid; gap: 10px; margin: 16px 0; }
+.choice {
+  display: grid; grid-template-columns: 56px minmax(0, 1fr) 14px; gap: 14px; align-items: center;
+  text-align: left; font: inherit; color: var(--ink); cursor: pointer; padding: 12px;
+  background: #d4d4d4; border: 3px solid var(--outline);
+  box-shadow: inset 3px 3px 0 #fff, inset -3px -3px 0 #8b8b8b;
+}
+.choice::after { content: ""; width: 12px; height: 18px; background: #555; clip-path: polygon(0 0, 100% 50%, 0 100%, 0 70%, 50% 50%, 0 30%); }
+.choice:hover { background: #e0e3f0; }
+.choice:hover::after { background: var(--lapis); }
+.choice[disabled] { cursor: progress; opacity: .6; }
+.choice .slot { width: 52px; height: 52px; }
+.choice strong { display: block; font: 700 1.1rem var(--display); }
+.choice .small { display: block; }
+.choice .provider { margin-top: 4px; font-style: italic; }
+.birthday-form { display: grid; grid-template-columns: 1.4fr .8fr 1fr; gap: 10px; align-items: end; margin: 16px 0 8px; }
+.birthday-form label { font-weight: 700; }
+.birthday-form .btn, .birthday-form .error { grid-column: 1 / -1; justify-self: start; margin: 0; }
+@media (max-width: 480px) { .birthday-form { grid-template-columns: 1fr 1fr; } .birthday-form label:first-child { grid-column: 1 / -1; } }
+
+/* Age group on the account page */
+.age-status { display: flex; gap: 16px; align-items: center; flex-wrap: wrap; }
+.age-status .slot { width: 56px; height: 56px; flex: none; }
+.age-status p { margin: 0; }
+
+/* An 18+ showcase listing, as teens and visitors see it (like an age-restricted channel). */
+.listing.restricted { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; background: #b9b9b9; }
+.restricted .gate-icon { width: 40px; height: 40px; margin-bottom: 4px; }
+.pill-adult { background: #9b1c14; }
+.check-row { display: flex !important; align-items: center; gap: 10px; font-weight: 700; }
+.check-row input { width: 22px; height: 22px; margin: 0; flex: none; accent-color: var(--emerald); }
+
+/* ---------- Support ---------- */
+.support-grid { display: grid; grid-template-columns: minmax(0, 320px) minmax(0, 1fr); gap: 24px; align-items: start; }
+.ticket-list { padding: 12px; }
+.ticket-list ul { list-style: none; padding: 0; margin: 12px 0 0; display: grid; gap: 6px; }
+.ticket-link {
+  display: grid; gap: 4px; width: 100%; text-align: left; font: inherit; color: var(--ink); cursor: pointer;
+  background: #d4d4d4; border: 2px solid transparent; padding: 10px 12px;
+}
+.ticket-link:hover { border-color: var(--lapis); }
+.ticket-link[aria-current="true"] { border-color: var(--outline); background: #e9e9e9; }
+.ticket-link strong { overflow-wrap: anywhere; }
+.ticket-link .pill { justify-self: start; font-size: .8rem; }
+.ticket-head { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; align-items: start; margin-bottom: 12px; }
+.ticket-head h2 { font-size: 1.5rem; margin: 0; overflow-wrap: anywhere; }
+.from-ai { background: #e3f1e7; border-color: var(--emerald-dark); align-self: flex-start; }
+.from-staff { background: #dfe6f7; border-color: var(--lapis); align-self: flex-start; }
+.from-customer { background: #e9e9e9; align-self: flex-end; }
+.msg-row.typing p { color: var(--ink-soft); font-style: italic; }
+.ticket-actions { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-top: 12px; }
+.ticket-form { display: grid; gap: 4px; }
+.ticket-form label { display: block; font-weight: 700; margin-bottom: 10px; }
+.ticket-form .btn { justify-self: start; }
+.note { background: #f2e7b8; border: 2px solid #b8860b; padding: 10px 14px; margin: 0 0 12px; }
+@media (max-width: 900px) { .support-grid { grid-template-columns: 1fr; } }
+
+.inline-form { display: flex; gap: 8px; align-items: flex-end; flex-wrap: wrap; margin-top: 8px; }
+.inline-form label { font-weight: 700; margin: 0; }
+.inline-form input { margin-top: 6px; }
+.inline-form .amount-input { width: 120px; }
+.inline-form .grow { flex: 1; min-width: 180px; }
+.age-status .grow { flex: 1; min-width: 220px; }

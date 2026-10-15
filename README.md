@@ -7,14 +7,17 @@ Minecraft mods, websites, Discord bots, games, Minecraft server hosting and an A
 - **Sign in with Google (Gmail), Microsoft, GitHub, Discord or WhatsApp.** Every account is backed by a real, verified identity, and no passwords are stored. Accounts with the same verified email are joined automatically, and people can connect several sign-in methods to one account.
 - **Shop and Stripe Checkout** for every service. Hosting and website domains ($2/month) are monthly subscriptions.
 - **Order tracking** at `/account`: status, a project brief, a message thread with you, and the delivery link.
-- **Owner panel** at `/admin`: update order status, add delivery links, reply to customers, approve showcase listings.
+- **Owner panel** at `/admin`: sales overview, support inbox, order status, delivery links, replies to customers, wallet refunds and credit, showcase approvals.
+- **Age groups like Discord's**: a birthday question after the first sign-in turns away under-13s, and every account starts in the teen group. Adults confirm once with a Stripe credit card check or a Stripe Identity ID scan with a selfie. ForgeCenter keeps only the result. Websites and games (configurable) and 18+ showcase listings are for confirmed adults, and the AI mentor and support assistant are told when someone is a teen.
+- **Wallet**: store credit customers top up by card ($5 to $500 at a time, up to $2,000) and spend on one-time items in one step. You can refund orders as credit or give goodwill credit. It's closed-loop: no withdrawals or transfers.
+- **Help desk** at `/support`: Forge Support (Claude) answers tickets straight away using built-in help notes and the customer's own orders, and hands anything involving money, broken services or a request for a person to you, with a note. You reply from the owner panel; customers get emails.
 - **Self-service billing** through the Stripe Customer Portal (update card, cancel subscriptions, download invoices).
 - **Mod Forge**: generate a Fabric mod in your name, download it or create a Modrinth draft.
 - **Texture Forge** (`/textures`): a 16x16 pixel editor that exports a Minecraft resource pack.
 - **Modpack Forge** (`/modpacks`): search Modrinth, pick Fabric mods, download a `.mrpack` with required dependencies added automatically.
 - **Plugin Forge** (`/plugins`): makes a Paper/Purpur server plugin project with custom commands, a welcome message and timed announcements, all editable later in `config.yml`. The generated Java is compiled in the tests.
 - Creations from all four tools are saved to the account when signed in.
-- **Email notifications**: you get an email for new paid orders and customer messages; customers get one for payment, status changes, your replies and failed renewals.
+- **Email notifications**: you get an email for new paid orders, customer messages and tickets that need you; customers get one for payment, status changes, your replies, wallet credit and failed renewals.
 - **Forge AI mentor**: 30 free messages a day per account, 300 with the Dedicated AI purchase.
 - **Showcase**: customers buy a slot, submit a listing, and it goes live after you approve it.
 - **Privacy policy and terms** pages (required by Google for sign-in). Have a lawyer review them before launch.
@@ -59,6 +62,7 @@ Each bot uses about 60 to 100 MB of memory, so plan the machine size around how 
 
 - **`/forgecenter`** opens a launch checklist: which `.env` settings are still missing (never showing their values), whether the tests pass, and what isn't committed or pushed yet.
 - **Secrets guard:** stops any commit or push that would include `.env`, `data/` or a database file.
+- **Project rules guard:** stops edits to `src/` that would pass `payment_method_types` to Stripe or store a date of birth.
 - **Status line:** shows the latest test result after the tests run.
 
 Install it at the prompt of a Claude Code terminal session:
@@ -105,18 +109,29 @@ Each provider turns on when its two values are in `.env`. Register this redirect
 - **WhatsApp:** needs a [WhatsApp Business account on the Cloud API](https://developers.facebook.com/docs/whatsapp/cloud-api/get-started). Create an *Authentication* message template with a copy-code button, then set `WHATSAPP_TOKEN` (a permanent system-user token), `WHATSAPP_PHONE_NUMBER_ID` and `WHATSAPP_TEMPLATE`. Meta charges per message, so `WHATSAPP_DAILY_LIMIT` caps how many codes go out each day. Codes expire after 10 minutes, lock after 5 wrong tries, and each number and device can request 3 or 10 codes an hour.
 
 ### Stripe
-1. Create a **restricted key** with write access to Checkout Sessions, Customers and Customer Portal. Put it in `STRIPE_SECRET_KEY`.
+1. Create a **restricted key** and put it in `STRIPE_SECRET_KEY`. It needs write access to Checkout Sessions, Customers, Customer Portal, SetupIntents (read is enough), PaymentMethods (to remove the card after an age check) and Identity Verification Sessions, plus the Identity permission to read verified dates of birth.
 2. Add a webhook endpoint at `https://YOUR-DOMAIN/api/stripe/webhook` for these events, and put its signing secret in `STRIPE_WEBHOOK_SECRET`:
    `checkout.session.completed`, `checkout.session.async_payment_succeeded`, `checkout.session.async_payment_failed`,
    `checkout.session.expired`, `customer.subscription.created`, `customer.subscription.updated`,
-   `customer.subscription.deleted`, `invoice.paid`, `invoice.payment_failed`.
-   Webhooks are required: they are how orders and subscriptions get marked paid, failed or canceled.
+   `customer.subscription.deleted`, `invoice.paid`, `invoice.payment_failed`, `charge.refunded`,
+   `identity.verification_session.verified`, `identity.verification_session.requires_input`,
+   `identity.verification_session.canceled`.
+   Webhooks are required: they are how orders, subscriptions, wallet top-ups and age checks get their results.
 3. Turn on the **Customer Portal** in Settings > Billing > Customer portal.
 4. For local testing: `stripe listen --forward-to localhost:3000/api/stripe/webhook`.
 5. **Taxes:** if you sell to customers in the US or EU, look at Stripe Tax before launch. It only collects tax once you have registrations set up.
 
-### Forge mentor
-Put an Anthropic API key in `ANTHROPIC_API_KEY`.
+### Age checks
+- **Credit card check** works as soon as Stripe is set up. It runs Checkout in setup mode, so nobody is charged, then removes the card. Only credit cards pass, because card issuers only give those to adults. Customers who pay with a card wallet such as Link may be asked to use a plain credit card instead.
+- **ID scan** needs [Stripe Identity](https://dashboard.stripe.com/identity) turned on for your account (Stripe charges per check). ForgeCenter reads the date of birth once to decide adult or not, never stores it, and then redacts the session so Stripe deletes the images.
+- `ADULT_ONLY_PRODUCTS` chooses what only confirmed adults can buy (default `game,website`, since minors can back out of contracts). Leave it empty to allow everything.
+- Someone who says they're under 13 has their new account deleted, and that browser can't try again for a day. An older account with paid subscriptions or credit is locked instead, and you get an email to refund it.
+
+### Wallet
+Top-ups go through Stripe Checkout and are added by the webhook. To refund unused credit, refund the top-up's payment in the Stripe Dashboard: the wallet goes down by the same amount automatically. Refunds for orders can be given as credit from the order in the owner panel, and goodwill credit from any support ticket. Check with an accountant how your state treats unused store credit.
+
+### Forge mentor and Forge Support
+Put an Anthropic API key in `ANTHROPIC_API_KEY`. The mentor uses `AI_MODEL` and Forge Support uses `SUPPORT_AI_MODEL` (default `claude-opus-5-5`, with Anthropic's automatic fallback model if it declines a request). Each customer gets up to 40 Forge Support replies a day and 5 open tickets. Without a key, tickets go straight to you.
 
 ### Email (optional)
 Create a free [Resend](https://resend.com) account, verify your domain, and set `RESEND_API_KEY` and `EMAIL_FROM`. Without them the site works the same, just without emails.

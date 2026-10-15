@@ -14,7 +14,7 @@ const GROUPS: { label: string; required: boolean; keys: string[] }[] = [
   { label: 'Google sign-in', required: true, keys: ['GOOGLE_CLIENT_ID'] },
   { label: 'Owner panel', required: true, keys: ['ADMIN_EMAILS'] },
   { label: 'Payments (Stripe)', required: true, keys: ['STRIPE_SECRET_KEY', 'STRIPE_WEBHOOK_SECRET'] },
-  { label: 'AI mentor', required: true, keys: ['ANTHROPIC_API_KEY'] },
+  { label: 'AI mentor and help desk', required: true, keys: ['ANTHROPIC_API_KEY'] },
   { label: 'Bot token encryption', required: true, keys: ['SECRET_KEY'] },
   { label: 'Privacy contact', required: true, keys: ['CONTACT_EMAIL'] },
   { label: 'Minecraft hosting', required: false, keys: ['PTERODACTYL_URL', 'PTERODACTYL_APP_KEY', 'PTERODACTYL_CLIENT_KEY', 'PTERODACTYL_NEST_ID', 'PTERODACTYL_EGG_ID', 'PTERODACTYL_LOCATION_ID'] },
@@ -33,7 +33,7 @@ export function parseEnv(text: string): Record<string, string> {
   const out: Record<string, string> = {}
   for (const line of text.split(/\r?\n/)) {
     const m = /^\s*(?:export\s+)?([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*?)\s*$/.exec(line)
-    if (m) out[m[1]] = m[2].replace(/^(['"])(.*)\1$/, '$2')
+    if (m?.[1]) out[m[1]] = (m[2] ?? '').replace(/^(['"])(.*)\1$/, '$2')
   }
   return out
 }
@@ -56,6 +56,26 @@ export function parseTestOutput(text: string): TestCount | null {
   const pass = /^# pass (\d+)/m.exec(text)
   const fail = /^# fail (\d+)/m.exec(text)
   return pass && fail ? { passed: Number(pass[1]), failed: Number(fail[1]) } : null
+}
+
+// Rules from CLAUDE.md that an edit to the site's server code must never break.
+const CODE_RULES: { pattern: RegExp; why: string }[] = [
+  {
+    pattern: /\bpayment_method_types\b/g,
+    why: 'passes payment_method_types to Stripe. ForgeCenter uses dynamic payment methods, so leave it out and choose payment methods in the Stripe Dashboard instead.',
+  },
+  {
+    pattern: /\b(?:ALTER\s+TABLE|CREATE\s+TABLE|INSERT\s+INTO|UPDATE)\b[^;`]*\b(?:dob|date_of_birth|birth_?date|birthday)\b/gi,
+    why: 'stores a date of birth. Age checks keep only the outcome (the age group, the method and when it was confirmed).',
+  },
+]
+const SERVER_CODE = /(^|\/)src\/[^/]+\.(m?js|ts)$/
+
+/** Why replacing `before` with `after` in `path` breaks a project rule, or null when it doesn't. */
+export function brokenRule(path: string, before: string, after: string): string | null {
+  if (!SERVER_CODE.test(path)) return null
+  const count = (re: RegExp, text: string) => text.match(re)?.length ?? 0
+  return CODE_RULES.find(r => count(r.pattern, after) > count(r.pattern, before))?.why ?? null
 }
 
 const lines = (text: string) => text.split('\n').map(s => s.trim()).filter(Boolean)
@@ -151,6 +171,19 @@ export const register: Register = on => {
       ? next(e)
       : { deny: 'forgecenter: the secrets check failed, so this commit or push was stopped. Try again.' },
   )
+
+  // Keeps edits to the site's server code inside the project's payment and privacy rules.
+  // A broken guard lets the edit through: it catches mistakes, it isn't a security boundary.
+  on('tool.call', { tool: 'Edit' }, ($, e, next) => {
+    const why = brokenRule(e.file_path, e.old_string, e.new_string)
+    return why ? { deny: `forgecenter: this edit to ${e.file_path} ${why}` } : next(e)
+  }).catch(($, e, next) => next(e))
+
+  on('tool.call', { tool: 'Write' }, async ($, e, next) => {
+    const before: string = await $.fs.read(e.file_path).catch(() => '')
+    const why = brokenRule(e.file_path, before, e.content)
+    return why ? { deny: `forgecenter: writing ${e.file_path} ${why}` } : next(e)
+  }).catch(($, e, next) => next(e))
 
   on('ui.render', { component: 'Pane', requestId: PANE }, async ($, e) => {
     const { Box, Text, Button } = $.ui.resolve(e)

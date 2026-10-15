@@ -17,7 +17,7 @@
 <header class="top">
   <div class="wrap top-inner">
     <a class="logo" href="/" aria-label="ForgeCenter home"><span class="logo-icon" data-icon="anvil"></span>ForgeCenter</a>
-    <nav aria-label="Main"><a href="/#shop">Prices</a><a href="/#tools">Free tools</a><a href="/#mentor">Learn to code</a></nav>
+    <nav aria-label="Main"><a href="/#shop">Prices</a><a href="/#tools">Free tools</a><a href="/#mentor">Learn to code</a><a href="/support">Help</a></nav>
     <div class="auth" id="auth-slot"></div>
   </div>
 </header>
@@ -63,6 +63,19 @@
         <div id="orders"><p class="hint">Loading your orders…</p></div>
       </section>
 
+      <section class="acct-section" id="wallet">
+        <h2>Wallet</h2>
+        <p class="section-lede">Store credit for ForgeCenter. Pay for bots, AI assistants and showcase slots in one step. Credit can't be withdrawn or sent to someone else, and it doesn't expire.</p>
+        <div class="panel wallet" id="wallet-panel"><p class="hint">Loading your wallet…</p></div>
+        <h3>History</h3>
+        <ul class="ledger" id="ledger"></ul>
+      </section>
+
+      <section class="acct-section" id="age">
+        <h2>Age group</h2>
+        <div class="panel age-status" id="age-status"><p class="hint">Loading…</p></div>
+      </section>
+
       <section class="acct-section">
         <h2>Showcase listings</h2>
         <div id="showcase"></div>
@@ -73,9 +86,15 @@
         <div id="mods"></div>
       </section>
 
+      <section class="acct-section">
+        <h2>Help</h2>
+        <p>Questions about an order, a server, a bot or your account? Forge Support, an AI assistant, answers straight away and passes anything it can't solve to a person.</p>
+        <a class="btn" href="/support">Get help</a>
+      </section>
+
       <section class="acct-section danger">
         <h2>Delete account</h2>
-        <p>This removes your profile, saved creations, showcase listings and messages, and switches off your game server panel login. Receipts for past orders are kept for tax records without your name attached.</p>
+        <p>This removes your profile, saved creations, showcase listings, messages and support tickets, and switches off your game server panel login. Receipts for past orders and wallet payments are kept for tax records without your name attached. Cancel subscriptions and use up or refund wallet credit first.</p>
         <button class="btn btn-danger" type="button" id="delete">Delete my account</button>
       </section>
     </div>
@@ -85,7 +104,7 @@
 <footer class="foot">
   <div class="wrap foot-inner">
     <span><span class="logo-icon" data-icon="anvil"></span>ForgeCenter</span>
-    <nav aria-label="Legal"><a href="/privacy">Privacy</a> <a href="/terms">Terms</a></nav>
+    <nav aria-label="Legal"><a href="/privacy">Privacy</a> <a href="/terms">Terms</a> <a href="/support">Help</a></nav>
   </div>
 </footer>
 <div class="toast" id="toast" role="status" hidden></div>

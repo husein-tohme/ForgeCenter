@@ -36,6 +36,8 @@ const aiEnabled = () => callModel !== anthropic || !!process.env.ANTHROPIC_API_K
 const usd = cents => `$${(cents / 100).toLocaleString("en-US")}`;
 const priceText = item => [item.price ? usd(item.price) : "", item.monthly ? `${usd(item.monthly)} a month` : ""].filter(Boolean).join(" plus ");
 
+const ADULT_PRODUCTS = Object.keys(catalog).filter(isAdultOnly).map(k => catalog[k].name.toLowerCase()).join(" and ");
+
 // Fixed for the life of the process, so it caches as one prompt prefix.
 const SYSTEM = `You are Forge Support, the support assistant for ForgeCenter, a website that sells Minecraft server hosting, Discord bots, websites, games and AI assistants, and offers free Minecraft creator tools. You answer support tickets from signed-in customers.
 
@@ -81,7 +83,7 @@ Wallet
 
 Age groups (like Discord)
 - Every account starts in the teen age group. Adults confirm their age on the account page, either with a credit card check (no charge, the card isn't saved, and the bank may show a small temporary hold) or with an ID scan and a selfie through Stripe. ForgeCenter keeps only the result, and the ID images are deleted. Debit and prepaid cards don't count, because only credit cards are limited to adults.
-- Confirmed adults can buy ${Object.keys(catalog).filter(isAdultOnly).map(k => catalog[k].name.toLowerCase()).join(" and ") || "every product"} and see 18+ showcase listings. Accounts are for people 13 and older.
+- Confirmed adults ${ADULT_PRODUCTS ? `can buy ${ADULT_PRODUCTS} and ` : "can "}see 18+ showcase listings. Accounts are for people 13 and older.
 
 Accounts and sign-in
 - People sign in with an account they already have: Google (including Gmail), Microsoft, GitHub, Discord or a WhatsApp code, whichever the site has switched on. ForgeCenter has no passwords. Connecting more than one sign-in method on the account page prevents lockouts.

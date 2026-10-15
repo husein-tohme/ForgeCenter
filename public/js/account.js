@@ -1,9 +1,16 @@
 import { renderService } from "./service.js";
-import { $, api, esc, icon, money, date, toast, onUser, openSignIn, signOut, pill, renderSignInOptions, STATUS, SUB_STATUS, PRODUCT_ICON, PROVIDER_NAMES } from "./common.js";
+import { $, api, esc, icon, money, cash, date, toast, getUser, onUser, adultPerks, openSignIn, signOut, pill, renderSignInOptions, refreshUser, stack, STATUS, SUB_STATUS, PRODUCT_ICON, PROVIDER_NAMES } from "./common.js";
 
 const params = new URLSearchParams(location.search);
 const focusOrder = Number(params.get("order")) || null;
+const ageCheck = Number(params.get("age_check")) || null;
+const toppedUp = params.has("topup");
 if (params.get("paid") === "1") toast("Payment received. Your order will update in a moment.");
+if (params.get("paid") === "wallet") toast("Paid from your wallet. Your order is below.");
+if (params.get("topup")) toast("Thanks! Your funds will show in your wallet in a moment.");
+// Read once; drop them so a reload doesn't repeat the messages.
+for (const k of ["paid", "topup", "age_check"]) params.delete(k);
+history.replaceState(null, "", location.pathname + (params.size ? `?${params}` : "") + location.hash);
 
 $("signin-here").addEventListener("click", () => openSignIn());
 $("signout").addEventListener("click", async () => { await signOut(); });
@@ -28,8 +35,13 @@ onUser(user => {
   $("p-email").textContent = [user.email, user.phone].filter(Boolean).join(", ");
   if (user.picture) { $("avatar").src = user.picture; $("avatar").hidden = false; }
   $("billing").hidden = !user.hasBilling;
-  loadIdentities(); loadOrders(); loadShowcase(); loadMods();
+  // Load once the account has answered the birthday question, and not again when the
+  // same account is refreshed (for example after a top-up).
+  if (!user.ageGroup || loadedFor === user.id) return;
+  loadedFor = user.id;
+  loadIdentities(); loadOrders(); loadWallet(); loadAge(); loadShowcase(); loadMods();
 });
+let loadedFor = null;
 
 // ---------- Name ----------
 $("rename-open").addEventListener("click", () => {
@@ -151,6 +163,83 @@ async function loadOrder(d) {
   });
 }
 
+// ---------- Wallet ----------
+const ENTRY_TEXT = {
+  topup: () => "Added funds",
+  purchase: e => `Paid for ${e.product ?? "an order"}${e.orderId ? ` (order ${e.orderId})` : ""}`,
+  refund: e => `Refund for order ${e.orderId}`,
+  credit: e => `Credit from ForgeCenter: ${e.note}`,
+  topup_refund: () => "Top-up refunded to your card",
+};
+
+async function loadWallet(retry = toppedUp) {
+  const r = await api("/api/wallet");
+  if (!r.ok) { $("wallet-panel").innerHTML = `<p class="error">${esc(r.data.error)}</p>`; return; }
+  const { balance, entries, pending, limits, available } = r.data;
+  const pendingCents = pending.reduce((n, t) => n + t.amount, 0);
+  $("wallet-panel").innerHTML = `
+    <div class="wallet-balance">${stack(balance, { big: true })}<span class="small">${cash(balance)} to spend</span></div>
+    <div class="wallet-add">
+      <h3>Add funds</h3>
+      ${available ? `<div class="amounts">
+        ${[1000, 2500, 5000, 10000].map(a => `<button class="btn btn-buy" type="button" data-topup="${a}">Add <span class="num">${money(a)}</span></button>`).join("")}
+        <form class="custom" id="topup-custom">
+          <label>Other amount<input name="dollars" type="number" inputmode="numeric" min="${limits.minTopup / 100}" max="${limits.maxTopup / 100}" step="1" placeholder="$" required></label>
+          <button class="btn" type="submit">Add</button>
+        </form>
+      </div>
+      <p class="small">${money(limits.minTopup)} to ${money(limits.maxTopup)} at a time, and up to ${money(limits.maxBalance)} in your wallet. Paid by card through Stripe.</p>`
+        : `<p class="hint">Adding funds isn't available yet.</p>`}
+      ${pendingCents ? `<p class="small">${cash(pendingCents)} is on its way and will appear once your payment goes through.</p>` : ""}
+    </div>`;
+  $("ledger").innerHTML = entries.length ? entries.map(e => `<li>
+      <span>${esc((ENTRY_TEXT[e.kind] ?? (() => e.kind))(e))}</span>
+      <span class="amount ${e.amount > 0 ? "plus" : ""}">${e.amount > 0 ? "+" : ""}${cash(e.amount)}</span>
+      <span class="small">${date(e.createdAt)}</span></li>`).join("")
+    : `<li class="hint">Nothing yet. Funds you add and spend show up here.</li>`;
+
+  const topUp = async (amount, button) => {
+    button.disabled = true;
+    const res = await api("/api/wallet/topup", { method: "POST", body: { amount } });
+    button.disabled = false;
+    if (res.data.url) location.href = res.data.url; else toast(res.data.error);
+  };
+  $("wallet-panel").querySelectorAll("[data-topup]").forEach(b => b.addEventListener("click", () => topUp(Number(b.dataset.topup), b)));
+  $("topup-custom")?.addEventListener("submit", e => {
+    e.preventDefault();
+    topUp(Math.round(Number(e.target.elements.dollars.value) * 100), e.target.querySelector("button"));
+  });
+  // Just back from Stripe: the webhook usually lands within a few seconds.
+  if (retry && pendingCents) setTimeout(async () => { await loadWallet(false); refreshUser(); }, 3000);
+  else if (retry) refreshUser();
+}
+
+// ---------- Age group ----------
+const METHOD_TEXT = { credit_card: "a credit card check", id_scan: "an ID scan" };
+
+async function loadAge(polls = 0) {
+  const r = await api(`/api/age${ageCheck ? `?check=${ageCheck}` : ""}`);
+  if (!r.ok) { $("age-status").innerHTML = `<p class="error">${esc(r.data.error)}</p>`; return; }
+  const { user, check, available } = r.data;
+  const adult = user.ageGroup === "adult";
+  const latest = ["pending", "failed"].includes(check?.status) ? check : null;
+  $("age-status").innerHTML = adult ? `
+      <span class="slot">${icon(user.ageMethod === "id_scan" ? "idcard" : "card")}</span>
+      <div><p><span class="pill pill-done">Adult</span> Confirmed by ${METHOD_TEXT[user.ageMethod] ?? "a check"} on ${date(user.ageConfirmedAt)}.</p></div>`
+    : `
+      <span class="slot">${icon("book")}</span>
+      <div class="grow">
+        <p><span class="pill pill-muted">Teen</span> Every account starts in the teen group, like on Discord. Confirm you're an adult to ${await adultPerks()}.</p>
+        ${latest?.status === "pending" ? `<p class="small">Checking your ${latest.method === "id_scan" ? "ID" : "card"}… This updates by itself.</p>` : ""}
+        ${latest?.status === "failed" && latest.message && latest.message !== "You started a newer check." ? `<p class="error">${esc(latest.message)}</p>` : ""}
+      </div>
+      ${available ? `<button class="btn btn-buy" type="button" data-confirm-age>Confirm your age</button>` : ""}`;
+  // Back from Stripe: keep checking for a short while until the result is in.
+  if (check?.status === "pending" && ageCheck && polls < 8) setTimeout(() => loadAge(polls + 1), 2500);
+  if (ageCheck && check?.status === "passed") toast("You're confirmed as an adult.");
+  if (ageCheck && adult) refreshUser();
+}
+
 // ---------- Showcase ----------
 async function loadShowcase() {
   const r = await api("/api/showcase/mine");
@@ -158,7 +247,7 @@ async function loadShowcase() {
   const labels = { pending: "Waiting for approval", approved: "Live", hidden: "Hidden" };
   const tones = { pending: "wait", approved: "done", hidden: "muted" };
   let html = listings.map(l => `<div class="panel listing-row">
-      <div><strong>${esc(l.title)}</strong> <span class="pill pill-${tones[l.status]}">${labels[l.status]}</span>
+      <div><strong>${esc(l.title)}</strong> <span class="pill pill-${tones[l.status]}">${labels[l.status]}</span>${l.adultOnly ? ` <span class="pill pill-adult">18+</span>` : ""}
       <p class="small"><a href="${esc(l.url)}" target="_blank" rel="noopener">${esc(l.url)}</a></p></div>
       <button class="btn btn-small" type="button" data-remove="${l.id}">Remove</button></div>`).join("");
   if (credits > 0) {
@@ -167,6 +256,7 @@ async function loadShowcase() {
       <label>Title<input name="title" required maxlength="80" placeholder="Skyblock Server"></label>
       <label>Link<input name="url" type="url" required maxlength="300" placeholder="https://"></label>
       <label>Short description<input name="description" maxlength="300" placeholder="What makes it worth a visit?"></label>
+      ${getUser()?.ageGroup === "adult" ? `<label class="check-row"><input type="checkbox" name="adultOnly"> 18+ only: show it to confirmed adults</label>` : ""}
       <button class="btn btn-buy" type="submit">Submit listing</button></form>`;
   } else if (!listings.length) {
     html = `<p class="hint">Buy a showcase slot to list a website or server on the homepage.</p>
@@ -176,7 +266,7 @@ async function loadShowcase() {
   $("listing-form")?.addEventListener("submit", async e => {
     e.preventDefault();
     const f = Object.fromEntries(new FormData(e.target));
-    const res = await api("/api/showcase", { method: "POST", body: f });
+    const res = await api("/api/showcase", { method: "POST", body: { ...f, adultOnly: f.adultOnly === "on" } });
     toast(res.ok ? "Listing submitted for review." : res.data.error);
     if (res.ok) loadShowcase();
   });

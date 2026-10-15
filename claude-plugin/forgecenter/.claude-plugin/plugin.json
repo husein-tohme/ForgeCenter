@@ -1,7 +1,7 @@
 {
   "name": "forgecenter",
-  "version": "0.1.0",
-  "description": "ForgeCenter launch checklist pane, /forgecenter command, test status line, and a guard that keeps secrets and customer data out of git",
+  "version": "0.2.0",
+  "description": "ForgeCenter launch checklist pane, /forgecenter command, test status line, and guards that keep secrets and customer data out of git and edits inside the project's payment and privacy rules",
   "types": "./types/index.d.ts",
   "author": {
     "name": "ForgeCenter"

@@ -49,6 +49,43 @@ describe('secrets guard', () => {
   })
 })
 
+describe('project rules guard', () => {
+  // Stands in for the tools themselves, noting which ones actually ran.
+  const runs = (calls: string[]) => (_: unknown, e: { tool: string }) => { calls.push(e.tool); return { result: {}, text: 'done' } }
+
+  test('stops server code that passes payment_method_types to Stripe', async ($, on) => {
+    const calls: string[] = []
+    on('tool.call', runs(calls))
+    const r = await $.tool.call({ tool: 'Edit', file_path: '/repo/src/orders.js',
+      old_string: 'mode, line_items, customer,', new_string: "mode, line_items, customer, payment_method_types: ['card'],", replace_all: false })
+    expect(refusal(r)).toContain('dynamic payment methods')
+    expect(calls).toEqual([])
+  })
+
+  test('stops a schema that stores a date of birth', async ($, on) => {
+    const calls: string[] = []
+    on('tool.call', runs(calls))
+    on('fs.read', () => ({ value: 'export const db = 1\n' }))
+    const r = await $.tool.call({ tool: 'Write', file_path: '/repo/src/db.js',
+      content: 'db.exec(`ALTER TABLE users ADD COLUMN date_of_birth TEXT`)\n' })
+    expect(refusal(r)).toContain('stores a date of birth')
+    expect(calls).toEqual([])
+  })
+
+  test('lets tests, reading a verified birth date, and existing code through', async ($, on) => {
+    const calls: string[] = []
+    on('tool.call', runs(calls))
+    await $.tool.call({ tool: 'Edit', file_path: '/repo/test/fake-stripe.js',
+      old_string: 'x', new_string: 'assert.equal(body.payment_method_types, undefined)', replace_all: false })
+    await $.tool.call({ tool: 'Edit', file_path: '/repo/src/age.js',
+      old_string: 'const dob = null', new_string: 'const dob = vs.verified_outputs?.dob', replace_all: false })
+    // Moving a line that already mentions it doesn't add a new use.
+    await $.tool.call({ tool: 'Edit', file_path: '/repo/src/legacy.js',
+      old_string: 'a; // payment_method_types', new_string: 'b; // payment_method_types', replace_all: false })
+    expect(calls).toEqual(['Edit', 'Edit', 'Edit'])
+  })
+})
+
 describe('status line', () => {
   test('shows the latest test result', async ($, on) => {
     const lines: (string | undefined)[] = []
@@ -87,7 +124,7 @@ describe('launch check pane', () => {
       const tree = JSON.stringify(await ui.drawn())
       expect(tree).toContain('Not ready yet: 3 required setting groups missing')
       expect(tree).toContain('Payments (Stripe): needs STRIPE_WEBHOOK_SECRET')
-      expect(tree).toContain('AI mentor: needs ANTHROPIC_API_KEY')
+      expect(tree).toContain('AI mentor and help desk: needs ANTHROPIC_API_KEY')
       expect(tree).toContain('Bot token encryption: needs SECRET_KEY')
       expect(tree).toContain('Tests: all 53 passing')
       expect(tree).toContain('1 changed file, 2 commits not pushed')

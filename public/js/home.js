@@ -1,4 +1,4 @@
-import { $, api, esc, icon, money, toast, requireSignIn, onUser, PRODUCT_ICON } from "./common.js";
+import { $, api, esc, icon, money, toast, requireSignIn, onUser, getUser, getCatalog, ready, PRODUCT_ICON } from "./common.js";
 
 // ---------- Crafting table ----------
 // key matches src/catalog.js; pattern is the 3x3 recipe shape.
@@ -21,9 +21,9 @@ const FREE = {
 };
 
 let catalog = {};
-api("/api/catalog").then(r => {
-  if (!r.ok) { $("trades").innerHTML = `<p class="hint">Prices couldn't load. Refresh the page to try again.</p>`; return; }
-  catalog = r.data; renderTrades();
+getCatalog().then(data => {
+  if (!Object.keys(data).length) { $("trades").innerHTML = `<p class="hint">Prices couldn't load. Refresh the page to try again.</p>`; return; }
+  catalog = data; renderTrades();
 });
 
 const grid = $("grid");
@@ -78,7 +78,7 @@ function renderTrades() {
     const p = catalog[k];
     return `<div class="trade${k === "website" ? " featured" : ""}">
       <div class="slot">${icon(PRODUCT_ICON[k])}</div>
-      <div><h3>${esc(p.name)}</h3><p>${esc(p.desc)}</p></div>
+      <div><h3>${esc(p.name)}</h3><p>${esc(p.desc)}</p>${p.adultOnly ? `<p class="small">For adults: confirm your age before buying.</p>` : ""}</div>
       ${priceHtml(p)}
       <button class="btn btn-buy" type="button" data-buy="${k}">Trade</button>
     </div>`;
@@ -168,12 +168,25 @@ onUser(async u => {
 });
 
 // ---------- Showcase ----------
-api("/api/showcase").then(r => {
+// 18+ listings come back as placeholders for anyone who isn't a confirmed adult,
+// shown like Discord's age-restricted channels.
+const restricted = () => `
+  <div class="panel listing restricted">
+    <span class="gate-icon">${icon("barrier")}</span>
+    <h3>Age-restricted listing</h3>
+    <p>This listing is for adults (18+). ${getUser()
+      ? "Your account is in the teen group. If that isn't right, confirm you're an adult."
+      : "Sign in and confirm you're an adult to see it."}</p>
+    <button class="btn btn-small" type="button" data-confirm-age>Confirm age</button>
+  </div>`;
+
+Promise.all([api("/api/showcase"), ready]).then(([r]) => {
   const list = r.data.listings ?? [];
   if (!list.length) return;
-  $("showcase-list").innerHTML = list.map(l => `
+  $("showcase-list").innerHTML = list.map(l => l.restricted ? restricted() : `
     <a class="panel listing" href="${esc(l.url)}" rel="noopener nofollow ugc" target="_blank">
-      <h3>${esc(l.title)}</h3><p>${esc(l.description)}</p><span class="small">By ${esc(l.owner)}</span>
+      <h3>${esc(l.title)}</h3><p>${esc(l.description)}</p>
+      <span class="small">By ${esc(l.owner)}</span>${l.adultOnly ? ` <span class="pill pill-adult">18+</span>` : ""}
     </a>`).join("");
 });
 

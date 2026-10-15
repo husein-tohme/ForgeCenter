@@ -26,6 +26,12 @@ const ICONS = {
     "ffffffff", "fsssssYf", "fssssssf", "fsssgssf", "fsggggsf", "fggggggf", "fddddddf", "ffffffff"] },
   frame: { c: { f: "#8e5426", F: "#5a3416", l: "#c9a46a" }, m: [
     "ffffffff", "fllllllF", "fl....lF", "fl....lF", "fl....lF", "fl....lF", "fllllllF", "FFFFFFFF"] },
+  card: { c: { c: "#3b7bd6", k: "#1c1c1c", g: "#f2c230", w: "#9cc7ff" }, m: [
+    "........", "cccccccc", "kkkkkkkk", "cccccccc", "cggccccc", "cggcwwwc", "cccccccc", "........"] },
+  idcard: { c: { f: "#5c5f66", p: "#ede6d6", s: "#e0ac69", h: "#3b7bd6", k: "#8b8b8b" }, m: [
+    "........", "ffffffff", "fsspkkpf", "fssppppf", "fhhpkkpf", "fhhppppf", "ffffffff", "........"] },
+  barrier: { c: { r: "#d9372b" }, m: [
+    "..rrrr..", ".rr...r.", "r.rr...r", "r..rr..r", "r...rr.r", "r....rrr", ".r....r.", "..rrrr.."] },
 };
 
 export function icon(name, label = "") {
@@ -65,6 +71,8 @@ export const pill = status => {
 export const $ = id => document.getElementById(id);
 export const esc = s => String(s ?? "").replace(/[&<>"']/g, ch => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[ch]));
 export const money = cents => "$" + (cents / 100).toLocaleString("en-US");
+// Always two decimals, for wallet amounts.
+export const cash = cents => (cents < 0 ? "−$" : "$") + (Math.abs(cents) / 100).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 export const date = iso => new Date(iso).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
 
 let toastTimer;
@@ -82,6 +90,7 @@ export async function api(path, { method = "GET", body } = {}) {
       body: method === "GET" ? undefined : JSON.stringify(body ?? {}),
     });
     const data = r.headers.get("content-type")?.includes("json") ? await r.json() : null;
+    if (data?.needs === "birthday") openBirthday();
     return { ok: r.ok, status: r.status, data: data ?? {} };
   } catch {
     return { ok: false, status: 0, data: { error: "You seem to be offline. Check your connection and try again." } };
@@ -98,7 +107,15 @@ export function onUser(fn) { listeners.push(fn); fn(currentUser); }
 function setUser(user) {
   currentUser = user;
   renderAuthSlot();
+  if (user && !user.ageGroup) openBirthday();
+  if (user?.ageGroup === "under13") openClosed();
   listeners.forEach(fn => fn(user));
+}
+// Re-reads the account, for example after a wallet or age change.
+export async function refreshUser() {
+  const r = await api("/api/me");
+  if (r.ok) setUser(r.data.user ?? null);
+  return currentUser;
 }
 export const ready = api("/api/me").then(r => setUser(r.data.user ?? null));
 const config = api("/api/config").then(r => r.data);
@@ -112,6 +129,7 @@ function renderAuthSlot() {
     return;
   }
   slot.innerHTML = `${currentUser.isAdmin ? `<a class="top-link" href="/admin">Owner panel</a>` : ""}
+    <a class="wallet-chip" href="/account#wallet" aria-label="Wallet: ${cash(currentUser.wallet ?? 0)}">${stack(currentUser.wallet ?? 0)}</a>
     <a class="account-link" href="/account">${currentUser.picture
       ? `<img src="${esc(currentUser.picture)}" alt="" width="32" height="32" referrerpolicy="no-referrer">` : ""}My account</a>`;
 }
@@ -276,20 +294,172 @@ export async function requireSignIn(action, resume = null) {
   openSignIn(action, resume);
 }
 
+let catalogPromise;
+export const getCatalog = () => catalogPromise ??= api("/api/catalog").then(r => (r.ok ? r.data : {}));
+
 export function checkout(product, button) {
   return requireSignIn(async () => {
+    const item = (await getCatalog())[product];
+    if (item?.adultOnly && currentUser.ageGroup !== "adult") {
+      return openAgeConfirm(`Confirm you're an adult to buy a ${item.name.toLowerCase()}.`);
+    }
+    let how = "card";
+    if (item?.walletPayable && (currentUser.wallet ?? 0) >= item.price) {
+      how = await choosePayment(item);
+      if (!how) return;
+    }
     if (button) button.disabled = true;
-    const r = await api("/api/checkout", { method: "POST", body: { product } });
+    const r = await api(how === "wallet" ? "/api/wallet/pay" : "/api/checkout", { method: "POST", body: { product } });
     if (button) button.disabled = false;
+    if (how === "wallet" && r.ok) { location.href = `/account?order=${r.data.orderId}&paid=wallet`; return; }
     if (r.data.url) location.href = r.data.url;
-    else toast(r.data.error || "Checkout couldn't start. Try again in a moment.");
+    else if (r.data.needs === "adult") openAgeConfirm(r.data.error);
+    else if (r.data.needs !== "birthday") toast(r.data.error || "Checkout couldn't start. Try again in a moment.");
   }, { buy: product });
 }
 
-// Any [data-buy] button on any page starts checkout.
+// ---------- Wallet ----------
+// The balance drawn as a Minecraft item stack: an emerald in a slot, the amount as its count.
+export function stack(cents, { big = false } = {}) {
+  const whole = cents % 100 === 0;
+  const label = whole ? `$${(cents / 100).toLocaleString("en-US")}` : cash(cents);
+  return `<span class="stack${big ? " stack-big" : ""}"><span class="stack-gem">${icon("emerald")}</span><span class="stack-count">${label}</span></span>`;
+}
+
+function choosePayment(item) {
+  const left = currentUser.wallet - item.price;
+  document.body.insertAdjacentHTML("beforeend", `
+    <dialog class="panel gate" id="pay-dialog" aria-labelledby="pay-title">
+      <h2 id="pay-title">Pay for ${esc(item.name.toLowerCase())}</h2>
+      <div class="choices">
+        <button class="choice" type="button" value="wallet"><span class="slot">${icon("emerald")}</span>
+          <span><strong>Pay from wallet</strong><span class="small">${cash(item.price)} now. ${cash(left)} stays in your wallet.</span></span></button>
+        <button class="choice" type="button" value="card"><span class="slot">${icon("card")}</span>
+          <span><strong>Pay by card</strong><span class="small">Card, bank or wallet apps through Stripe Checkout.</span></span></button>
+      </div>
+      <button class="btn" type="button" value="">Cancel</button>
+    </dialog>`);
+  const d = $("pay-dialog");
+  return new Promise(resolve => {
+    d.addEventListener("click", e => {
+      const b = e.target.closest("button");
+      if (b) d.close(b.value);
+    });
+    d.addEventListener("close", () => { resolve(d.returnValue || null); d.remove(); });
+    d.showModal();
+  });
+}
+
+// ---------- Age (like Discord: everyone starts as a teen; adults confirm) ----------
+const MONTHS = [...Array(12)].map((_, i) => new Date(Date.UTC(2000, i, 1)).toLocaleString(undefined, { month: "long", timeZone: "UTC" }));
+
+function birthdayDialog() {
+  const year = new Date().getFullYear();
+  document.body.insertAdjacentHTML("beforeend", `
+    <dialog class="panel gate" id="birthday-dialog" aria-labelledby="birthday-title">
+      <h2 id="birthday-title">When's your birthday?</h2>
+      <p>Everyone answers this once. It keeps ForgeCenter right for younger players. Only your age group is saved, not the date.</p>
+      <form class="birthday-form" id="birthday-form">
+        <label>Month<select name="month" required><option value="" disabled selected hidden>Choose</option>${MONTHS.map((m, i) => `<option value="${i + 1}">${m}</option>`).join("")}</select></label>
+        <label>Day<select name="day" required><option value="" disabled selected hidden>Choose</option>${[...Array(31)].map((_, i) => `<option>${i + 1}</option>`).join("")}</select></label>
+        <label>Year<select name="year" required><option value="" disabled selected hidden>Choose</option>${[...Array(101)].map((_, i) => `<option>${year - i}</option>`).join("")}</select></label>
+        <p class="error" id="birthday-error" role="alert" hidden></p>
+        <button class="btn btn-buy" type="submit">Continue</button>
+      </form>
+      <p class="small">Signed in with the wrong account? <button class="link-btn" type="button" id="birthday-signout">Sign out</button></p>
+    </dialog>`);
+  const d = $("birthday-dialog");
+  d.addEventListener("cancel", e => e.preventDefault()); // it has to be answered
+  $("birthday-signout").addEventListener("click", async () => { d.close(); await signOut(); });
+  $("birthday-form").addEventListener("submit", async e => {
+    e.preventDefault();
+    const f = e.target.elements;
+    const r = await api("/api/me/birthday", { method: "POST", body: { year: Number(f.year.value), month: Number(f.month.value), day: Number(f.day.value) } });
+    if (r.ok) { d.close(); setUser(r.data.user); return; }
+    if (r.data.needs === "closed" || r.data.needs === "blocked") { d.close(); setUser(null); openClosed(r.data.error); return; }
+    $("birthday-error").textContent = r.data.error;
+    $("birthday-error").hidden = false;
+  });
+  return d;
+}
+
+export function openBirthday() {
+  const d = $("birthday-dialog") ?? birthdayDialog();
+  if (!d.open) d.showModal();
+}
+
+function openClosed(message = "This account is closed because ForgeCenter accounts are for people 13 and older.") {
+  if ($("closed-dialog")) return;
+  document.body.insertAdjacentHTML("beforeend", `
+    <dialog class="panel gate" id="closed-dialog" aria-labelledby="closed-title">
+      <span class="gate-icon">${icon("barrier")}</span>
+      <h2 id="closed-title">ForgeCenter accounts are for ages 13 and up</h2>
+      <p>${esc(message)}</p>
+      <a class="btn" href="/" id="closed-ok">Back to the home page</a>
+    </dialog>`);
+  $("closed-ok").addEventListener("click", async e => {
+    if (!currentUser) return;
+    e.preventDefault();
+    await signOut();
+    location.href = "/";
+  });
+  $("closed-dialog").addEventListener("cancel", e => e.preventDefault());
+  $("closed-dialog").showModal();
+}
+
+// What confirming unlocks, from the catalog's adult-only products.
+const PLURAL = { website: "websites", game: "games", discord: "Discord bots", mcserver: "server hosting", ai: "AI assistants", showcase: "showcase slots" };
+export async function adultPerks() {
+  const items = Object.entries(await getCatalog()).filter(([, i]) => i.adultOnly).map(([k, i]) => PLURAL[k] ?? i.name);
+  const buy = items.length > 1 ? `${items.slice(0, -1).join(", ")} and ${items.at(-1)}` : items[0];
+  return buy ? `buy ${buy} and see 18+ showcase listings` : "see 18+ showcase listings";
+}
+
+function ageDialog() {
+  document.body.insertAdjacentHTML("beforeend", `
+    <dialog class="panel gate age-dialog" id="age-dialog" aria-labelledby="age-title">
+      <span class="gate-icon">${icon("idcard")}</span>
+      <h2 id="age-title">Confirm your age group</h2>
+      <p id="age-reason"></p>
+      <div class="choices">
+        <button class="choice" type="button" data-age-method="card"><span class="slot">${icon("card")}</span>
+          <span><strong>Credit card</strong><span class="small">ForgeCenter never sees your card details, and you aren't charged. Your bank may show a small temporary hold that disappears on its own.</span>
+          <span class="small provider">Provided by Stripe</span></span></button>
+        <button class="choice" type="button" data-age-method="id"><span class="slot">${icon("idcard")}</span>
+          <span><strong>ID scan</strong><span class="small">Scan a photo ID and take a selfie to show it's yours. Both are deleted right after, and ForgeCenter only learns whether you're 18 or over.</span>
+          <span class="small provider">Provided by Stripe Identity</span></span></button>
+      </div>
+      <p class="error" id="age-error" role="alert" hidden></p>
+      <button class="btn" type="button" id="age-close">Not now</button>
+    </dialog>`);
+  const d = $("age-dialog");
+  $("age-close").addEventListener("click", () => d.close());
+  d.querySelectorAll("[data-age-method]").forEach(b => b.addEventListener("click", async () => {
+    b.disabled = true;
+    const r = await api(`/api/age/${b.dataset.ageMethod}`, { method: "POST" });
+    b.disabled = false;
+    if (r.data.url) { location.href = r.data.url; return; }
+    $("age-error").textContent = r.data.error || "The check couldn't start. Try again in a moment.";
+    $("age-error").hidden = false;
+  }));
+  return d;
+}
+
+export function openAgeConfirm(reason = null) {
+  return requireSignIn(async () => {
+    if (currentUser.ageGroup === "adult") return toast("Your age is already confirmed.");
+    const d = $("age-dialog") ?? ageDialog();
+    $("age-reason").textContent = reason ?? `Confirmed adults can ${await adultPerks()}. ForgeCenter keeps only the result.`;
+    $("age-error").hidden = true;
+    if (!d.open) d.showModal();
+  });
+}
+
+// Any [data-buy] button on any page starts checkout, and [data-confirm-age] opens the age check.
 document.addEventListener("click", e => {
   const btn = e.target.closest("[data-buy]");
   if (btn) checkout(btn.dataset.buy, btn);
+  if (e.target.closest("[data-confirm-age]")) openAgeConfirm();
 });
 
 // Messages and unfinished actions from a sign-in that left the page.
