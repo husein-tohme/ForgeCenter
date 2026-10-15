@@ -491,3 +491,9 @@ fieldset.commands legend { font-weight: 700; padding: 0 6px; }
 .installed { list-style: none; padding: 0; margin: 0; display: grid; gap: 6px; }
 .installed li:not(.hint) { display: flex; justify-content: space-between; align-items: center; gap: 12px; background: #c6c6c6; padding: 6px 10px; }
 .plugins-box .results { max-height: 420px; }
+
+/* ---------- Not found ---------- */
+.not-found { display: flex; gap: 28px; align-items: center; max-width: 760px; }
+.not-found-slot { width: 96px; height: 96px; flex: none; }
+.not-found .page-title { margin-bottom: 8px; }
+@media (max-width: 640px) { .not-found { flex-direction: column; align-items: flex-start; } }

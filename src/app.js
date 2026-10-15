@@ -9,6 +9,7 @@ import { toolsRouter } from "./tools.js";
 import { oauthRouter, enabledOAuthProviders } from "./oauth.js";
 import { whatsappRouter, whatsappEnabled } from "./whatsapp.js";
 import { servicesRouter, adminServicesRouter } from "./services.js";
+import { pagesRouter, notFound } from "./pages.js";
 
 export function createApp() {
   const app = express();
@@ -76,7 +77,9 @@ export function createApp() {
   app.use("/api", toolsRouter);
 
   app.use("/api", (_req, res) => res.status(404).json({ error: "Not found." }));
-  app.use(express.static("public", { extensions: ["html"] }));
+  app.use(pagesRouter);
+  app.use(express.static("public", { index: false }));
+  app.use(notFound);
 
   app.use((err, _req, res, _next) => {
     console.error(err);
