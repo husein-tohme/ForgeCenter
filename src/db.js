@@ -57,9 +57,11 @@ CREATE TABLE IF NOT EXISTS order_messages (
   created_at TEXT NOT NULL
 );
 
+-- Saved creations from the free tools. kind is mod, texturepack or modpack.
 CREATE TABLE IF NOT EXISTS mods (
   id INTEGER PRIMARY KEY,
   user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  kind TEXT NOT NULL DEFAULT 'mod',
   name TEXT NOT NULL,
   modrinth_url TEXT,
   created_at TEXT NOT NULL
@@ -88,3 +90,7 @@ CREATE TABLE IF NOT EXISTS webhook_events (
   received_at TEXT NOT NULL
 );
 `);
+
+// Upgrades for databases created by older versions.
+const columns = table => db.prepare(`PRAGMA table_info(${table})`).all().map(c => c.name);
+if (!columns("mods").includes("kind")) db.exec("ALTER TABLE mods ADD COLUMN kind TEXT NOT NULL DEFAULT 'mod'");

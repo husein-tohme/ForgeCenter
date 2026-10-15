@@ -5,6 +5,7 @@ import { db, now } from "./db.js";
 import { catalog, modeOf } from "./catalog.js";
 import { isAdmin, requireAdmin, requireUser } from "./auth.js";
 import { rateLimit } from "./limit.js";
+import { notify } from "./email.js";
 
 let stripeClient;
 export function getStripe() {
@@ -43,6 +44,7 @@ export function fulfillCheckout(session) {
       subscription_status = CASE WHEN ? THEN COALESCE(subscription_status, 'active') ELSE subscription_status END,
       stripe_subscription_id = COALESCE(?, stripe_subscription_id), updated_at = ? WHERE id = ?`)
     .run(session.mode === "subscription" ? 1 : 0, subId, now(), orderId);
+  notify.orderPaid(getOrder(orderId));
 }
 
 function setCheckoutStatus(session, status) {
@@ -87,7 +89,11 @@ export function handleStripeEvent(event) {
     }
     case "invoice.payment_failed": {
       const sub = invoiceSubId(obj);
-      return sub && setSubscriptionStatus(sub, "past_due");
+      if (!sub) return;
+      setSubscriptionStatus(sub, "past_due");
+      const order = db.prepare("SELECT * FROM orders WHERE stripe_subscription_id = ?").get(sub);
+      if (order) notify.paymentFailed(order);
+      return;
     }
   }
 }
@@ -220,6 +226,7 @@ ordersRouter.post("/orders/:id/messages", requireUser, loadOwnOrder, rateLimit({
   const fromOwner = req.order.user_id !== req.user.id ? 1 : 0;
   db.prepare("INSERT INTO order_messages (order_id, from_admin, body, created_at) VALUES (?, ?, ?, ?)")
     .run(req.order.id, fromOwner, body, now());
+  notify.newMessage(req.order, !!fromOwner, body);
   res.json({ messages: messagesFor(req.order.id) });
 });
 
@@ -246,7 +253,9 @@ adminOrdersRouter.patch("/orders/:id", (req, res) => {
   db.prepare(`UPDATE orders SET status = COALESCE(?, status),
       deliverable_url = CASE WHEN ? THEN ? ELSE deliverable_url END, updated_at = ? WHERE id = ?`)
     .run(status ?? null, deliverableUrl !== undefined ? 1 : 0, deliverableUrl || null, now(), order.id);
-  res.json({ order: serialize(getOrder(order.id)) });
+  const updated = getOrder(order.id);
+  if (updated.status !== order.status) notify.statusChanged(updated);
+  res.json({ order: serialize(updated) });
 });
 
 export const paidOrderCount = (userId, product) =>

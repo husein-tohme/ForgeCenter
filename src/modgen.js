@@ -53,9 +53,9 @@ archives_base_name=${id}
   };
 }
 
-export function streamZip(files, res, filename) {
-  res.setHeader("Content-Type", "application/zip");
-  res.setHeader("Content-Disposition", `attachment; filename="${filename}.zip"`);
+export function streamZip(files, res, filename, ext = "zip") {
+  res.setHeader("Content-Type", ext === "mrpack" ? "application/x-modrinth-modpack+zip" : "application/zip");
+  res.setHeader("Content-Disposition", `attachment; filename="${filename}.${ext}"`);
   const zip = archiver("zip");
   zip.pipe(res);
   for (const [path, content] of Object.entries(files)) zip.append(content, { name: path });

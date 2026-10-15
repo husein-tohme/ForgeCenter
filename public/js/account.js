@@ -142,12 +142,20 @@ async function loadShowcase() {
   }));
 }
 
-// ---------- Mods ----------
+// ---------- Saved creations ----------
+const KINDS = {
+  mod: { icon: "pickaxe", label: "Mod", again: "/#forge" },
+  texturepack: { icon: "painting", label: "Texture pack", again: "/textures" },
+  modpack: { icon: "chest", label: "Modpack", again: "/modpacks" },
+};
 async function loadMods() {
-  const r = await api("/api/mods");
-  const mods = r.data.mods ?? [];
-  $("mods").innerHTML = mods.length
-    ? `<ul class="mod-list">${mods.map(m => `<li><span class="mod-icon">${icon("pickaxe")}</span><strong>${esc(m.name)}</strong>
-        <span class="small">${date(m.createdAt)}</span>${m.modrinthUrl ? ` <a href="${esc(m.modrinthUrl)}" target="_blank" rel="noopener">View on Modrinth</a>` : ""}</li>`).join("")}</ul>`
-    : `<p class="hint">Mods you make in the Mod Forge while signed in show up here.</p><a class="btn" href="/#forge">Open Mod Forge</a>`;
+  const r = await api("/api/creations");
+  const items = r.data.creations ?? [];
+  $("mods").innerHTML = items.length
+    ? `<ul class="mod-list">${items.map(m => {
+        const k = KINDS[m.kind] ?? KINDS.mod;
+        return `<li><span class="mod-icon">${icon(k.icon)}</span><strong>${esc(m.name)}</strong>
+          <span class="small">${k.label}, ${date(m.createdAt)}</span>${m.modrinthUrl ? ` <a href="${esc(m.modrinthUrl)}" target="_blank" rel="noopener">View on Modrinth</a>` : ""}</li>`;
+      }).join("")}</ul>`
+    : `<p class="hint">Mods, texture packs and modpacks you make while signed in show up here.</p><a class="btn" href="/#tools">Open the free tools</a>`;
 }

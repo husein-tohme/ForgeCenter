@@ -1,49 +1,6 @@
 import { test, before, after } from "node:test";
 import assert from "node:assert/strict";
-import Stripe from "stripe";
-
-process.env.DATABASE_PATH = ":memory:";
-process.env.ADMIN_EMAILS = "owner@example.com";
-process.env.STRIPE_SECRET_KEY = "sk_test_dummy";
-process.env.STRIPE_WEBHOOK_SECRET = "whsec_test_secret";
-process.env.GOOGLE_CLIENT_ID = "test-client.apps.googleusercontent.com";
-delete process.env.ANTHROPIC_API_KEY;
-
-const { createApp } = await import("../src/app.js");
-const { upsertUser, createSession } = await import("../src/auth.js");
-const { db } = await import("../src/db.js");
-
-let server, base;
-before(async () => {
-  server = createApp().listen(0);
-  await new Promise(r => server.once("listening", r));
-  base = `http://127.0.0.1:${server.address().port}`;
-});
-after(() => server.close());
-
-function signIn(email, sub = email) {
-  const user = upsertUser({ sub, email, name: email.split("@")[0] });
-  return { user, cookie: `fc_session=${createSession(user.id)}` };
-}
-async function api(path, { method = "GET", body, cookie, headers = {} } = {}) {
-  const r = await fetch(base + path, {
-    method,
-    headers: { ...(body !== undefined ? { "Content-Type": "application/json" } : {}), ...(cookie ? { cookie } : {}), ...headers },
-    body: body === undefined ? undefined : typeof body === "string" ? body : JSON.stringify(body),
-  });
-  return { status: r.status, body: await r.json().catch(() => null), headers: r.headers };
-}
-function makeOrder(userId, product, status = "awaiting_payment") {
-  return Number(db.prepare(`INSERT INTO orders (user_id, product, amount, status, created_at, updated_at)
-    VALUES (?, ?, 1000, ?, 'now', 'now')`).run(userId, product, status).lastInsertRowid);
-}
-async function sendWebhook(event) {
-  const payload = JSON.stringify(event);
-  const header = Stripe.webhooks.generateTestHeaderString({ payload, secret: process.env.STRIPE_WEBHOOK_SECRET });
-  return fetch(base + "/api/stripe/webhook", {
-    method: "POST", headers: { "Content-Type": "application/json", "stripe-signature": header }, body: payload,
-  });
-}
+import { api, db, makeOrder, sendWebhook, signIn, url } from "./helpers.js";
 
 test("visitors are signed out and can't buy", async () => {
   assert.equal((await api("/api/me")).body.user, null);
@@ -90,7 +47,7 @@ test("signed Stripe webhooks mark orders paid, once", async () => {
   db.prepare("UPDATE orders SET status = 'in_progress' WHERE id = ?").run(id);
   assert.equal((await sendWebhook(event)).status, 200);
   assert.equal((await api(`/api/orders/${id}`, { cookie })).body.order.status, "in_progress");
-  const forged = await fetch(base + "/api/stripe/webhook", { method: "POST", headers: { "Content-Type": "application/json", "stripe-signature": "t=1,v1=bad" }, body: JSON.stringify(event) });
+  const forged = await fetch(url("/api/stripe/webhook"), { method: "POST", headers: { "Content-Type": "application/json", "stripe-signature": "t=1,v1=bad" }, body: JSON.stringify(event) });
   assert.equal(forged.status, 400);
 });
 
@@ -158,11 +115,13 @@ test("showcase listings need a paid slot and owner approval", async () => {
 
 test("mods made while signed in are saved to the account", async () => {
   const { cookie } = signIn("modder@example.com");
-  const r = await fetch(base + "/api/mod/zip", { method: "POST", headers: { "Content-Type": "application/json", cookie },
+  const r = await fetch(url("/api/mod/zip"), { method: "POST", headers: { "Content-Type": "application/json", cookie },
     body: JSON.stringify({ name: "Ruby Tools", author: "Ana", description: "Rubies", items: ["Ruby"] }) });
   assert.equal(r.headers.get("content-type"), "application/zip");
   await r.arrayBuffer();
-  assert.equal((await api("/api/mods", { cookie })).body.mods[0].name, "Ruby Tools");
+  const saved = (await api("/api/creations", { cookie })).body.creations[0];
+  assert.equal(saved.name, "Ruby Tools");
+  assert.equal(saved.kind, "mod");
 });
 
 test("deleting an account keeps orders but removes the user", async () => {
@@ -186,7 +145,7 @@ test("accounts with an active subscription must cancel first", async () => {
 });
 
 test("security headers allow Google sign-in", async () => {
-  const r = await fetch(base + "/");
+  const r = await fetch(url("/"));
   assert.match(r.headers.get("content-security-policy"), /accounts\.google\.com\/gsi\/client/);
   assert.equal(r.headers.get("cross-origin-opener-policy"), "same-origin-allow-popups");
 });

@@ -9,10 +9,14 @@ const ITEMS = [
   { key: "mcserver", icon: "grass",   label: "Minecraft server", pattern: "xxxxxxxxx" },
   { key: "ai",       icon: "eye",     label: "Dedicated AI",     pattern: ".x.x.x.x." },
   { key: "mod",      icon: "pickaxe", label: "Minecraft mod",    pattern: "xxx.x..x." },
+  { key: "textures", icon: "painting", label: "Texture pack",    pattern: "xxxx.xxxx" },
+  { key: "modpack",  icon: "chest",   label: "Modpack",          pattern: "xxxxxx..." },
   { key: "learn",    icon: "book",    label: "Learn to code",    pattern: "x..xx.xxx" },
 ];
 const FREE = {
   mod:   { name: "Minecraft mod", desc: "Free. Generate a mod project in your name and publish it to Modrinth.", href: "#forge", cta: "Open Mod Forge" },
+  textures: { name: "Texture pack", desc: "Free. Draw your own textures pixel by pixel and download a resource pack.", href: "/textures", cta: "Open Texture Forge" },
+  modpack: { name: "Modpack", desc: "Free. Pick mods from Modrinth and download a modpack you can import into any launcher.", href: "/modpacks", cta: "Open Modpack Forge" },
   learn: { name: "Coding lessons", desc: "Free with a Google account. Learn step by step with Forge, your AI mentor.", href: "#mentor", cta: "Start learning" },
 };
 

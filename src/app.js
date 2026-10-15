@@ -1,13 +1,11 @@
 import express from "express";
 import helmet from "helmet";
-import { db, now } from "./db.js";
 import { catalog } from "./catalog.js";
-import { modFiles, streamZip, createModrinthProject } from "./modgen.js";
-import { authRouter, meRouter, loadUser, requireUser } from "./auth.js";
+import { authRouter, meRouter, loadUser } from "./auth.js";
 import { ordersRouter, adminOrdersRouter, stripeWebhook } from "./orders.js";
 import { showcaseRouter, adminShowcaseRouter } from "./showcase.js";
 import { tutorRouter } from "./tutor.js";
-import { rateLimit } from "./limit.js";
+import { toolsRouter } from "./tools.js";
 
 export function createApp() {
   const app = express();
@@ -24,7 +22,7 @@ export function createApp() {
         connectSrc: ["'self'", "https://accounts.google.com/gsi/"],
         styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com", "https://accounts.google.com/gsi/style"],
         fontSrc: ["'self'", "https://fonts.gstatic.com"],
-        imgSrc: ["'self'", "data:", "https://*.googleusercontent.com"],
+        imgSrc: ["'self'", "data:", "blob:", "https://*.googleusercontent.com", "https://cdn.modrinth.com"],
         formAction: ["'self'"],
         upgradeInsecureRequests: isProd ? [] : null,
       },
@@ -64,32 +62,7 @@ export function createApp() {
   app.use("/api/showcase", showcaseRouter);
   app.use("/api/tutor", tutorRouter);
 
-  // Mod Forge works without an account; signed-in users get their mods saved.
-  const recordMod = (req, modrinthUrl = null) => {
-    if (req.user) db.prepare("INSERT INTO mods (user_id, name, modrinth_url, created_at) VALUES (?, ?, ?, ?)")
-      .run(req.user.id, String(req.body.name).slice(0, 60), modrinthUrl, now());
-  };
-
-  app.post("/api/mod/zip", rateLimit({ windowMs: 60_000, max: 20 }), (req, res) => {
-    const { name, author, description } = req.body || {};
-    if (!name || !author || !description) return res.status(400).json({ error: "Add a mod name, your name and what it adds." });
-    recordMod(req);
-    streamZip(modFiles(req.body), res, String(name).replace(/\W+/g, "-"));
-  });
-
-  app.post("/api/mod/modrinth", rateLimit({ windowMs: 60_000, max: 5 }), async (req, res) => {
-    const { token, name, description, license = "MIT" } = req.body || {};
-    if (!token || !name || !description) return res.status(400).json({ error: "Add a Modrinth token, a mod name and what it adds." });
-    try {
-      const result = await createModrinthProject({ token, name, description, license });
-      recordMod(req, result.url);
-      res.json(result);
-    } catch (e) { res.status(502).json({ error: e.message }); }
-  });
-
-  app.get("/api/mods", requireUser, (req, res) => {
-    res.json({ mods: db.prepare("SELECT id, name, modrinth_url AS modrinthUrl, created_at AS createdAt FROM mods WHERE user_id = ? ORDER BY id DESC LIMIT 100").all(req.user.id) });
-  });
+  app.use("/api", toolsRouter);
 
   app.use("/api", (_req, res) => res.status(404).json({ error: "Not found." }));
   app.use(express.static("public", { extensions: ["html"] }));

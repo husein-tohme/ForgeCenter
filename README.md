@@ -9,7 +9,11 @@ Minecraft mods, websites, Discord bots, games, Minecraft server hosting and an A
 - **Order tracking** at `/account`: status, a project brief, a message thread with you, and the delivery link.
 - **Owner panel** at `/admin`: update order status, add delivery links, reply to customers, approve showcase listings.
 - **Self-service billing** through the Stripe Customer Portal (update card, cancel subscriptions, download invoices).
-- **Mod Forge**: generate a Fabric mod in your name, download it or create a Modrinth draft. Saved to your account when signed in.
+- **Mod Forge**: generate a Fabric mod in your name, download it or create a Modrinth draft.
+- **Texture Forge** (`/textures`): a 16x16 pixel editor that exports a Minecraft resource pack.
+- **Modpack Forge** (`/modpacks`): search Modrinth, pick Fabric mods, download a `.mrpack` with required dependencies added automatically.
+- Creations from all three tools are saved to the account when signed in.
+- **Email notifications**: you get an email for new paid orders and customer messages; customers get one for payment, status changes, your replies and failed renewals.
 - **Forge AI mentor**: 30 free messages a day per account, 300 with the Dedicated AI purchase.
 - **Showcase**: customers buy a slot, submit a listing, and it goes live after you approve it.
 - **Privacy policy and terms** pages (required by Google for sign-in). Have a lawyer review them before launch.
@@ -50,6 +54,9 @@ Open http://localhost:3000.
 ### Forge mentor
 Put an Anthropic API key in `ANTHROPIC_API_KEY`.
 
+### Email (optional)
+Create a free [Resend](https://resend.com) account, verify your domain, and set `RESEND_API_KEY` and `EMAIL_FROM`. Without them the site works the same, just without emails.
+
 ## Deploy
 
 Any Node 22 host works (Render, Railway, Fly.io, a VPS). Set `NODE_ENV=production` (this makes the sign-in cookie HTTPS-only), set `BASE_URL` to your domain, and put `DATABASE_PATH` on a **persistent disk** so accounts and orders survive restarts.
@@ -57,5 +64,4 @@ Any Node 22 host works (Render, Railway, Fly.io, a VPS). Set `NODE_ENV=productio
 ## Not built yet
 
 - Automatic provisioning of Minecraft servers and Discord bots (orders are fulfilled by you through the owner panel for now)
-- Email notifications for new orders and messages
-- Resource pack and modpack generators
+- NeoForge and Quilt modpacks (Modpack Forge is Fabric only for now)

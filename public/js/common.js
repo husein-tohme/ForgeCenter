@@ -20,6 +20,10 @@ const ICONS = {
     "...ee...", "..ewee..", ".ewEeee.", ".eeeeeE.", ".eeeeeE.", ".eeeeEE.", "..eeEE..", "...EE..."] },
   anvil: { c: { a: "#5c5f66", A: "#8a8e96", k: "#2e3035" }, m: [
     "........", "AAAAAAAk", ".aaaaak.", "...ak...", "...ak...", "..aaak..", ".aaaaaak", ".kkkkkkk"] },
+  chest: { c: { b: "#5a3416", B: "#a0682f", k: "#2e1a0a", g: "#c9c9c9" }, m: [
+    "........", ".bbbbbb.", "bBBBBBBb", "bBBBBBBb", "kkkggkkk", "bBBggBBb", "bBBBBBBb", ".bbbbbb."] },
+  painting: { c: { f: "#8e5426", s: "#7fb2f0", Y: "#f2c230", g: "#5da33a", d: "#8b5a2b" }, m: [
+    "ffffffff", "fsssssYf", "fssssssf", "fsssgssf", "fsggggsf", "fggggggf", "fddddddf", "ffffffff"] },
   frame: { c: { f: "#8e5426", F: "#5a3416", l: "#c9a46a" }, m: [
     "ffffffff", "fllllllF", "fl....lF", "fl....lF", "fl....lF", "fl....lF", "fllllllF", "FFFFFFFF"] },
 };
