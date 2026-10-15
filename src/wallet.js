@@ -24,7 +24,7 @@ function transaction(fn) {
   catch (e) { db.exec("ROLLBACK"); throw e; }
 }
 
-function addEntry({ userId, amount, kind, orderId = null, topupId = null, ref = null, note = "" }) {
+export function addEntry({ userId, amount, kind, orderId = null, topupId = null, ref = null, note = "" }) {
   return db.prepare(`INSERT OR IGNORE INTO wallet_entries (user_id, amount, kind, order_id, topup_id, ref, note, created_at)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`).run(userId, amount, kind, orderId, topupId, ref, note, now()).changes > 0;
 }
