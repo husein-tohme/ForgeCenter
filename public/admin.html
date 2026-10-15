@@ -31,7 +31,12 @@
     </section>
 
     <div id="panel" hidden>
-      <section class="acct-section">
+      <section class="overview" aria-labelledby="overview-title">
+        <h2 id="overview-title" class="sr-only">Overview</h2>
+        <div id="overview"><p class="hint">Loading the numbers…</p></div>
+      </section>
+
+      <section class="acct-section" id="orders-section">
         <div class="admin-head">
           <h2>Orders</h2>
           <label class="filter">Show
@@ -40,6 +45,9 @@
               <option value="paid">Paid, not started</option>
               <option value="in_progress">In progress</option>
               <option value="delivered">Delivered</option>
+              <option value="awaiting_reply">Waiting for your reply</option>
+              <option value="setup_failed">Setup failed</option>
+              <option value="past_due">Payment overdue</option>
               <option value="awaiting_payment">Waiting for payment</option>
               <option value="payment_failed">Payment failed</option>
               <option value="expired">Checkout expired</option>
@@ -50,7 +58,7 @@
         <div id="orders"></div>
       </section>
 
-      <section class="acct-section">
+      <section class="acct-section" id="listings-section">
         <h2>Showcase listings</h2>
         <div id="listings"></div>
       </section>

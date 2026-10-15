@@ -12,8 +12,68 @@ onUser(user => {
     $("denied-text").textContent = `${user.email} isn't the site owner's account. Add it to ADMIN_EMAILS on the server to give it access.`;
     $("signin-here").hidden = true;
   }
-  if (ok) { loadOrders(); loadListings(); }
+  if (ok) { loadOverview(); loadOrders(); loadListings(); }
 });
+
+// ---------- Overview ----------
+const dollars = cents => {
+  const d = cents / 100;
+  return d >= 1e6 ? `$${(d / 1e6).toFixed(1)}M` : d >= 1e4 ? `$${(d / 1e3).toFixed(1)}K` : `$${d.toLocaleString("en-US")}`;
+};
+const monthName = (ym, offset = 0) => {
+  const [y, m] = ym.split("-").map(Number);
+  return new Date(Date.UTC(y, m - 1 + offset, 1)).toLocaleString("en-US", { month: "long", timeZone: "UTC" });
+};
+const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`;
+
+async function loadOverview() {
+  const r = await api("/api/admin/overview");
+  if (!r.ok) { $("overview").innerHTML = `<p class="error">${esc(r.data.error)}</p>`; return; }
+  const o = r.data;
+  const diff = o.sales.cents - o.sales.lastMonthCents;
+  const last = monthName(o.month, -1);
+  const delta = diff === 0 ? `Same as ${last}`
+    : `<span class="${diff > 0 ? "up" : "down"}">${diff > 0 ? "▲" : "▼"} ${dollars(Math.abs(diff))}</span> ${diff > 0 ? "more" : "less"} than ${last}`;
+
+  const a = o.attention;
+  const todo = [
+    [a.notStarted, "paid", "info", plural(a.notStarted, "paid order isn't started", "paid orders aren't started")],
+    [a.awaitingReply, "awaiting_reply", "wait", plural(a.awaitingReply, "customer is waiting for your reply", "customers are waiting for your reply")],
+    [a.setupFailed, "setup_failed", "bad", plural(a.setupFailed, "server setup failed", "server setups failed")],
+    [a.pastDue, "past_due", "bad", plural(a.pastDue, "subscription has an overdue payment", "subscriptions have overdue payments")],
+    [a.pendingListings, "listings", "wait", plural(a.pendingListings, "showcase listing needs approval", "showcase listings need approval")],
+  ].filter(([n]) => n > 0);
+
+  $("overview").innerHTML = `
+    <div class="overview-grid">
+      <div class="panel hero-stat">
+        <span class="stat-label">New sales in ${monthName(o.month)}</span>
+        <span class="hero-figure">${dollars(o.sales.cents)}</span>
+        <span class="stat-delta">${plural(o.sales.orders, "order", "orders")}. ${delta}</span>
+      </div>
+      <div class="stat-tiles">
+        <div class="panel stat"><span class="stat-label">Recurring revenue</span><span class="stat-value">${dollars(o.recurringCents)}</span><span class="stat-delta">a month</span></div>
+        <div class="panel stat"><span class="stat-label">Servers running</span><span class="stat-value">${o.activeServers.toLocaleString()}</span></div>
+        <div class="panel stat"><span class="stat-label">Bots running</span><span class="stat-value">${o.activeBots.toLocaleString()}</span></div>
+        <div class="panel stat"><span class="stat-label">Accounts</span><span class="stat-value">${o.customers.toLocaleString()}</span><span class="stat-delta">${o.newCustomers} new this month</span></div>
+      </div>
+    </div>
+    <div class="panel attention">
+      <h3>Needs you</h3>
+      ${todo.length ? `<ul>${todo.map(([, key, tone, text]) => `<li>
+          <span class="pill pill-${tone}">${tone === "bad" ? "Problem" : tone === "wait" ? "Waiting" : "To do"}</span>
+          <span>${esc(text)}</span>
+          <button class="btn btn-small" type="button" data-show="${key}">Show</button></li>`).join("")}</ul>`
+        : `<p><span class="pill pill-done">All clear</span> Nothing needs you right now.</p>`}
+      <p class="small">Renewal payments and payouts are in your <a href="https://dashboard.stripe.com" target="_blank" rel="noopener">Stripe dashboard</a>.</p>
+    </div>`;
+  $("overview").querySelectorAll("[data-show]").forEach(b => b.addEventListener("click", () => {
+    if (b.dataset.show === "listings") { $("listings-section").scrollIntoView({ behavior: "smooth" }); return; }
+    $("filter").value = b.dataset.show;
+    loadOrders();
+    $("orders-section").scrollIntoView({ behavior: "smooth" });
+  }));
+}
 
 const amountText = o => [o.amount ? money(o.amount) : "", o.monthly ? `${money(o.monthly)}/mo` : ""].filter(Boolean).join(" + ");
 const statusOptions = current => Object.entries(STATUS)

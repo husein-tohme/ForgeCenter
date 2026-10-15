@@ -240,14 +240,53 @@ ordersRouter.post("/orders/:id/messages", requireUser, loadOwnOrder, rateLimit({
 export const adminOrdersRouter = express.Router();
 adminOrdersRouter.use(requireUser, requireAdmin);
 
+// The customer wrote last, so they're waiting on the owner.
+const AWAITING_REPLY = `(SELECT from_admin FROM order_messages m WHERE m.order_id = o.id ORDER BY m.id DESC LIMIT 1) = 0`;
+// Owner-panel filters beyond plain statuses.
+const SPECIAL_FILTERS = {
+  awaiting_reply: AWAITING_REPLY,
+  setup_failed: "EXISTS (SELECT 1 FROM services s WHERE s.order_id = o.id AND s.state = 'failed')",
+  past_due: "o.subscription_status = 'past_due'",
+};
+
 adminOrdersRouter.get("/orders", (req, res) => {
-  const status = STATUSES.includes(req.query.status) ? req.query.status : null;
+  const filter = String(req.query.status ?? "");
+  const where = SPECIAL_FILTERS[filter]
+    ?? (STATUSES.includes(filter) ? "o.status = ?" : "o.status NOT IN ('awaiting_payment', 'expired')");
   const rows = db.prepare(`SELECT o.*, u.email AS user_email, u.phone AS user_phone, u.name AS user_name,
       (SELECT COUNT(*) FROM order_messages m WHERE m.order_id = o.id) AS message_count
     FROM orders o LEFT JOIN users u ON u.id = o.user_id
-    WHERE (? IS NULL AND o.status != 'awaiting_payment' AND o.status != 'expired') OR o.status = ?
-    ORDER BY o.id DESC LIMIT 200`).all(status, status);
+    WHERE ${where} ORDER BY o.id DESC LIMIT 200`).all(...(STATUSES.includes(filter) ? [filter] : []));
   res.json({ orders: rows.map(o => ({ ...serialize(o, { withCustomer: true }), messageCount: o.message_count })) });
+});
+
+// Numbers for the top of the owner panel. Renewal payments live in Stripe, so sales
+// here are new orders; recurring revenue is the monthly total of active subscriptions.
+adminOrdersRouter.get("/overview", (_req, res) => {
+  const now = new Date();
+  const monthStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1)).toISOString();
+  const lastMonthStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - 1, 1)).toISOString();
+  const one = (sql, ...args) => db.prepare(sql).get(...args);
+  const sales = (from, to) => one(`SELECT COALESCE(SUM(amount + monthly), 0) AS cents, COUNT(*) AS n FROM orders
+    WHERE status IN ${PAID} AND created_at >= ? AND created_at < ?`, from, to);
+  const thisMonth = sales(monthStart, "9999");
+  const lastMonth = sales(lastMonthStart, monthStart);
+  res.json({
+    month: monthStart.slice(0, 7),
+    sales: { cents: thisMonth.cents, orders: thisMonth.n, lastMonthCents: lastMonth.cents },
+    recurringCents: one("SELECT COALESCE(SUM(monthly), 0) AS c FROM orders WHERE subscription_status = 'active'").c,
+    activeServers: one("SELECT COUNT(*) AS n FROM services WHERE kind = 'minecraft' AND state = 'active'").n,
+    activeBots: one("SELECT COUNT(*) AS n FROM services WHERE kind = 'discord_bot' AND state = 'active'").n,
+    customers: one("SELECT COUNT(*) AS n FROM users").n,
+    newCustomers: one("SELECT COUNT(*) AS n FROM users WHERE created_at >= ?", monthStart).n,
+    attention: {
+      notStarted: one("SELECT COUNT(*) AS n FROM orders WHERE status = 'paid'").n,
+      awaitingReply: one(`SELECT COUNT(*) AS n FROM orders o WHERE ${AWAITING_REPLY}`).n,
+      setupFailed: one("SELECT COUNT(*) AS n FROM services WHERE state = 'failed'").n,
+      pastDue: one("SELECT COUNT(*) AS n FROM orders WHERE subscription_status = 'past_due'").n,
+      pendingListings: one("SELECT COUNT(*) AS n FROM showcase WHERE status = 'pending'").n,
+    },
+  });
 });
 
 adminOrdersRouter.patch("/orders/:id", (req, res) => {
