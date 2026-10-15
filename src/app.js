@@ -6,6 +6,8 @@ import { ordersRouter, adminOrdersRouter, stripeWebhook } from "./orders.js";
 import { showcaseRouter, adminShowcaseRouter } from "./showcase.js";
 import { tutorRouter } from "./tutor.js";
 import { toolsRouter } from "./tools.js";
+import { oauthRouter, enabledOAuthProviders } from "./oauth.js";
+import { whatsappRouter, whatsappEnabled } from "./whatsapp.js";
 
 export function createApp() {
   const app = express();
@@ -22,7 +24,7 @@ export function createApp() {
         connectSrc: ["'self'", "https://accounts.google.com/gsi/"],
         styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com", "https://accounts.google.com/gsi/style"],
         fontSrc: ["'self'", "https://fonts.gstatic.com"],
-        imgSrc: ["'self'", "data:", "blob:", "https://*.googleusercontent.com", "https://cdn.modrinth.com"],
+        imgSrc: ["'self'", "data:", "blob:", "https://*.googleusercontent.com", "https://avatars.githubusercontent.com", "https://cdn.discordapp.com", "https://cdn.modrinth.com"],
         formAction: ["'self'"],
         upgradeInsecureRequests: isProd ? [] : null,
       },
@@ -51,11 +53,18 @@ export function createApp() {
 
   app.get("/api/config", (_req, res) => res.json({
     googleClientId: process.env.GOOGLE_CLIENT_ID || null,
+    signIn: [
+      ...(process.env.GOOGLE_CLIENT_ID ? ["google"] : []),
+      ...enabledOAuthProviders(),
+      ...(whatsappEnabled() ? ["whatsapp"] : []),
+    ],
     contactEmail: process.env.CONTACT_EMAIL || null,
   }));
   app.get("/api/catalog", (_req, res) => res.json(catalog));
 
   app.use("/api/auth", authRouter);
+  app.use("/api/auth/whatsapp", whatsappRouter);
+  app.use("/api/auth", oauthRouter);
   app.use("/api/me", meRouter);
   app.use("/api", ordersRouter);
   app.use("/api/admin", adminOrdersRouter, adminShowcaseRouter);

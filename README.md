@@ -4,7 +4,7 @@ Minecraft mods, websites, Discord bots, games, Minecraft server hosting and an A
 
 ## Features
 
-- **Google sign-in only.** Every account is a real, verified Google account. No passwords are stored.
+- **Sign in with Google (Gmail), Microsoft, GitHub, Discord or WhatsApp.** Every account is backed by a real, verified identity, and no passwords are stored. Accounts with the same verified email are joined automatically, and people can connect several sign-in methods to one account.
 - **Shop and Stripe Checkout** for every service. Hosting and website domains ($2/month) are monthly subscriptions.
 - **Order tracking** at `/account`: status, a project brief, a message thread with you, and the delivery link.
 - **Owner panel** at `/admin`: update order status, add delivery links, reply to customers, approve showcase listings.
@@ -38,7 +38,15 @@ Open http://localhost:3000.
 1. In [Google Cloud Console](https://console.cloud.google.com/apis/credentials), configure the OAuth consent screen. Use `/privacy` and `/terms` on your domain as the policy links.
 2. Create an **OAuth client ID** of type *Web application*.
 3. Under **Authorized JavaScript origins**, add `http://localhost:3000` and your real domain.
-4. Put the client ID in `GOOGLE_CLIENT_ID` and your own email in `ADMIN_EMAILS`.
+4. Put the client ID in `GOOGLE_CLIENT_ID` and your own email in `ADMIN_EMAILS`. Gmail accounts sign in through Google.
+
+### More sign-in options (optional)
+Each provider turns on when its two values are in `.env`. Register this redirect URL with each one: `https://YOUR-DOMAIN/api/auth/<provider>/callback` (and the `http://localhost:3000/...` version for testing).
+
+- **GitHub:** Settings > Developer settings > OAuth Apps > New OAuth App. Callback: `/api/auth/github/callback`.
+- **Microsoft (Outlook, Hotmail, Xbox, work accounts):** [Azure portal](https://portal.azure.com) > App registrations > New registration. Choose "Accounts in any organizational directory and personal Microsoft accounts", add a Web redirect URI `/api/auth/microsoft/callback`, then create a client secret. Only personal Microsoft accounts' emails are trusted for joining accounts and owner access, because work accounts can set any email.
+- **Discord:** [Developer Portal](https://discord.com/developers/applications) > New Application > OAuth2. Add the redirect `/api/auth/discord/callback`.
+- **WhatsApp:** needs a [WhatsApp Business account on the Cloud API](https://developers.facebook.com/docs/whatsapp/cloud-api/get-started). Create an *Authentication* message template with a copy-code button, then set `WHATSAPP_TOKEN` (a permanent system-user token), `WHATSAPP_PHONE_NUMBER_ID` and `WHATSAPP_TEMPLATE`. Meta charges per message, so `WHATSAPP_DAILY_LIMIT` caps how many codes go out each day. Codes expire after 10 minutes, lock after 5 wrong tries, and each number and device can request 3 or 10 codes an hour.
 
 ### Stripe
 1. Create a **restricted key** with write access to Checkout Sessions, Customers and Customer Portal. Put it in `STRIPE_SECRET_KEY`.

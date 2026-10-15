@@ -1,4 +1,4 @@
-import { $, api, esc, icon, money, date, toast, onUser, openSignIn, signOut, pill, STATUS, SUB_STATUS, PRODUCT_ICON } from "./common.js";
+import { $, api, esc, icon, money, date, toast, onUser, openSignIn, signOut, pill, renderSignInOptions, STATUS, SUB_STATUS, PRODUCT_ICON, PROVIDER_NAMES } from "./common.js";
 
 const params = new URLSearchParams(location.search);
 const focusOrder = Number(params.get("order")) || null;
@@ -24,11 +24,43 @@ onUser(user => {
   $("account").hidden = !user;
   if (!user) return;
   $("p-name").textContent = user.name;
-  $("p-email").textContent = user.email;
+  $("p-email").textContent = [user.email, user.phone].filter(Boolean).join(", ");
   if (user.picture) { $("avatar").src = user.picture; $("avatar").hidden = false; }
   $("billing").hidden = !user.hasBilling;
-  loadOrders(); loadShowcase(); loadMods();
+  loadIdentities(); loadOrders(); loadShowcase(); loadMods();
 });
+
+// ---------- Name ----------
+$("rename-open").addEventListener("click", () => {
+  $("rename-input").value = $("p-name").textContent;
+  $("rename-form").hidden = false; $("rename-open").hidden = true; $("rename-input").focus();
+});
+$("rename-form").addEventListener("submit", async e => {
+  e.preventDefault();
+  const r = await api("/api/me", { method: "PATCH", body: { name: $("rename-input").value } });
+  if (!r.ok) return toast(r.data.error);
+  $("p-name").textContent = r.data.user.name;
+  $("rename-form").hidden = true; $("rename-open").hidden = false;
+  toast("Name saved.");
+});
+
+// ---------- Sign-in methods ----------
+async function loadIdentities() {
+  const r = await api("/api/me/identities");
+  const ids = r.data.identities ?? [];
+  $("identities").innerHTML = ids.map(i => `<li class="panel identity">
+      <span><strong>${esc(PROVIDER_NAMES[i.provider] ?? i.provider)}</strong> <span class="small">${esc(i.display ?? "")}</span></span>
+      ${ids.length > 1 ? `<button class="btn btn-small" type="button" data-unlink="${esc(i.provider)}">Remove</button>` : ""}
+    </li>`).join("");
+  $("identities").querySelectorAll("[data-unlink]").forEach(b => b.addEventListener("click", async () => {
+    if (!confirm(`Remove ${PROVIDER_NAMES[b.dataset.unlink]} sign-in from your account?`)) return;
+    const res = await api(`/api/me/identities/${b.dataset.unlink}`, { method: "DELETE" });
+    if (!res.ok) return toast(res.data.error);
+    toast(`${PROVIDER_NAMES[b.dataset.unlink]} sign-in removed.`);
+    loadIdentities();
+  }));
+  renderSignInOptions($("connect-options"), { link: true, exclude: ids.map(i => i.provider) });
+}
 
 // ---------- Orders ----------
 const amountText = o => [o.amount ? money(o.amount) : "", o.monthly ? `${money(o.monthly)} a month` : ""].filter(Boolean).join(" + ");

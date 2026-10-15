@@ -25,7 +25,7 @@ function serialize(o, { withCustomer = false } = {}) {
     amount: o.amount, monthly: o.monthly, status: o.status, subscriptionStatus: o.subscription_status,
     brief: o.brief, deliverableUrl: o.deliverable_url, createdAt: o.created_at, updatedAt: o.updated_at,
   };
-  if (withCustomer) out.customer = o.user_email ? { name: o.user_name, email: o.user_email } : null;
+  if (withCustomer) out.customer = o.user_name ? { name: o.user_name, email: o.user_email, phone: o.user_phone } : null;
   return out;
 }
 
@@ -123,7 +123,9 @@ export const ordersRouter = express.Router();
 
 async function ensureCustomer(stripe, user) {
   if (user.stripe_customer_id) return user.stripe_customer_id;
-  const customer = await stripe.customers.create({ email: user.email, name: user.name, metadata: { user_id: String(user.id) } });
+  const customer = await stripe.customers.create({
+    email: user.email ?? undefined, phone: user.phone ?? undefined, name: user.name, metadata: { user_id: String(user.id) },
+  });
   db.prepare("UPDATE users SET stripe_customer_id = ? WHERE id = ?").run(customer.id, user.id);
   return customer.id;
 }
@@ -236,7 +238,7 @@ adminOrdersRouter.use(requireUser, requireAdmin);
 
 adminOrdersRouter.get("/orders", (req, res) => {
   const status = STATUSES.includes(req.query.status) ? req.query.status : null;
-  const rows = db.prepare(`SELECT o.*, u.email AS user_email, u.name AS user_name,
+  const rows = db.prepare(`SELECT o.*, u.email AS user_email, u.phone AS user_phone, u.name AS user_name,
       (SELECT COUNT(*) FROM order_messages m WHERE m.order_id = o.id) AS message_count
     FROM orders o LEFT JOIN users u ON u.id = o.user_id
     WHERE (? IS NULL AND o.status != 'awaiting_payment' AND o.status != 'expired') OR o.status = ?

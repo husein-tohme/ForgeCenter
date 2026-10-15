@@ -46,7 +46,7 @@ export const adminShowcaseRouter = express.Router();
 adminShowcaseRouter.use(requireUser, requireAdmin);
 
 adminShowcaseRouter.get("/showcase", (_req, res) => {
-  const rows = db.prepare(`SELECT s.id, s.title, s.url, s.description, s.status, u.email AS owner
+  const rows = db.prepare(`SELECT s.id, s.title, s.url, s.description, s.status, COALESCE(u.email, u.phone, u.name) AS owner
     FROM showcase s JOIN users u ON u.id = s.user_id ORDER BY s.status = 'pending' DESC, s.id DESC LIMIT 200`).all();
   res.json({ listings: rows });
 });

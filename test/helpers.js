@@ -11,7 +11,7 @@ delete process.env.ANTHROPIC_API_KEY;
 delete process.env.RESEND_API_KEY;
 
 const { createApp } = await import("../src/app.js");
-const { upsertUser, createSession } = await import("../src/auth.js");
+const { signInWith, createSession } = await import("../src/auth.js");
 export const { db } = await import("../src/db.js");
 
 let server, base;
@@ -25,7 +25,7 @@ after(() => server.close());
 export const url = path => base + path;
 
 export function signIn(email, sub = email) {
-  const user = upsertUser({ sub, email, name: email.split("@")[0] });
+  const user = signInWith({ provider: "google", subject: sub, email, emailVerified: true, name: email.split("@")[0] });
   return { user, cookie: `fc_session=${createSession(user.id)}` };
 }
 

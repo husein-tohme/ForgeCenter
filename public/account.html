@@ -25,7 +25,7 @@
     <h1 class="page-title">My account</h1>
 
     <section class="panel signed-out" id="signed-out" hidden>
-      <p>Sign in with Google to see your orders, messages and saved mods.</p>
+      <p>Sign in to see your orders, messages and saved creations.</p>
       <button class="btn btn-buy" type="button" id="signin-here">Sign in</button>
     </section>
 
@@ -35,11 +35,25 @@
         <div class="profile-who">
           <h2 id="p-name"></h2>
           <p id="p-email"></p>
+          <button class="link-btn" type="button" id="rename-open">Change name</button>
+          <form id="rename-form" class="rename-form" hidden>
+            <label class="sr-only" for="rename-input">Display name</label>
+            <input id="rename-input" name="name" maxlength="50" required>
+            <button class="btn btn-small btn-buy" type="submit">Save</button>
+          </form>
         </div>
         <div class="profile-actions">
           <button class="btn" type="button" id="billing" hidden>Manage billing</button>
           <button class="btn" type="button" id="signout">Sign out</button>
         </div>
+      </section>
+
+      <section class="acct-section">
+        <h2>Sign-in methods</h2>
+        <p class="section-lede">Connect more ways to sign in, so you can always get back into your account.</p>
+        <ul class="identity-list" id="identities"></ul>
+        <h3>Connect another</h3>
+        <div class="signin-options" id="connect-options"></div>
       </section>
 
       <section class="acct-section">
