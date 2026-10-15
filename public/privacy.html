@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Privacy policy · ForgeCenter</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=Pixelify+Sans:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="top">
+  <div class="wrap top-inner">
+    <a class="logo" href="/" aria-label="ForgeCenter home"><span class="logo-icon" data-icon="anvil"></span>ForgeCenter</a>
+    <nav aria-label="Main"><a href="/#shop">Prices</a><a href="/#forge">Mod Forge</a><a href="/#mentor">Learn to code</a></nav>
+    <div class="auth" id="auth-slot"></div>
+  </div>
+</header>
+<main id="main" class="page">
+  <article class="wrap legal">
+    <h1 class="page-title">Privacy policy</h1>
+    <p class="small">Last updated 15 October 2026</p>
+
+    <h2>What ForgeCenter collects</h2>
+    <ul>
+      <li><strong>Your Google account basics</strong> when you sign in: your name, email address, profile picture and Google account ID. ForgeCenter never sees your Google password.</li>
+      <li><strong>Orders</strong>: what you bought, the price and whether payment succeeded. Stripe handles card details, so ForgeCenter never sees your card number.</li>
+      <li><strong>What you write to us</strong>: project briefs, order messages and showcase listings.</li>
+      <li><strong>Mods you make</strong> in the Mod Forge while signed in: the mod name and Modrinth link.</li>
+      <li><strong>How many messages</strong> you send the Forge mentor each day, to apply the daily limit.</li>
+    </ul>
+
+    <h2>What ForgeCenter doesn't keep</h2>
+    <ul>
+      <li>Your conversations with Forge. They're sent to Anthropic to write the answers and aren't saved by ForgeCenter.</li>
+      <li>Your Modrinth token. It's used once to create your draft and then discarded.</li>
+    </ul>
+
+    <h2>Cookies</h2>
+    <p>ForgeCenter sets one cookie to keep you signed in. There are no advertising or tracking cookies. Google may set its own cookies when you use the sign-in button.</p>
+
+    <h2>Who your data is shared with</h2>
+    <ul>
+      <li><strong>Google</strong>, to sign you in.</li>
+      <li><strong>Stripe</strong>, to take payments and manage subscriptions.</li>
+      <li><strong>Anthropic</strong>, to answer your questions to Forge.</li>
+      <li><strong>Modrinth</strong>, only if you choose to publish a mod there.</li>
+      <li>The company that hosts this website, which stores the database.</li>
+    </ul>
+    <p>Your data is never sold.</p>
+
+    <h2>Deleting your data</h2>
+    <p>Delete your account any time from <a href="/account">My account</a>. That removes your profile, saved mods, showcase listings and messages. Records of past payments are kept for tax law, without your name attached.</p>
+
+    <h2>Age</h2>
+    <p>ForgeCenter is for people 13 and older. If you're under 18, ask a parent or guardian before buying anything.</p>
+
+    <h2>Contact</h2>
+    <p>Questions about your data? Email <span data-contact>us using the address on your Stripe receipt</span>.</p>
+  </article>
+</main>
+<footer class="foot">
+  <div class="wrap foot-inner">
+    <span><span class="logo-icon" data-icon="anvil"></span>ForgeCenter</span>
+    <nav aria-label="Legal"><a href="/privacy">Privacy</a> <a href="/terms">Terms</a></nav>
+  </div>
+</footer>
+<div class="toast" id="toast" role="status" hidden></div>
+<script type="module" src="/js/legal.js"></script>
+</body>
+</html>

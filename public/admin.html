@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Owner panel · ForgeCenter</title>
+<meta name="robots" content="noindex">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=Pixelify+Sans:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="top">
+  <div class="wrap top-inner">
+    <a class="logo" href="/" aria-label="ForgeCenter home"><span class="logo-icon" data-icon="anvil"></span>ForgeCenter</a>
+    <nav aria-label="Main"><a href="/#shop">Prices</a><a href="/#forge">Mod Forge</a></nav>
+    <div class="auth" id="auth-slot"></div>
+  </div>
+</header>
+
+<main id="main" class="page">
+  <div class="wrap">
+    <h1 class="page-title">Owner panel</h1>
+    <section class="panel signed-out" id="denied" hidden>
+      <p id="denied-text">Sign in with the site owner's Google account to manage orders.</p>
+      <button class="btn btn-buy" type="button" id="signin-here">Sign in</button>
+    </section>
+
+    <div id="panel" hidden>
+      <section class="acct-section">
+        <div class="admin-head">
+          <h2>Orders</h2>
+          <label class="filter">Show
+            <select id="filter">
+              <option value="">Paid and active</option>
+              <option value="paid">Paid, not started</option>
+              <option value="in_progress">In progress</option>
+              <option value="delivered">Delivered</option>
+              <option value="awaiting_payment">Waiting for payment</option>
+              <option value="payment_failed">Payment failed</option>
+              <option value="expired">Checkout expired</option>
+              <option value="canceled">Canceled</option>
+            </select>
+          </label>
+        </div>
+        <div id="orders"></div>
+      </section>
+
+      <section class="acct-section">
+        <h2>Showcase listings</h2>
+        <div id="listings"></div>
+      </section>
+    </div>
+  </div>
+</main>
+
+<div class="toast" id="toast" role="status" hidden></div>
+<script type="module" src="/js/admin.js"></script>
+</body>
+</html>

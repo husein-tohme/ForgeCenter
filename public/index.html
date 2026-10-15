@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=Pixelify+Sans:wght@500;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css">
+<link rel="stylesheet" href="/styles.css">
 </head>
 <body>
 
@@ -16,13 +16,14 @@
 
 <header class="top">
   <div class="wrap top-inner">
-    <a class="logo" href="#" aria-label="ForgeCenter home"><span class="logo-icon" data-icon="anvil"></span>ForgeCenter</a>
+    <a class="logo" href="/" aria-label="ForgeCenter home"><span class="logo-icon" data-icon="anvil"></span>ForgeCenter</a>
     <nav aria-label="Main">
       <a href="#shop">Prices</a>
       <a href="#forge">Mod Forge</a>
       <a href="#mentor">Learn to code</a>
       <a href="#faq">Questions</a>
     </nav>
+    <div class="auth" id="auth-slot"></div>
   </div>
 </header>
 
@@ -119,6 +120,7 @@
         <input id="q" autocomplete="off" placeholder="Ask Forge a question">
         <button class="btn btn-buy" type="submit">Send</button>
       </form>
+      <p class="small" id="mentor-usage"></p>
     </div>
   </div>
 </section>
@@ -126,12 +128,15 @@
 <section class="band band-alt" id="showcase">
   <div class="wrap">
     <h2>Showcase</h2>
+    <p class="section-lede">Websites and servers made by ForgeCenter customers.</p>
+    <div class="listings" id="showcase-list">
     <div class="panel empty">
       <span class="empty-icon" data-icon="frame"></span>
       <div>
         <p><strong>Nothing here yet.</strong> Websites and servers that owners choose to share will appear here.</p>
         <button class="btn" type="button" data-buy="showcase">List your project for $10</button>
       </div>
+    </div>
     </div>
   </div>
 </section>
@@ -143,6 +148,7 @@
     <details><summary>Do I need my own Stripe account?</summary><p>Only if your project takes payments. You connect it once and money from your customers goes straight to you.</p></details>
     <details><summary>Why does a game cost $10,000 to $20,000?</summary><p>A finished game with art, sound, testing and a Steam launch is months of work. The $10,000 deposit starts the project, and the final price depends on its size.</p></details>
     <details><summary>What do I get with Minecraft hosting?</summary><p>A server for 10 players with 2 GB of RAM, 100 GB of storage, a dedicated CPU and DDoS protection, billed monthly. Cancel any time.</p></details>
+    <details><summary>Why do I sign in with Google?</summary><p>So every account belongs to a real person and your orders stay private. ForgeCenter only receives your name, email address and profile picture, never your password.</p></details>
     <details><summary>Is the AI assistant really mine?</summary><p>It's branded and set up for you, with its own instructions and higher limits. It runs on a leading AI model behind the scenes, so it stays fast and up to date.</p></details>
   </div>
 </section>
@@ -152,12 +158,13 @@
 <footer class="foot">
   <div class="wrap foot-inner">
     <span><span class="logo-icon" data-icon="anvil"></span>ForgeCenter</span>
+    <nav aria-label="Legal"><a href="/privacy">Privacy</a> <a href="/terms">Terms</a> <a href="/account">My account</a></nav>
     <span>Not affiliated with Mojang or Microsoft. Minecraft is a trademark of Mojang AB.</span>
   </div>
 </footer>
 
 <div class="toast" id="toast" role="status" hidden></div>
 
-<script src="app.js"></script>
+<script type="module" src="/js/home.js"></script>
 </body>
 </html>

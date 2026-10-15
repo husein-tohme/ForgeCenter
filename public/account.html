@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>My account · ForgeCenter</title>
+<meta name="robots" content="noindex">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=Pixelify+Sans:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="top">
+  <div class="wrap top-inner">
+    <a class="logo" href="/" aria-label="ForgeCenter home"><span class="logo-icon" data-icon="anvil"></span>ForgeCenter</a>
+    <nav aria-label="Main"><a href="/#shop">Prices</a><a href="/#forge">Mod Forge</a><a href="/#mentor">Learn to code</a></nav>
+    <div class="auth" id="auth-slot"></div>
+  </div>
+</header>
+
+<main id="main" class="page">
+  <div class="wrap">
+    <h1 class="page-title">My account</h1>
+
+    <section class="panel signed-out" id="signed-out" hidden>
+      <p>Sign in with Google to see your orders, messages and saved mods.</p>
+      <button class="btn btn-buy" type="button" id="signin-here">Sign in</button>
+    </section>
+
+    <div id="account" hidden>
+      <section class="panel profile">
+        <img id="avatar" alt="" width="64" height="64" referrerpolicy="no-referrer" hidden>
+        <div class="profile-who">
+          <h2 id="p-name"></h2>
+          <p id="p-email"></p>
+        </div>
+        <div class="profile-actions">
+          <button class="btn" type="button" id="billing" hidden>Manage billing</button>
+          <button class="btn" type="button" id="signout">Sign out</button>
+        </div>
+      </section>
+
+      <section class="acct-section">
+        <h2>Orders</h2>
+        <div id="orders"><p class="hint">Loading your orders…</p></div>
+      </section>
+
+      <section class="acct-section">
+        <h2>Showcase listings</h2>
+        <div id="showcase"></div>
+      </section>
+
+      <section class="acct-section">
+        <h2>Saved mods</h2>
+        <div id="mods"></div>
+      </section>
+
+      <section class="acct-section danger">
+        <h2>Delete account</h2>
+        <p>This removes your profile, saved mods, showcase listings and messages. Receipts for past orders are kept for tax records without your name attached.</p>
+        <button class="btn btn-danger" type="button" id="delete">Delete my account</button>
+      </section>
+    </div>
+  </div>
+</main>
+
+<footer class="foot">
+  <div class="wrap foot-inner">
+    <span><span class="logo-icon" data-icon="anvil"></span>ForgeCenter</span>
+    <nav aria-label="Legal"><a href="/privacy">Privacy</a> <a href="/terms">Terms</a></nav>
+  </div>
+</footer>
+<div class="toast" id="toast" role="status" hidden></div>
+<script type="module" src="/js/account.js"></script>
+</body>
+</html>
