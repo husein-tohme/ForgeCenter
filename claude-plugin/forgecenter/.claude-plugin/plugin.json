@@ -1,0 +1,9 @@
+{
+  "name": "forgecenter",
+  "version": "0.1.0",
+  "description": "ForgeCenter launch checklist pane, /forgecenter command, test status line, and a guard that keeps secrets and customer data out of git",
+  "types": "./types/index.d.ts",
+  "author": {
+    "name": "ForgeCenter"
+  }
+}

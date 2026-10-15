@@ -53,6 +53,28 @@ After paying, the customer follows the steps on their order page to create a Dis
 
 Each bot uses about 60 to 100 MB of memory, so plan the machine size around how many you sell.
 
+## Claude plugin
+
+`claude-plugin/forgecenter` is a Claude Code plugin for working on this project:
+
+- **`/forgecenter`** opens a launch checklist: which `.env` settings are still missing (never showing their values), whether the tests pass, and what isn't committed or pushed yet.
+- **Secrets guard:** stops any commit or push that would include `.env`, `data/` or a database file.
+- **Status line:** shows the latest test result after the tests run.
+
+Install it at the prompt of a Claude Code terminal session:
+
+```
+/plugin install forgecenter --marketplace husein-tohme/ForgeCenter
+```
+
+Or from a shell:
+
+```bash
+claude plugin install forgecenter --marketplace husein-tohme/ForgeCenter
+```
+
+Its tests run with `claude plugin test claude-plugin/forgecenter`.
+
 ## Run it locally
 
 Needs Node.js 22.13 or newer.
