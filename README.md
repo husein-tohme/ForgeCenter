@@ -19,6 +19,10 @@ Minecraft mods, websites, Discord bots, games, Minecraft server hosting and an A
 - **Privacy policy and terms** pages (required by Google for sign-in). Have a lawyer review them before launch.
 - **Security**: CSRF protection, strict security headers, signed and replay-protected Stripe webhooks, rate limits, hashed session tokens.
 
+## Delivering orders
+
+- **Discord bots:** `templates/discord-bot/` is the bot you deliver for each $100 order: tickets with transcripts, button role menus, memes, moderation with warnings and logs, welcome messages, trivia and a coin economy. Its README walks through setting it up for a customer and hosting it 24/7.
+
 ## Run it locally
 
 Needs Node.js 22.13 or newer.
@@ -71,5 +75,5 @@ Any Node 22 host works (Render, Railway, Fly.io, a VPS). Set `NODE_ENV=productio
 
 ## Not built yet
 
-- Automatic provisioning of Minecraft servers and Discord bots (orders are fulfilled by you through the owner panel for now)
+- Automatic provisioning of Minecraft servers and Discord bots (you set them up per order and deliver through the owner panel)
 - NeoForge and Quilt modpacks (Modpack Forge is Fabric only for now)
