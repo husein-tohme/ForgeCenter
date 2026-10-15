@@ -21,7 +21,35 @@ Minecraft mods, websites, Discord bots, games, Minecraft server hosting and an A
 
 ## Delivering orders
 
-- **Discord bots:** `templates/discord-bot/` is the bot you deliver for each $100 order: tickets with transcripts, button role menus, memes, moderation with warnings and logs, welcome messages, trivia and a coin economy. Its README walks through setting it up for a customer and hosting it 24/7.
+Minecraft servers and Discord bots are set up automatically when they're paid for. Websites, games and AI assistants are built by you and delivered through the owner panel.
+
+### Minecraft servers (Pterodactyl)
+
+1. Rent a machine for game servers. Pick a provider with **DDoS protection** included (for example OVH Game or Hetzner with a protection add-on), because that protection comes from the network, not from software.
+2. Install [Pterodactyl](https://pterodactyl.io) (panel and Wings) or its successor [Pelican](https://pelican.dev). Add a location and a node with a range of ports (allocations).
+3. In the panel, note the IDs of the **nest** and **egg** to use (for example the Paper egg in the Minecraft nest) and of the **location**.
+4. Create an **Application API key** (Admin > Application API) with read and write access to users, servers, nests, locations, nodes and allocations, and a **Client API key** on your admin account (Account > API Credentials).
+5. Fill in the `PTERODACTYL_` settings in `.env`.
+
+What happens automatically:
+- **Payment:** a panel account is made for the customer and a server is created with 2 GB RAM, 100 GB storage and a dedicated CPU core. The customer gets an email with the address and can start, stop, restart and run commands from their account page.
+- **Failed payment:** the server is suspended, and comes back as soon as a payment succeeds.
+- **Cancelled subscription:** the server is suspended and deleted 7 days later.
+- **Errors:** they retry with growing waits. After 8 failures you get an email, and the owner panel shows the error with a Retry button. Retries never create duplicate servers.
+
+### Discord bots
+
+`templates/discord-bot/` is the bot every bot order gets: tickets with transcripts, button role menus, memes, moderation with warnings and logs, welcome messages, trivia and a coin economy.
+
+1. Set `SECRET_KEY` in `.env` (tokens are stored encrypted with it).
+2. Run `npm run setup:bots` once, then keep `npm run bots` running next to the website (same folder, same database).
+
+After paying, the customer follows the steps on their order page to create a Discord application and paste its token. ForgeCenter checks the token and the required intent with Discord, stores it encrypted and shows an "Add to your server" link. The bot runner then:
+- registers the slash commands and keeps one process per bot running, restarting crashes with growing waits;
+- gives each bot only its own token and database, never the website's keys;
+- shows customers their bot's status, recent errors and a Restart button.
+
+Each bot uses about 60 to 100 MB of memory, so plan the machine size around how many you sell.
 
 ## Run it locally
 
@@ -71,9 +99,8 @@ Create a free [Resend](https://resend.com) account, verify your domain, and set 
 
 ## Deploy
 
-Any Node 22 host works (Render, Railway, Fly.io, a VPS). Set `NODE_ENV=production` (this makes the sign-in cookie HTTPS-only), set `BASE_URL` to your domain, and put `DATABASE_PATH` on a **persistent disk** so accounts and orders survive restarts.
+Any Node 22 host works (Render, Railway, Fly.io, a VPS). Run two processes from the same folder: `npm start` (the website) and `npm run bots` (customer Discord bots). The included `Procfile` does this on hosts that read it. Set `NODE_ENV=production` (this makes the sign-in cookie HTTPS-only), set `BASE_URL` to your domain, and put `DATABASE_PATH` on a **persistent disk** so accounts and orders survive restarts.
 
 ## Not built yet
 
-- Automatic provisioning of Minecraft servers and Discord bots (you set them up per order and deliver through the owner panel)
 - NeoForge and Quilt modpacks (Modpack Forge is Fabric only for now)

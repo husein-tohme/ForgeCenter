@@ -6,6 +6,7 @@ import { catalog, modeOf } from "./catalog.js";
 import { isAdmin, requireAdmin, requireUser } from "./auth.js";
 import { rateLimit } from "./limit.js";
 import { notify } from "./email.js";
+import { createServiceForOrder, serviceForOrder, publicService } from "./services.js";
 
 let stripeClient;
 export function getStripe() {
@@ -44,7 +45,9 @@ export function fulfillCheckout(session) {
       subscription_status = CASE WHEN ? THEN COALESCE(subscription_status, 'active') ELSE subscription_status END,
       stripe_subscription_id = COALESCE(?, stripe_subscription_id), updated_at = ? WHERE id = ?`)
     .run(session.mode === "subscription" ? 1 : 0, subId, now(), orderId);
-  notify.orderPaid(getOrder(orderId));
+  const paid = getOrder(orderId);
+  createServiceForOrder(paid);
+  notify.orderPaid(paid);
 }
 
 function setCheckoutStatus(session, status) {
@@ -211,7 +214,8 @@ ordersRouter.get("/orders/:id", requireUser, loadOwnOrder, async (req, res) => {
       order = getOrder(order.id);
     } catch (e) { console.error("Order sync failed", e.message); }
   }
-  res.json({ order: { ...serialize(order), messages: messagesFor(order.id) } });
+  res.json({ order: { ...serialize(order), messages: messagesFor(order.id),
+    service: publicService(serviceForOrder(order.id), { owner: isAdmin(req.user) }) } });
 });
 
 ordersRouter.patch("/orders/:id", requireUser, loadOwnOrder, (req, res) => {

@@ -8,6 +8,7 @@ import { tutorRouter } from "./tutor.js";
 import { toolsRouter } from "./tools.js";
 import { oauthRouter, enabledOAuthProviders } from "./oauth.js";
 import { whatsappRouter, whatsappEnabled } from "./whatsapp.js";
+import { servicesRouter, adminServicesRouter } from "./services.js";
 
 export function createApp() {
   const app = express();
@@ -67,7 +68,8 @@ export function createApp() {
   app.use("/api/auth", oauthRouter);
   app.use("/api/me", meRouter);
   app.use("/api", ordersRouter);
-  app.use("/api/admin", adminOrdersRouter, adminShowcaseRouter);
+  app.use("/api/admin", adminOrdersRouter, adminShowcaseRouter, adminServicesRouter);
+  app.use("/api/services", servicesRouter);
   app.use("/api/showcase", showcaseRouter);
   app.use("/api/tutor", tutorRouter);
 

@@ -1,3 +1,4 @@
+import { renderService } from "./service.js";
 import { $, api, esc, icon, money, date, toast, onUser, openSignIn, pill, STATUS, SUB_STATUS, PRODUCT_ICON } from "./common.js";
 
 $("signin-here").addEventListener("click", () => openSignIn());
@@ -50,6 +51,7 @@ async function loadOrder(d) {
   d.dataset.loaded = "1";
   body.innerHTML = `
     ${o.monthly && o.subscriptionStatus ? `<p class="small">${esc(SUB_STATUS[o.subscriptionStatus] ?? o.subscriptionStatus)}</p>` : ""}
+    <div class="service-box"></div>
     <h3>Brief from the customer</h3>
     <p class="brief">${o.brief ? esc(o.brief) : '<span class="hint">No brief yet.</span>'}</p>
     <form class="panel-inset update-form">
@@ -64,6 +66,8 @@ async function loadOrder(d) {
       <textarea id="reply-${o.id}" name="body" rows="2" maxlength="4000" placeholder="Reply to the customer"></textarea>
       <button class="btn btn-buy" type="submit">Send reply</button>
     </form>`;
+
+  renderService(body.querySelector(".service-box"), o.service, { owner: true, reload: () => loadOrder(d) });
 
   body.querySelector(".update-form").addEventListener("submit", async e => {
     e.preventDefault();

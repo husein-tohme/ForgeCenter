@@ -59,6 +59,11 @@ export const notify = {
       `Hi ${c.name},\n\n${lines[order.status]}\n\nSee the order: ${orderLink(order)}\n\nForgeCenter`);
   },
 
+  provisioningFailed(orderId, reason) {
+    send(owners(), `Setup failed for order ${orderId}`,
+      `ForgeCenter couldn't set up the server for order ${orderId} after several tries.\n\nLast error: ${reason}\n\nFix the problem, then press Retry in the owner panel: ${site()}/admin`);
+  },
+
   newMessage(order, fromOwner, body) {
     const preview = body.length > 500 ? `${body.slice(0, 500)}…` : body;
     if (fromOwner) {

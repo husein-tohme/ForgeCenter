@@ -124,6 +124,32 @@ CREATE TABLE IF NOT EXISTS tutor_usage (
   PRIMARY KEY (user_id, day)
 );
 
+-- What a paid order runs: a Minecraft server on Pterodactyl or a hosted Discord bot.
+-- state: waiting_setup, provisioning, active, suspended, failed, deleted.
+CREATE TABLE IF NOT EXISTS services (
+  id INTEGER PRIMARY KEY,
+  order_id INTEGER NOT NULL UNIQUE REFERENCES orders(id),
+  kind TEXT NOT NULL,
+  state TEXT NOT NULL,
+  panel_server_id INTEGER,
+  panel_identifier TEXT,
+  address TEXT,
+  bot_token_enc TEXT,
+  bot_app_id TEXT,
+  bot_name TEXT,
+  bot_status TEXT,
+  bot_started_at INTEGER,
+  commands_registered INTEGER NOT NULL DEFAULT 0,
+  restart_requested INTEGER NOT NULL DEFAULT 0,
+  log_tail TEXT,
+  attempts INTEGER NOT NULL DEFAULT 0,
+  next_attempt_at INTEGER,
+  delete_after INTEGER,
+  last_error TEXT,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL
+);
+
 CREATE TABLE IF NOT EXISTS webhook_events (
   id TEXT PRIMARY KEY,
   received_at TEXT NOT NULL

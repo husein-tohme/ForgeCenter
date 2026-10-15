@@ -1,3 +1,4 @@
+import { renderService } from "./service.js";
 import { $, api, esc, icon, money, date, toast, onUser, openSignIn, signOut, pill, renderSignInOptions, STATUS, SUB_STATUS, PRODUCT_ICON, PROVIDER_NAMES } from "./common.js";
 
 const params = new URLSearchParams(location.search);
@@ -63,6 +64,11 @@ async function loadIdentities() {
 }
 
 // ---------- Orders ----------
+// Servers and bots are set up automatically, so their orders explain that instead.
+const SERVICE_HELP = {
+  minecraft: { paid: "Payment received. Your server is being set up below.", in_progress: "Your server is being set up below.", delivered: "Your server is ready." },
+  discord_bot: { paid: "Payment received. Switch on your bot below. Use the brief and messages for custom features you'd like.", in_progress: "Your bot is being customised. Updates will appear in the messages below.", delivered: "Your bot is set up." },
+};
 const amountText = o => [o.amount ? money(o.amount) : "", o.monthly ? `${money(o.monthly)} a month` : ""].filter(Boolean).join(" + ");
 
 async function loadOrders() {
@@ -103,16 +109,21 @@ async function loadOrder(d) {
   d.querySelector(".pill").outerHTML = pill(o.status);
   const locked = ["delivered", "canceled"].includes(o.status);
   const canWrite = !["awaiting_payment", "expired", "payment_failed"].includes(o.status);
+  const kind = o.service?.kind;
+  const help = SERVICE_HELP[kind]?.[o.status] ?? STATUS[o.status]?.help ?? "";
+  const showBrief = canWrite && kind !== "minecraft";
   body.innerHTML = `
-    <p>${esc(STATUS[o.status]?.help ?? "")}</p>
+    <p>${esc(help)}</p>
     ${o.monthly && o.subscriptionStatus ? `<p class="small">${esc(SUB_STATUS[o.subscriptionStatus] ?? "")}</p>` : ""}
     ${o.deliverableUrl ? `<p><a class="btn btn-buy" href="${esc(o.deliverableUrl)}" target="_blank" rel="noopener">Open your project</a></p>` : ""}
-    ${canWrite ? `
+    <div class="service-box"></div>
+    ${showBrief ? `
     <form class="brief-form">
       <label>Project brief<textarea name="brief" rows="5" maxlength="5000" ${locked ? "disabled" : ""}
         placeholder="Describe what you want: features, colours, examples you like, deadlines.">${esc(o.brief)}</textarea></label>
       ${locked ? "" : `<button class="btn" type="submit">Save brief</button>`}
-    </form>
+    </form>` : ""}
+    ${canWrite ? `
     <h3>Messages</h3>
     <div class="thread">${thread(o.messages)}</div>
     <form class="msg-form">
@@ -120,6 +131,8 @@ async function loadOrder(d) {
       <textarea id="msg-${o.id}" name="body" rows="2" maxlength="4000" placeholder="Write a message"></textarea>
       <button class="btn btn-buy" type="submit">Send message</button>
     </form>` : ""}`;
+
+  renderService(body.querySelector(".service-box"), o.service, { reload: () => loadOrder(d) });
 
   body.querySelector(".brief-form")?.addEventListener("submit", async e => {
     e.preventDefault();
