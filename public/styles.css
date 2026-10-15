@@ -350,7 +350,7 @@ a.listing:hover h3 { color: var(--lapis); text-decoration: underline; }
 
 /* ---------- Free tools ---------- */
 .top nav a[aria-current="page"] { color: #fff; text-decoration: underline; text-underline-offset: 4px; }
-.tool-links { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.tool-links { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
 .tool-link { display: flex; gap: 16px; align-items: center; color: var(--ink); text-decoration: none; }
 .tool-link .slot { flex: none; width: 60px; height: 60px; }
 .tool-icon { width: 100%; height: 100%; }
@@ -468,3 +468,26 @@ code.address { font-size: 1.15rem; padding: 6px 10px; background: #1e1e1e; color
 pre.log { background: #1e1e1e; color: #f0b4ae; padding: 12px; font-size: 13px; white-space: pre-wrap; max-height: 220px; overflow: auto; }
 .replace-token summary { cursor: pointer; color: var(--lapis); font-weight: 700; margin-top: 8px; }
 .owner-info { border-top: 2px dashed #9a9a9a; margin-top: 16px; padding-top: 12px; }
+
+/* ---------- Plugin Forge ---------- */
+fieldset.commands { border: 2px solid #9a9a9a; padding: 12px 14px 16px; margin: 0 0 16px; }
+fieldset.commands legend { font-weight: 700; padding: 0 6px; }
+.command-row { display: flex; gap: 10px; align-items: flex-end; flex-wrap: wrap; margin-bottom: 10px; }
+.command-row label { margin: 0; font-weight: 700; }
+.command-row .grow { flex: 1; min-width: 180px; }
+.slash { display: flex; align-items: center; gap: 4px; font: 700 1.1rem ui-monospace, monospace; }
+.slash input { width: 130px; }
+.inline-number { display: flex !important; align-items: center; gap: 8px; }
+.inline-number input { width: 90px; margin: 0; }
+.preview pre + .panel-title { margin-top: 16px; }
+#preview-plugin, #preview-config { min-height: 0; }
+.forge-grid > *, .mentor-grid > *, .tex-grid > *, .mp-grid > * { min-width: 0; }
+.service-box .result { background: #c6c6c6; }
+
+/* Plugins on a hosted server */
+.plugins-box { margin-top: 16px; border-top: 2px solid #b0b0b0; padding-top: 12px; }
+.plugins-box > summary { cursor: pointer; font: 700 1.1rem var(--display); }
+.plugins-box h4 { margin: 16px 0 8px; }
+.installed { list-style: none; padding: 0; margin: 0; display: grid; gap: 6px; }
+.installed li:not(.hint) { display: flex; justify-content: space-between; align-items: center; gap: 12px; background: #c6c6c6; padding: 6px 10px; }
+.plugins-box .results { max-height: 420px; }

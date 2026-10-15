@@ -8,6 +8,7 @@ import { rateLimit } from "./limit.js";
 import { notify } from "./email.js";
 import { encrypt, secretsEnabled } from "./secrets.js";
 import * as panel from "./pterodactyl.js";
+import { resolvePluginFile, isGameVersion } from "./modrinth.js";
 
 const DAY_MS = 24 * 60 * 60_000;
 const GRACE_MS = 7 * DAY_MS;      // canceled servers are kept (suspended) this long
@@ -186,6 +187,39 @@ servicesRouter.post("/:id/command", requireUser, loadOwnService, needsActiveServ
     console.error("Command failed", e.message);
     res.status(e.status === 502 ? 409 : 502).json({ error: e.status === 502 ? "Start the server first." : "The server didn't respond. Try again in a moment." });
   }
+});
+
+// ---------- Plugins on a customer's server ----------
+const PLUGIN_FILE = /^[\w.+-]{1,120}\.jar$/i;
+const needsClientKey = (_req, res, next) => process.env.PTERODACTYL_CLIENT_KEY
+  ? next() : res.status(503).json({ error: "Plugin management isn't set up yet." });
+
+servicesRouter.get("/:id/plugins", requireUser, loadOwnService, needsActiveServer, needsClientKey, async (req, res) => {
+  try {
+    const files = await panel.listFiles(req.service.panel_identifier, "/plugins");
+    res.json({ plugins: files.filter(f => f.is_file && /\.jar$/i.test(f.name)).map(f => ({ name: f.name, size: f.size })) });
+  } catch (e) { console.error("Plugin list failed", e.message); res.status(502).json({ error: "The server didn't respond. Try again in a moment." }); }
+});
+
+servicesRouter.post("/:id/plugins", requireUser, loadOwnService, needsActiveServer, needsClientKey, rateLimit({ windowMs: 60_000, max: 10 }), async (req, res) => {
+  const { projectId, gameVersion } = req.body ?? {};
+  if (typeof projectId !== "string" || !/^[\w-]{1,64}$/.test(projectId) || !isGameVersion(gameVersion)) {
+    return res.status(400).json({ error: "Pick a plugin and your server's Minecraft version." });
+  }
+  let file;
+  try { file = await resolvePluginFile(projectId, gameVersion); }
+  catch (e) { console.error("Plugin lookup failed", e.message); return res.status(502).json({ error: "Modrinth didn't answer. Try again in a moment." }); }
+  if (!file) return res.status(400).json({ error: `That plugin doesn't have a version for Minecraft ${gameVersion}.` });
+  try { await panel.pullFile(req.service.panel_identifier, { url: file.url, directory: "/plugins", filename: file.filename }); }
+  catch (e) { console.error("Plugin install failed", e.message); return res.status(502).json({ error: "The server couldn't download the plugin. Try again in a moment." }); }
+  res.json({ installed: file.filename, title: file.title, versionNumber: file.versionNumber });
+});
+
+servicesRouter.delete("/:id/plugins/:file", requireUser, loadOwnService, needsActiveServer, needsClientKey, async (req, res) => {
+  const name = req.params.file;
+  if (!PLUGIN_FILE.test(name)) return res.status(400).json({ error: "That isn't a plugin file." });
+  try { await panel.deleteFiles(req.service.panel_identifier, "/plugins", [name]); res.json({ ok: true }); }
+  catch (e) { console.error("Plugin remove failed", e.message); res.status(502).json({ error: "The server didn't respond. Try again in a moment." }); }
 });
 
 // Discord application flags that show which privileged intents are turned on.

@@ -37,6 +37,17 @@ beforeEach(() => {
       assert.match(init.headers.Authorization, /^Bot /);
       return json(discordApp.body, discordApp.status);
     }
+    if (u.hostname === "api.modrinth.com") {
+      if (u.pathname === "/v2/project/luckperms/version") {
+        assert.deepEqual(JSON.parse(u.searchParams.get("loaders")), ["paper", "purpur", "spigot", "bukkit"]);
+        return JSON.parse(u.searchParams.get("game_versions"))[0] === "1.21.1"
+          ? json([{ version_type: "release", version_number: "5.4.140", files: [{ primary: true, filename: "LuckPerms-Bukkit-5.4.140.jar",
+              url: "https://cdn.modrinth.com/data/Vebnzrzj/versions/abc/LuckPerms-Bukkit-5.4.140.jar" }] }])
+          : json([]);
+      }
+      if (u.pathname === "/v2/project/luckperms") return json({ id: "Vebnzrzj", title: "LuckPerms" });
+      return json([], 404);
+    }
     if (u.hostname !== "panel.test") return realFetch(input, init);
     const method = init.method || "GET";
     const body = init.body ? JSON.parse(init.body) : null;
@@ -73,7 +84,11 @@ beforeEach(() => {
         { attributes: { id: 77, ip: "10.0.0.5", alias: "mc1.forgecenter.test", port: 25565 } }] } } } });
     }
     if (u.pathname.match(/^\/api\/application\/servers\/\d+(\/(suspend|unsuspend))?$/)) return json(null, 204);
-    if (u.pathname.match(/^\/api\/client\/servers\/\w+\/(power|command)$/)) return json(null, 204);
+    if (u.pathname.match(/^\/api\/client\/servers\/\w+\/(power|command|files\/pull|files\/delete)$/)) return json(null, 204);
+    if (u.pathname.match(/^\/api\/client\/servers\/\w+\/files\/list$/)) {
+      return json({ data: [{ attributes: { name: "EssentialsX.jar", size: 1200000, is_file: true } },
+        { attributes: { name: "EssentialsX", size: 0, is_file: false } }, { attributes: { name: "notes.txt", size: 10, is_file: true } }] });
+    }
     if (u.pathname.match(/^\/api\/client\/servers\/\w+\/resources$/)) {
       return json({ attributes: { current_state: "running", is_suspended: false,
         resources: { memory_bytes: 1024 * 1048576, cpu_absolute: 37.4, disk_bytes: 2048 * 1048576, uptime: 3600_000 } } });
@@ -197,6 +212,32 @@ test("customers control their own server, and only their own", async () => {
 
   const stranger = signIn("stranger@example.com");
   assert.equal((await api(`/api/services/${id}/power`, { method: "POST", body: { signal: "stop" }, cookie: stranger.cookie })).status, 404);
+});
+
+test("customers install and remove plugins from Modrinth on their server", async () => {
+  const o = await paidOrder("plugins@example.com", "mcserver", "sub_mc7");
+  await reconcileServices();
+  const id = o.service().id;
+  const list = await api(`/api/services/${id}/plugins`, { cookie: o.cookie });
+  assert.deepEqual(list.body.plugins, [{ name: "EssentialsX.jar", size: 1200000 }]);
+
+  const add = await api(`/api/services/${id}/plugins`, { method: "POST", body: { projectId: "luckperms", gameVersion: "1.21.1" }, cookie: o.cookie });
+  assert.equal(add.status, 200);
+  assert.equal(add.body.title, "LuckPerms");
+  const pull = calls.find(c => c.path.endsWith("/files/pull"));
+  assert.deepEqual(pull.body, { url: "https://cdn.modrinth.com/data/Vebnzrzj/versions/abc/LuckPerms-Bukkit-5.4.140.jar",
+    directory: "/plugins", filename: "LuckPerms-Bukkit-5.4.140.jar" });
+
+  const tooNew = await api(`/api/services/${id}/plugins`, { method: "POST", body: { projectId: "luckperms", gameVersion: "1.8.9" }, cookie: o.cookie });
+  assert.match(tooNew.body.error, /doesn't have a version for Minecraft 1\.8\.9/);
+
+  assert.equal((await api(`/api/services/${id}/plugins/EssentialsX.jar`, { method: "DELETE", body: {}, cookie: o.cookie })).status, 200);
+  assert.deepEqual(calls.find(c => c.path.endsWith("/files/delete")).body, { root: "/plugins", files: ["EssentialsX.jar"] });
+  const sneaky = await api(`/api/services/${id}/plugins/${encodeURIComponent("../server.properties")}`, { method: "DELETE", body: {}, cookie: o.cookie });
+  assert.equal(sneaky.status, 400);
+
+  const stranger = signIn("nosy@example.com");
+  assert.equal((await api(`/api/services/${id}/plugins`, { cookie: stranger.cookie })).status, 404);
 });
 
 // ---------- Discord bots ----------

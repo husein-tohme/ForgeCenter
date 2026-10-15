@@ -99,3 +99,13 @@ export async function resources(identifier) {
     uptimeSeconds: Math.round((a.resources?.uptime ?? 0) / 1000),
   };
 }
+
+// Files on a server (Client API). A missing folder lists as empty.
+export async function listFiles(identifier, directory) {
+  const data = await findOrNull(client("GET", `/servers/${identifier}/files/list?directory=${encodeURIComponent(directory)}`));
+  return (data?.data ?? []).map(f => f.attributes);
+}
+export const pullFile = (identifier, { url, directory, filename }) =>
+  client("POST", `/servers/${identifier}/files/pull`, { url, directory, filename });
+export const deleteFiles = (identifier, root, files) =>
+  client("POST", `/servers/${identifier}/files/delete`, { root, files });

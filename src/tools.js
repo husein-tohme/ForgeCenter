@@ -6,6 +6,7 @@ import { requireUser } from "./auth.js";
 import { rateLimit } from "./limit.js";
 import { modFiles, streamZip, createModrinthProject } from "./modgen.js";
 import { texturePackFiles, TEXTURE_TARGETS, PACK_FORMATS } from "./texturepack.js";
+import { pluginFiles, pluginPreview, PAPER_VERSIONS } from "./plugingen.js";
 import { gameVersions, searchMods, planModpack, mrpackFiles, isGameVersion } from "./modrinth.js";
 
 export const toolsRouter = express.Router();
@@ -34,6 +35,22 @@ toolsRouter.post("/mod/modrinth", rateLimit({ windowMs: 60_000, max: 5 }), async
   } catch (e) { res.status(502).json({ error: e.message }); }
 });
 
+// ---------- Plugin Forge ----------
+toolsRouter.get("/plugin/options", (_req, res) => res.json({ versions: Object.keys(PAPER_VERSIONS) }));
+
+toolsRouter.post("/plugin/preview", rateLimit({ windowMs: 60_000, max: 120 }), (req, res) => {
+  try { res.json({ files: pluginPreview(req.body ?? {}) }); }
+  catch (e) { res.status(400).json({ error: e.message }); }
+});
+
+toolsRouter.post("/plugin/zip", rateLimit({ windowMs: 60_000, max: 20 }), (req, res) => {
+  let files;
+  try { files = pluginFiles(req.body ?? {}); }
+  catch (e) { return res.status(400).json({ error: e.message }); }
+  saveCreation(req, "plugin", req.body.name);
+  streamZip(files, res, zipName(req.body.name));
+});
+
 // ---------- Texture Forge ----------
 toolsRouter.get("/texturepack/options", (_req, res) =>
   res.json({ targets: TEXTURE_TARGETS, versions: Object.keys(PACK_FORMATS) }));
@@ -58,7 +75,8 @@ toolsRouter.get("/modrinth/search", rateLimit({ windowMs: 60_000, max: 60 }), as
   const query = String(req.query.q ?? "").slice(0, 100);
   const gameVersion = String(req.query.version ?? "");
   if (!isGameVersion(gameVersion)) return res.status(400).json({ error: "Pick a Minecraft version." });
-  try { res.json({ results: await searchMods({ query, gameVersion }) }); }
+  const kind = req.query.kind === "plugin" ? "plugin" : "mod";
+  try { res.json({ results: await searchMods({ query, gameVersion, kind }) }); }
   catch (e) { console.error("Modrinth search failed", e.message); res.status(502).json({ error: "Modrinth didn't answer. Try again in a moment." }); }
 });
 

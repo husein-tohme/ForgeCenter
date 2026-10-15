@@ -192,6 +192,7 @@ const KINDS = {
   mod: { icon: "pickaxe", label: "Mod", again: "/#forge" },
   texturepack: { icon: "painting", label: "Texture pack", again: "/textures" },
   modpack: { icon: "chest", label: "Modpack", again: "/modpacks" },
+  plugin: { icon: "anvil", label: "Server plugin", again: "/plugins" },
 };
 async function loadMods() {
   const r = await api("/api/creations");
@@ -202,5 +203,5 @@ async function loadMods() {
         return `<li><span class="mod-icon">${icon(k.icon)}</span><strong>${esc(m.name)}</strong>
           <span class="small">${k.label}, ${date(m.createdAt)}</span>${m.modrinthUrl ? ` <a href="${esc(m.modrinthUrl)}" target="_blank" rel="noopener">View on Modrinth</a>` : ""}</li>`;
       }).join("")}</ul>`
-    : `<p class="hint">Mods, texture packs and modpacks you make while signed in show up here.</p><a class="btn" href="/#tools">Open the free tools</a>`;
+    : `<p class="hint">Mods, plugins, texture packs and modpacks you make while signed in show up here.</p><a class="btn" href="/#tools">Open the free tools</a>`;
 }

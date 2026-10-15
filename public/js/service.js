@@ -1,5 +1,5 @@
 // The "your server" / "your bot" part of an order, shared by the account page and the owner panel.
-import { api, esc, date, toast } from "./common.js";
+import { api, esc, date, icon, toast } from "./common.js";
 
 const uptime = s => (s >= 86400 ? `${Math.floor(s / 86400)}d ${Math.floor((s % 86400) / 3600)}h`
   : s >= 3600 ? `${Math.floor(s / 3600)}h ${Math.floor((s % 3600) / 60)}m` : `${Math.floor(s / 60)}m`);
@@ -55,11 +55,84 @@ function minecraft(s) {
       <label>Run a server command<input name="command" maxlength="200" placeholder="whitelist add Steve" autocomplete="off"></label>
       <button class="btn btn-small" type="submit">Run</button>
     </form>
-    ${s.panelUrl ? `<p class="small">For files, plugins and backups, use the <a href="${esc(s.panelUrl)}" target="_blank" rel="noopener">full control panel</a>. The first time, choose "Forgot password" there and use your account email.</p>` : ""}`;
+    <details class="plugins-box" data-plugins>
+      <summary>Plugins</summary>
+      <p class="small">For Paper, Purpur and Spigot servers. Restart the server after adding or removing plugins. Made your own with <a href="/plugins">Plugin Forge</a>? Upload its jar in the control panel.</p>
+      <h4>Installed</h4>
+      <ul class="installed" data-installed><li class="hint">Loading…</li></ul>
+      <h4>Add plugins from Modrinth</h4>
+      <div class="mp-search">
+        <label>Your Minecraft version<select data-pversion></select></label>
+        <label class="grow">Search<input type="search" data-pquery placeholder="EssentialsX, LuckPerms, WorldEdit…" autocomplete="off"></label>
+      </div>
+      <ul class="results" data-presults></ul>
+    </details>
+    ${s.panelUrl ? `<p class="small">For files, worlds and backups, use the <a href="${esc(s.panelUrl)}" target="_blank" rel="noopener">full control panel</a>. The first time, choose "Forgot password" there and use your account email.</p>` : ""}`;
+}
+
+function wirePlugins(el, s) {
+  const box = el.querySelector("[data-plugins]");
+  const installed = box.querySelector("[data-installed]");
+  const results = box.querySelector("[data-presults]");
+  const version = box.querySelector("[data-pversion]");
+  const query = box.querySelector("[data-pquery]");
+  let found = [], run = 0, debounce;
+
+  const loadInstalled = async () => {
+    const r = await api(`/api/services/${s.id}/plugins`);
+    if (!r.ok) { installed.innerHTML = `<li class="error">${esc(r.data.error)}</li>`; return; }
+    installed.innerHTML = r.data.plugins.length
+      ? r.data.plugins.map(p => `<li><span>${esc(p.name)} <span class="small">${(p.size / 1048576).toFixed(1)} MB</span></span>
+          <button class="btn btn-small" type="button" data-premove="${esc(p.name)}">Remove</button></li>`).join("")
+      : `<li class="hint">No plugins yet.</li>`;
+  };
+  const search = async () => {
+    const mine = ++run;
+    const r = await api(`/api/modrinth/search?kind=plugin&q=${encodeURIComponent(query.value.trim())}&version=${encodeURIComponent(version.value)}`);
+    if (mine !== run) return;
+    if (!r.ok) { results.innerHTML = `<li class="error">${esc(r.data.error)}</li>`; return; }
+    found = r.data.results;
+    results.innerHTML = found.length ? found.map(p => `<li class="result">
+        <span class="result-icon">${p.icon ? `<img src="${esc(p.icon)}" alt="" width="48" height="48" loading="lazy">` : `<span class="mod-fallback">${icon("chest")}</span>`}</span>
+        <div class="result-text"><strong>${esc(p.title)}</strong><span class="small">by ${esc(p.author)}</span><p>${esc(p.description)}</p></div>
+        <button class="btn btn-buy btn-small" type="button" data-pinstall="${esc(p.id)}">Install</button></li>`).join("")
+      : `<li class="hint">No plugins match that for Minecraft ${esc(version.value)}.</li>`;
+  };
+
+  box.addEventListener("toggle", async () => {
+    if (!box.open || box.dataset.ready) return;
+    box.dataset.ready = "1";
+    loadInstalled();
+    const v = await api("/api/modrinth/versions");
+    const versions = v.data.versions ?? ["1.21.1"];
+    version.innerHTML = versions.map(x => `<option>${esc(x)}</option>`).join("");
+    search();
+  });
+  query.addEventListener("input", () => { clearTimeout(debounce); debounce = setTimeout(search, 300); });
+  version.addEventListener("change", search);
+  box.addEventListener("click", async e => {
+    const install = e.target.closest("[data-pinstall]");
+    const remove = e.target.closest("[data-premove]");
+    if (install) {
+      install.disabled = true;
+      const r = await api(`/api/services/${s.id}/plugins`, { method: "POST", body: { projectId: install.dataset.pinstall, gameVersion: version.value } });
+      install.disabled = false;
+      if (!r.ok) return toast(r.data.error);
+      toast(`Installing ${r.data.title}. Restart the server to turn it on.`);
+      setTimeout(loadInstalled, 2500);
+    } else if (remove) {
+      if (!confirm(`Remove ${remove.dataset.premove}? Its settings folder is kept.`)) return;
+      const r = await api(`/api/services/${s.id}/plugins/${encodeURIComponent(remove.dataset.premove)}`, { method: "DELETE" });
+      if (!r.ok) return toast(r.data.error);
+      toast("Plugin removed. Restart the server to finish.");
+      loadInstalled();
+    }
+  });
 }
 
 function wireMinecraft(el, s) {
   if (s.state !== "active") return;
+  wirePlugins(el, s);
   const statusBox = el.querySelector("[data-status]");
   const refresh = async () => {
     const r = await api(`/api/services/${s.id}/status`);

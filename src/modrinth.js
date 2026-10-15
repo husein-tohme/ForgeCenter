@@ -27,8 +27,13 @@ export async function gameVersions() {
   return tags.filter(t => t.version_type === "release").slice(0, 20).map(t => t.version);
 }
 
-export async function searchMods({ query, gameVersion }) {
-  const facets = [["project_type:mod"], ["categories:fabric"], [`versions:${gameVersion}`]];
+// Server plugins are the projects published for these loaders.
+const PLUGIN_LOADERS = ["paper", "purpur", "spigot", "bukkit"];
+
+export async function searchMods({ query, gameVersion, kind = "mod" }) {
+  const facets = kind === "plugin"
+    ? [PLUGIN_LOADERS.map(l => `categories:${l}`), [`versions:${gameVersion}`]]
+    : [["project_type:mod"], ["categories:fabric"], [`versions:${gameVersion}`]];
   const data = await getJson(`${API}/search?query=${encodeURIComponent(query)}&limit=20&index=relevance&facets=${q(facets)}`);
   return data.hits.map(h => ({
     id: h.project_id, slug: h.slug, title: h.title, description: h.description,
@@ -100,4 +105,14 @@ export function mrpackFiles(plan, { name, summary }) {
     dependencies: { minecraft: plan.gameVersion, "fabric-loader": plan.loaderVersion },
   };
   return { "modrinth.index.json": JSON.stringify(index, null, 2) };
+}
+
+// The newest plugin jar for a server's Minecraft version, or null if there isn't one.
+export async function resolvePluginFile(projectId, gameVersion) {
+  const versions = await getJson(`${API}/project/${encodeURIComponent(projectId)}/version?loaders=${q(PLUGIN_LOADERS)}&game_versions=${q([gameVersion])}`);
+  const version = versions.find(v => v.version_type === "release") ?? versions[0];
+  const file = version && (version.files.find(f => f.primary) ?? version.files[0]);
+  if (!file || !allowedDownload(file.url) || !/\.jar$/i.test(file.filename)) return null;
+  const project = await getJson(`${API}/project/${encodeURIComponent(projectId)}`);
+  return { url: file.url, filename: safeFilename(file.filename), title: project.title, versionNumber: version.version_number };
 }

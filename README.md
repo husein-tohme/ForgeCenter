@@ -12,7 +12,8 @@ Minecraft mods, websites, Discord bots, games, Minecraft server hosting and an A
 - **Mod Forge**: generate a Fabric mod in your name, download it or create a Modrinth draft.
 - **Texture Forge** (`/textures`): a 16x16 pixel editor that exports a Minecraft resource pack.
 - **Modpack Forge** (`/modpacks`): search Modrinth, pick Fabric mods, download a `.mrpack` with required dependencies added automatically.
-- Creations from all three tools are saved to the account when signed in.
+- **Plugin Forge** (`/plugins`): makes a Paper/Purpur server plugin project with custom commands, a welcome message and timed announcements, all editable later in `config.yml`. The generated Java is compiled in the tests.
+- Creations from all four tools are saved to the account when signed in.
 - **Email notifications**: you get an email for new paid orders and customer messages; customers get one for payment, status changes, your replies and failed renewals.
 - **Forge AI mentor**: 30 free messages a day per account, 300 with the Dedicated AI purchase.
 - **Showcase**: customers buy a slot, submit a listing, and it goes live after you approve it.
@@ -35,6 +36,7 @@ What happens automatically:
 - **Payment:** a panel account is made for the customer and a server is created with 2 GB RAM, 100 GB storage and a dedicated CPU core. The customer gets an email with the address and can start, stop, restart and run commands from their account page.
 - **Failed payment:** the server is suspended, and comes back as soon as a payment succeeds.
 - **Cancelled subscription:** the server is suspended and deleted 7 days later.
+- **Plugins:** customers search Modrinth for Paper/Purpur/Spigot plugins and install or remove them on their server from their order page, using the panel's download feature (make sure remote downloads are allowed in the panel's settings).
 - **Errors:** they retry with growing waits. After 8 failures you get an email, and the owner panel shows the error with a Retry button. Retries never create duplicate servers.
 
 ### Discord bots
