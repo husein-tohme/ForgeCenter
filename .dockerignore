@@ -1,0 +1,9 @@
+node_modules
+templates/discord-bot/node_modules
+data
+*.db
+*.db-*
+.env
+.git
+test
+claude-plugin

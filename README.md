@@ -123,6 +123,8 @@ Create a free [Resend](https://resend.com) account, verify your domain, and set 
 
 ## Deploy
 
+With Docker on a VPS: fill in `.env` (with `NODE_ENV=production`), run `docker compose up -d --build`, and put an HTTPS reverse proxy such as Caddy in front of port 3000. Accounts, orders and bot data live in the `forgecenter-data` volume.
+
 Any Node 22 host works (Render, Railway, Fly.io, a VPS). Run two processes from the same folder: `npm start` (the website) and `npm run bots` (customer Discord bots). The included `Procfile` does this on hosts that read it. Set `NODE_ENV=production` (this makes the sign-in cookie HTTPS-only), set `BASE_URL` to your domain, and put `DATABASE_PATH` on a **persistent disk** so accounts and orders survive restarts.
 
 ## Not built yet
