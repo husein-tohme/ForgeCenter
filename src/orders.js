@@ -1,30 +1,23 @@
-// Orders, Stripe Checkout, Stripe webhooks, billing portal and the owner's order tools.
+// Orders, Stripe Checkout, billing portal and the owner's order tools.
 import express from "express";
-import Stripe from "stripe";
 import { db, now } from "./db.js";
-import { catalog, modeOf } from "./catalog.js";
-import { isAdmin, requireAdmin, requireUser } from "./auth.js";
+import { catalog, modeOf, isAdultOnly } from "./catalog.js";
+import { isAdmin, isAdult, requireAdmin, requireUser } from "./auth.js";
 import { rateLimit } from "./limit.js";
 import { notify } from "./email.js";
+import { getStripe, ensureCustomer, baseUrl, CHECKOUT_LABELS } from "./stripe.js";
 import { createServiceForOrder, serviceForOrder, publicService } from "./services.js";
-
-let stripeClient;
-export function getStripe() {
-  if (!process.env.STRIPE_SECRET_KEY) return null;
-  stripeClient ??= new Stripe(process.env.STRIPE_SECRET_KEY);
-  return stripeClient;
-}
 
 export const STATUSES = ["awaiting_payment", "paid", "in_progress", "delivered", "payment_failed", "expired", "canceled"];
 const PAID = "('paid', 'in_progress', 'delivered')";
-const baseUrl = req => process.env.BASE_URL || `${req.protocol}://${req.get("host")}`;
 const getOrder = id => db.prepare("SELECT * FROM orders WHERE id = ?").get(Number(id));
 
 function serialize(o, { withCustomer = false } = {}) {
   const out = {
     id: o.id, product: o.product, name: catalog[o.product]?.name ?? o.product,
     amount: o.amount, monthly: o.monthly, status: o.status, subscriptionStatus: o.subscription_status,
-    brief: o.brief, deliverableUrl: o.deliverable_url, createdAt: o.created_at, updatedAt: o.updated_at,
+    brief: o.brief, deliverableUrl: o.deliverable_url, paidWith: o.paid_with ?? "card",
+    createdAt: o.created_at, updatedAt: o.updated_at,
   };
   if (withCustomer) out.customer = o.user_name ? { name: o.user_name, email: o.user_email, phone: o.user_phone } : null;
   return out;
@@ -45,9 +38,13 @@ export function fulfillCheckout(session) {
       subscription_status = CASE WHEN ? THEN COALESCE(subscription_status, 'active') ELSE subscription_status END,
       stripe_subscription_id = COALESCE(?, stripe_subscription_id), updated_at = ? WHERE id = ?`)
     .run(session.mode === "subscription" ? 1 : 0, subId, now(), orderId);
-  const paid = getOrder(orderId);
-  createServiceForOrder(paid);
-  notify.orderPaid(paid);
+  afterPayment(getOrder(orderId));
+}
+
+// Everything that follows a payment, whether by card or from the wallet.
+export function afterPayment(order) {
+  createServiceForOrder(order);
+  notify.orderPaid(order);
 }
 
 function setCheckoutStatus(session, status) {
@@ -72,7 +69,8 @@ function setSubscriptionStatus(subId, status, orderIdHint) {
 
 const invoiceSubId = inv => inv.parent?.subscription_details?.subscription ?? inv.subscription ?? null;
 
-export function handleStripeEvent(event) {
+// Checkout Sessions for shop orders, and subscription billing.
+export function handleOrderEvent(event) {
   const obj = event.data.object;
   switch (event.type) {
     case "checkout.session.completed":
@@ -101,42 +99,14 @@ export function handleStripeEvent(event) {
   }
 }
 
-// Mounted with express.raw() so the signature can be checked against the exact bytes.
-export function stripeWebhook(req, res) {
-  const stripe = getStripe();
-  const secret = process.env.STRIPE_WEBHOOK_SECRET;
-  if (!stripe || !secret) return res.status(503).json({ error: "Stripe webhooks aren't set up yet." });
-  let event;
-  try { event = stripe.webhooks.constructEvent(req.body, req.headers["stripe-signature"], secret); }
-  catch { return res.status(400).json({ error: "Invalid Stripe signature." }); }
-
-  const fresh = db.prepare("INSERT OR IGNORE INTO webhook_events (id, received_at) VALUES (?, ?)").run(event.id, now()).changes;
-  if (!fresh) return res.json({ received: true });
-  try { handleStripeEvent(event); }
-  catch (e) {
-    db.prepare("DELETE FROM webhook_events WHERE id = ?").run(event.id); // let Stripe retry
-    console.error("Webhook failed", event.type, e);
-    return res.status(500).json({ error: "Webhook handling failed." });
-  }
-  res.json({ received: true });
-}
-
 // ---------- Customer routes ----------
 export const ordersRouter = express.Router();
-
-async function ensureCustomer(stripe, user) {
-  if (user.stripe_customer_id) return user.stripe_customer_id;
-  const customer = await stripe.customers.create({
-    email: user.email ?? undefined, phone: user.phone ?? undefined, name: user.name, metadata: { user_id: String(user.id) },
-  });
-  db.prepare("UPDATE users SET stripe_customer_id = ? WHERE id = ?").run(customer.id, user.id);
-  return customer.id;
-}
 
 ordersRouter.post("/checkout", requireUser, rateLimit({ windowMs: 60_000, max: 10 }), async (req, res) => {
   const key = req.body?.product;
   const item = catalog[key];
   if (!item) return res.status(400).json({ error: "That product doesn't exist." });
+  if (isAdultOnly(key) && !isAdult(req.user)) return res.status(403).json({ error: `Confirm you're an adult to buy a ${item.name.toLowerCase()}.`, needs: "adult" });
   const stripe = getStripe();
   if (!stripe) return res.status(503).json({ error: "Payments aren't set up yet." });
 
@@ -154,14 +124,14 @@ ordersRouter.post("/checkout", requireUser, rateLimit({ windowMs: 60_000, max: 1
       currency: "usd", unit_amount: item.monthly, recurring: { interval: "month" }, product_data: { name: item.monthlyName } } });
 
     const mode = modeOf(item);
-    const metadata = { order_id: String(orderId) };
+    const metadata = { kind: "order", order_id: String(orderId) };
     const session = await stripe.checkout.sessions.create({
       mode, line_items, customer,
       client_reference_id: String(orderId), metadata,
       ...(mode === "subscription" ? { subscription_data: { metadata } } : { payment_intent_data: { metadata } }),
       success_url: `${baseUrl(req)}/account.html?order=${orderId}&paid=1`,
       cancel_url: `${baseUrl(req)}/#shop`,
-      integration_identifier: "forgecenter-shop-qzvkmrtw",
+      integration_identifier: CHECKOUT_LABELS.shop,
     });
     db.prepare("UPDATE orders SET stripe_session_id = ? WHERE id = ?").run(session.id, orderId);
     res.json({ url: session.url, orderId });
@@ -285,7 +255,9 @@ adminOrdersRouter.get("/overview", (_req, res) => {
       setupFailed: one("SELECT COUNT(*) AS n FROM services WHERE state = 'failed'").n,
       pastDue: one("SELECT COUNT(*) AS n FROM orders WHERE subscription_status = 'past_due'").n,
       pendingListings: one("SELECT COUNT(*) AS n FROM showcase WHERE status = 'pending'").n,
+      ticketsWaiting: one("SELECT COUNT(*) AS n FROM tickets WHERE status = 'waiting'").n,
     },
+    walletCents: one("SELECT COALESCE(SUM(amount), 0) AS c FROM wallet_entries WHERE user_id IS NOT NULL").c,
   });
 });
 

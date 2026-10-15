@@ -12,6 +12,8 @@ export const AI_PLAN_DAILY = 300;
 const SYSTEM = `You are Forge, the ForgeCenter coding mentor. Your goal is to turn the learner into a professional developer.
 Teach step by step, find out what they already know, give small exercises, review their code honestly, and explain the "why".
 You also help plan Minecraft mods, Discord bots, websites and games. Many learners are young, so keep explanations clear and kind.`;
+// Accounts are in the teen group until an adult confirms their age (see age.js).
+const TEEN_NOTE = "\n\nThis learner's account is in the teen age group. Keep every example, project idea and topic suitable for teenagers.";
 
 let client;
 const ai = () => (process.env.ANTHROPIC_API_KEY ? (client ??= new Anthropic()) : null);
@@ -44,7 +46,8 @@ tutorRouter.post("/", requireUser, rateLimit({ windowMs: 60_000, max: 10 }), asy
 
   try {
     const r = await ai().messages.create({
-      model: process.env.AI_MODEL || "claude-sonnet-5-5", max_tokens: 1500, system: SYSTEM, messages,
+      model: process.env.AI_MODEL || "claude-sonnet-5-5", max_tokens: 1500,
+      system: req.user.age_group === "adult" ? SYSTEM : SYSTEM + TEEN_NOTE, messages,
     });
     res.json({
       reply: r.content.filter(b => b.type === "text").map(b => b.text).join(""),

@@ -8,10 +8,15 @@ if (path !== ":memory:") mkdirSync(dirname(path), { recursive: true });
 
 export const db = new DatabaseSync(path);
 export const now = () => new Date().toISOString();
+// Wallet balance in cents: the sum of the person's wallet entries.
+export const walletBalance = userId =>
+  db.prepare("SELECT COALESCE(SUM(amount), 0) AS c FROM wallet_entries WHERE user_id = ?").get(userId).c;
 
 db.exec(`
 PRAGMA journal_mode = WAL;
 PRAGMA foreign_keys = ON;
+-- The bot runner shares this file, so wait briefly for its writes instead of failing.
+PRAGMA busy_timeout = 5000;
 
 -- email is only ever set from a provider that verified it, because it decides
 -- who can open the owner panel. WhatsApp-only accounts have a phone instead.
@@ -24,7 +29,10 @@ CREATE TABLE IF NOT EXISTS users (
   name TEXT NOT NULL,
   picture TEXT,
   stripe_customer_id TEXT,
-  created_at TEXT NOT NULL
+  created_at TEXT NOT NULL,
+  age_group TEXT,
+  age_method TEXT,
+  age_confirmed_at TEXT
 );
 CREATE INDEX IF NOT EXISTS users_email ON users(lower(email));
 
@@ -84,6 +92,7 @@ CREATE TABLE IF NOT EXISTS orders (
   stripe_subscription_id TEXT,
   brief TEXT NOT NULL DEFAULT '',
   deliverable_url TEXT,
+  paid_with TEXT,
   created_at TEXT NOT NULL,
   updated_at TEXT NOT NULL
 );
@@ -116,6 +125,7 @@ CREATE TABLE IF NOT EXISTS showcase (
   url TEXT NOT NULL,
   description TEXT NOT NULL DEFAULT '',
   status TEXT NOT NULL DEFAULT 'pending',
+  adult_only INTEGER NOT NULL DEFAULT 0,
   created_at TEXT NOT NULL
 );
 
@@ -164,6 +174,78 @@ CREATE TABLE IF NOT EXISTS webhook_events (
   id TEXT PRIMARY KEY,
   received_at TEXT NOT NULL
 );
+
+-- Adult confirmations through Stripe: a credit card check (Checkout in setup mode)
+-- or an ID scan with a selfie (Stripe Identity). Only the outcome is kept; dates of
+-- birth, card details and ID images never reach this database.
+CREATE TABLE IF NOT EXISTS age_checks (
+  id INTEGER PRIMARY KEY,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  method TEXT NOT NULL,
+  stripe_id TEXT UNIQUE,
+  status TEXT NOT NULL DEFAULT 'pending',
+  reason TEXT,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS age_checks_user ON age_checks(user_id);
+
+-- Wallet: store credit that can be spent on ForgeCenter. A balance is the sum of
+-- the person's entries, so every change is on record. ref makes entries that come
+-- from Stripe events idempotent.
+CREATE TABLE IF NOT EXISTS wallet_topups (
+  id INTEGER PRIMARY KEY,
+  user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  amount INTEGER NOT NULL,
+  status TEXT NOT NULL,
+  stripe_session_id TEXT UNIQUE,
+  stripe_payment_intent TEXT,
+  refunded INTEGER NOT NULL DEFAULT 0,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS wallet_topups_pi ON wallet_topups(stripe_payment_intent);
+CREATE TABLE IF NOT EXISTS wallet_entries (
+  id INTEGER PRIMARY KEY,
+  user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  amount INTEGER NOT NULL,
+  kind TEXT NOT NULL,
+  order_id INTEGER REFERENCES orders(id),
+  topup_id INTEGER REFERENCES wallet_topups(id),
+  ref TEXT UNIQUE,
+  note TEXT NOT NULL DEFAULT '',
+  created_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS wallet_entries_user ON wallet_entries(user_id);
+
+-- Support tickets. status: ai (the assistant is answering), waiting (for the owner),
+-- answered (the owner replied) or closed. author: customer, ai or staff.
+CREATE TABLE IF NOT EXISTS tickets (
+  id INTEGER PRIMARY KEY,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  subject TEXT NOT NULL,
+  category TEXT NOT NULL,
+  order_id INTEGER REFERENCES orders(id),
+  status TEXT NOT NULL,
+  handoff_note TEXT,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS tickets_user ON tickets(user_id);
+CREATE TABLE IF NOT EXISTS ticket_messages (
+  id INTEGER PRIMARY KEY,
+  ticket_id INTEGER NOT NULL REFERENCES tickets(id) ON DELETE CASCADE,
+  author TEXT NOT NULL,
+  body TEXT NOT NULL,
+  created_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS ticket_messages_ticket ON ticket_messages(ticket_id);
+CREATE TABLE IF NOT EXISTS support_usage (
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  day TEXT NOT NULL,
+  count INTEGER NOT NULL DEFAULT 0,
+  PRIMARY KEY (user_id, day)
+);
 `);
 
 // Upgrades for databases created by older versions.
@@ -192,3 +274,13 @@ if (userColumns.includes("google_sub") || !/AUTOINCREMENT/i.test(usersSql)) {
     COMMIT;`);
   db.exec("PRAGMA foreign_keys = ON");
 }
+
+// Columns added after the tables above first shipped.
+const addColumn = (table, column, type) => {
+  if (!columns(table).includes(column)) db.exec(`ALTER TABLE ${table} ADD COLUMN ${column} ${type}`);
+};
+addColumn("users", "age_group", "TEXT");
+addColumn("users", "age_method", "TEXT");
+addColumn("users", "age_confirmed_at", "TEXT");
+addColumn("orders", "paid_with", "TEXT");
+addColumn("showcase", "adult_only", "INTEGER NOT NULL DEFAULT 0");

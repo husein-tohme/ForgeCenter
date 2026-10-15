@@ -1,8 +1,12 @@
 import express from "express";
 import helmet from "helmet";
-import { catalog } from "./catalog.js";
+import { publicCatalog } from "./catalog.js";
 import { authRouter, meRouter, loadUser } from "./auth.js";
-import { ordersRouter, adminOrdersRouter, stripeWebhook } from "./orders.js";
+import { ordersRouter, adminOrdersRouter } from "./orders.js";
+import { stripeWebhook } from "./webhooks.js";
+import { ageRouter } from "./age.js";
+import { walletRouter, adminWalletRouter } from "./wallet.js";
+import { supportRouter, adminSupportRouter } from "./support.js";
 import { showcaseRouter, adminShowcaseRouter } from "./showcase.js";
 import { tutorRouter } from "./tutor.js";
 import { toolsRouter } from "./tools.js";
@@ -62,14 +66,17 @@ export function createApp() {
     ],
     contactEmail: process.env.CONTACT_EMAIL || null,
   }));
-  app.get("/api/catalog", (_req, res) => res.json(catalog));
+  app.get("/api/catalog", (_req, res) => res.json(publicCatalog()));
 
   app.use("/api/auth", authRouter);
   app.use("/api/auth/whatsapp", whatsappRouter);
   app.use("/api/auth", oauthRouter);
   app.use("/api/me", meRouter);
   app.use("/api", ordersRouter);
-  app.use("/api/admin", adminOrdersRouter, adminShowcaseRouter, adminServicesRouter);
+  app.use("/api/admin", adminOrdersRouter, adminShowcaseRouter, adminServicesRouter, adminWalletRouter, adminSupportRouter);
+  app.use("/api/age", ageRouter);
+  app.use("/api/wallet", walletRouter);
+  app.use("/api/support", supportRouter);
   app.use("/api/services", servicesRouter);
   app.use("/api/showcase", showcaseRouter);
   app.use("/api/tutor", tutorRouter);

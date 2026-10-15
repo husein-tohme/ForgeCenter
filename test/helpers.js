@@ -24,8 +24,15 @@ after(() => server.close());
 
 export const url = path => base + path;
 
-export function signIn(email, sub = email) {
-  const user = signInWith({ provider: "google", subject: sub, email, emailVerified: true, name: email.split("@")[0] });
+// Signs in a Google account that has passed the birthday question (teen group by
+// default, as on the real site). Pass age: "adult" for a confirmed adult, or null for
+// a brand-new account that hasn't answered yet.
+export function signIn(email, sub = email, { age = "teen" } = {}) {
+  let user = signInWith({ provider: "google", subject: sub, email, emailVerified: true, name: email.split("@")[0] });
+  if (age !== null && !user.age_group) {
+    db.prepare("UPDATE users SET age_group = ? WHERE id = ?").run(age, user.id);
+    user = db.prepare("SELECT * FROM users WHERE id = ?").get(user.id);
+  }
   return { user, cookie: `fc_session=${createSession(user.id)}` };
 }
 

@@ -30,3 +30,14 @@ export const catalog = {
 };
 
 export const modeOf = item => (item.monthly ? "subscription" : "payment");
+
+// Products only adults can buy (age confirmed by a credit card check or an ID scan).
+// Big projects are contracts, and minors can back out of contracts.
+export const isAdultOnly = key =>
+  (process.env.ADULT_ONLY_PRODUCTS ?? "game,website").split(",").map(s => s.trim()).includes(key);
+
+// One-time products can be paid from the wallet; monthly plans go through Stripe.
+export const walletPayable = item => !!item?.price && !item.monthly;
+
+export const publicCatalog = () => Object.fromEntries(Object.entries(catalog).map(([key, item]) =>
+  [key, { ...item, adultOnly: isAdultOnly(key), walletPayable: walletPayable(item) }]));

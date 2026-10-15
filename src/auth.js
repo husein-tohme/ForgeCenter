@@ -4,9 +4,10 @@
 import express from "express";
 import { OAuth2Client } from "google-auth-library";
 import { createHash, randomBytes } from "node:crypto";
-import { db, now } from "./db.js";
+import { db, now, walletBalance } from "./db.js";
 import { rateLimit } from "./limit.js";
 import { panelUserId } from "./pterodactyl.js";
+import { notify } from "./email.js";
 
 const COOKIE = "fc_session";
 const MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000;
@@ -22,6 +23,8 @@ export const isAdmin = user => !!user?.email && adminEmails().has(user.email.toL
 export const publicUser = u => u && ({
   id: u.id, email: u.email, phone: u.phone, name: u.name, picture: u.picture,
   isAdmin: isAdmin(u), hasBilling: !!u.stripe_customer_id,
+  ageGroup: u.age_group, ageMethod: u.age_method, ageConfirmedAt: u.age_confirmed_at,
+  wallet: walletBalance(u.id),
 });
 
 export function parseCookies(header = "") {
@@ -94,8 +97,25 @@ export function loadUser(req, _res, next) {
   next();
 }
 
-export const requireUser = (req, res, next) =>
+// Signed in, whatever the account's state. Only for managing the account itself.
+export const requireSignedIn = (req, res, next) =>
   req.user ? next() : res.status(401).json({ error: "Sign in to continue." });
+
+// Signed in and past the birthday question every new account answers first, like
+// Discord's sign-up. Accounts of people under 13 can't be used.
+export function requireUser(req, res, next) {
+  if (!req.user) return res.status(401).json({ error: "Sign in to continue." });
+  if (req.user.age_group === "under13") return res.status(403).json({ error: "This account is closed because ForgeCenter is for people 13 and older.", needs: "closed" });
+  if (!req.user.age_group) return res.status(403).json({ error: "Tell us your birthday first.", needs: "birthday" });
+  next();
+}
+
+// Adults whose age was confirmed by a credit card check or an ID scan.
+export const isAdult = user => user?.age_group === "adult";
+export function requireAdult(req, res, next) {
+  if (isAdult(req.user)) return next();
+  res.status(403).json({ error: "This is for adults. Confirm your age to continue.", needs: "adult" });
+}
 
 export const requireAdmin = (req, res, next) =>
   isAdmin(req.user) ? next() : res.status(403).json({ error: "Only the site owner can do this." });
@@ -137,19 +157,19 @@ export const meRouter = express.Router();
 
 meRouter.get("/", (req, res) => res.json({ user: publicUser(req.user) ?? null }));
 
-meRouter.patch("/", requireUser, (req, res) => {
+meRouter.patch("/", requireSignedIn, (req, res) => {
   const name = String(req.body?.name ?? "").trim().slice(0, 50);
   if (!name) return res.status(400).json({ error: "Enter a name." });
   db.prepare("UPDATE users SET name = ? WHERE id = ?").run(name, req.user.id);
   res.json({ user: publicUser(db.prepare("SELECT * FROM users WHERE id = ?").get(req.user.id)) });
 });
 
-meRouter.get("/identities", requireUser, (req, res) => {
+meRouter.get("/identities", requireSignedIn, (req, res) => {
   res.json({ identities: db.prepare(`SELECT provider, display, created_at AS createdAt FROM identities
     WHERE user_id = ? ORDER BY created_at`).all(req.user.id) });
 });
 
-meRouter.delete("/identities/:provider", requireUser, (req, res) => {
+meRouter.delete("/identities/:provider", requireSignedIn, (req, res) => {
   const count = db.prepare("SELECT COUNT(*) AS n FROM identities WHERE user_id = ?").get(req.user.id).n;
   if (count <= 1) return res.status(409).json({ error: "Connect another sign-in method before removing your last one." });
   const r = db.prepare("DELETE FROM identities WHERE user_id = ? AND provider = ?").run(req.user.id, req.params.provider);
@@ -157,19 +177,80 @@ meRouter.delete("/identities/:provider", requireUser, (req, res) => {
   res.json({ ok: true });
 });
 
-meRouter.delete("/", requireUser, (req, res) => {
+// Why an account can't be deleted right now, or null if it can.
+function deleteBlocker(userId) {
   const activeSubs = db.prepare(`SELECT COUNT(*) AS n FROM orders WHERE user_id = ?
-    AND subscription_status IN ('active', 'past_due')`).get(req.user.id).n;
-  if (activeSubs) return res.status(409).json({ error: "Cancel your subscriptions in Manage billing before deleting your account." });
+    AND subscription_status IN ('active', 'past_due')`).get(userId).n;
+  if (activeSubs) return "Cancel your subscriptions in Manage billing before deleting your account.";
+  const balance = walletBalance(userId);
+  if (balance > 0) return `You have $${(balance / 100).toFixed(2)} in your wallet. Spend it, or open a support ticket to have it refunded, before deleting your account.`;
+  return null;
+}
+
+function deleteAccount(userId) {
   // If they ever had a Minecraft server, queue their game panel login to be locked.
   db.prepare(`INSERT OR IGNORE INTO panel_cleanups (external_id) SELECT ? WHERE EXISTS (
       SELECT 1 FROM services s JOIN orders o ON o.id = s.order_id
       WHERE o.user_id = ? AND s.kind = 'minecraft' AND s.panel_server_id IS NOT NULL)`)
-    .run(panelUserId(req.user.id), req.user.id);
-  // Orders are kept for tax records, but without the person's name, brief or messages.
-  db.prepare("DELETE FROM order_messages WHERE order_id IN (SELECT id FROM orders WHERE user_id = ?)").run(req.user.id);
-  db.prepare("UPDATE orders SET brief = '' WHERE user_id = ?").run(req.user.id);
-  db.prepare("DELETE FROM users WHERE id = ?").run(req.user.id);
+    .run(panelUserId(userId), userId);
+  // Orders and wallet records are kept for tax records, but without the person's
+  // name, brief or messages. Tickets and age checks go with the account.
+  db.prepare("DELETE FROM order_messages WHERE order_id IN (SELECT id FROM orders WHERE user_id = ?)").run(userId);
+  db.prepare("UPDATE orders SET brief = '' WHERE user_id = ?").run(userId);
+  db.prepare("DELETE FROM users WHERE id = ?").run(userId);
+}
+
+meRouter.delete("/", requireSignedIn, (req, res) => {
+  const blocker = deleteBlocker(req.user.id);
+  if (blocker) return res.status(409).json({ error: blocker });
+  deleteAccount(req.user.id);
   res.clearCookie(COOKIE, { path: "/" });
   res.json({ ok: true });
+});
+
+// ---------- Birthday (age screen) ----------
+// Asked once, right after the first sign-in, without hinting at the answer that
+// passes. Every account starts in the teen group, as on Discord; only a credit card
+// check or an ID scan (age.js) moves it to adult. Only the group is stored, never
+// the birthday itself.
+const AGE_BLOCK = "fc_age_block";
+const MIN_AGE = 13;
+
+export function ageOn(today, year, month, day) {
+  let age = today.getUTCFullYear() - year;
+  if (today.getUTCMonth() + 1 < month || (today.getUTCMonth() + 1 === month && today.getUTCDate() < day)) age--;
+  return age;
+}
+
+function validBirthday(year, month, day, today) {
+  if (![year, month, day].every(Number.isInteger)) return false;
+  const d = new Date(Date.UTC(year, month - 1, day));
+  return year >= 1900 && d.getUTCMonth() === month - 1 && d.getUTCDate() === day && d <= today;
+}
+
+meRouter.post("/birthday", requireSignedIn, rateLimit({ windowMs: 60_000, max: 10 }), (req, res) => {
+  if (req.user.age_group) return res.json({ user: publicUser(req.user) }); // answered already; it can't be changed
+  // Someone under 13 was turned away in this browser recently, so don't let them try another date.
+  if (parseCookies(req.headers.cookie)[AGE_BLOCK]) {
+    return res.status(403).json({ error: "A new account can't be set up in this browser right now. Try again tomorrow.", needs: "blocked" });
+  }
+  const today = new Date();
+  const { year, month, day } = req.body ?? {};
+  if (!validBirthday(year, month, day, today)) return res.status(400).json({ error: "Choose your full date of birth." });
+
+  if (ageOn(today, year, month, day) < MIN_AGE) {
+    res.cookie(AGE_BLOCK, "1", { httpOnly: true, sameSite: "lax", path: "/", maxAge: 24 * 60 * 60 * 1000, secure: process.env.NODE_ENV === "production" });
+    res.clearCookie(COOKIE, { path: "/" });
+    if (deleteBlocker(req.user.id)) {
+      // Rare: an older account with paid subscriptions or credit. Close it and let the owner sort out refunds.
+      db.prepare("UPDATE users SET age_group = 'under13' WHERE id = ?").run(req.user.id);
+      db.prepare("DELETE FROM sessions WHERE user_id = ?").run(req.user.id);
+      notify.underageAccount(req.user);
+    } else {
+      deleteAccount(req.user.id);
+    }
+    return res.status(403).json({ error: "ForgeCenter accounts are for people 13 and older, so this account wasn't kept. The free creator tools still work without an account.", needs: "closed" });
+  }
+  db.prepare("UPDATE users SET age_group = 'teen' WHERE id = ? AND age_group IS NULL").run(req.user.id);
+  res.json({ user: publicUser(db.prepare("SELECT * FROM users WHERE id = ?").get(req.user.id)) });
 });

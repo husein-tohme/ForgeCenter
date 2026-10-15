@@ -76,4 +76,28 @@ export const notify = {
         `${preview}\n\nReply in the owner panel: ${site()}/admin`);
     }
   },
+
+  underageAccount(user) {
+    send(owners(), `Account ${user.id} closed: under 13`,
+      `${user.name} (${user.email ?? user.phone ?? "no email"}) said they're under 13. Their account has paid subscriptions or wallet credit, so it was closed instead of deleted.\n\nCancel and refund their subscriptions in Stripe and refund any wallet credit. The account stays locked: it can sign in but can't use anything.`);
+  },
+
+  walletCredited(userId, cents, reason) {
+    const c = db.prepare("SELECT email, name FROM users WHERE id = ?").get(userId);
+    if (c) send(c.email, `$${(cents / 100).toFixed(2)} added to your ForgeCenter wallet`,
+      `Hi ${c.name},\n\nWe added $${(cents / 100).toFixed(2)} to your wallet for ${reason}. You can spend it on anything with a one-time price.\n\nSee your wallet: ${site()}/account#wallet\n\nForgeCenter`);
+  },
+
+  ticketWaiting(ticket) {
+    const c = db.prepare("SELECT email, phone, name FROM users WHERE id = ?").get(ticket.user_id);
+    send(owners(), `Support ticket ${ticket.id} needs you: ${ticket.subject}`,
+      `${c?.name ?? "A customer"} (${c?.email ?? c?.phone ?? "no email"}) needs a person.${ticket.handoff_note ? `\n\n${ticket.handoff_note}` : ""}\n\nReply in the owner panel: ${site()}/admin#tickets`);
+  },
+
+  ticketAnswered(ticket, body) {
+    const c = db.prepare("SELECT email, name FROM users WHERE id = ?").get(ticket.user_id);
+    const preview = body.length > 500 ? `${body.slice(0, 500)}…` : body;
+    if (c) send(c.email, `Reply to your ticket: ${ticket.subject}`,
+      `Hi ${c.name},\n\nForgeCenter wrote:\n\n${preview}\n\nReply here: ${site()}/support?ticket=${ticket.id}`);
+  },
 };
