@@ -219,10 +219,12 @@ test("databases from the Google-only version are upgraded in place", () => {
       order: db.prepare("SELECT user_id FROM orders WHERE id = 1").get(),
       fk: db.prepare("PRAGMA foreign_key_check").all().length,
       kind: db.prepare("PRAGMA table_info(mods)").all().some(c => c.name === "kind"),
+      autoincrement: /AUTOINCREMENT/.test(db.prepare("SELECT sql FROM sqlite_master WHERE name = 'users'").get().sql),
     }));`));
   assert.deepEqual({ ...out.user }, { id: 7, email: "old@example.com", phone: null, name: "Old Timer", stripe_customer_id: "cus_1" });
   assert.deepEqual({ ...out.identity }, { provider: "google", subject: "g-7", user_id: 7 });
   assert.equal(out.order.user_id, 7);
   assert.equal(out.fk, 0);
   assert.equal(out.kind, true);
+  assert.equal(out.autoincrement, true);
 });

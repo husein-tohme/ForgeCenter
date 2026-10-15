@@ -4,6 +4,9 @@
 export const panelEnabled = () => !!(process.env.PTERODACTYL_URL && process.env.PTERODACTYL_APP_KEY
   && process.env.PTERODACTYL_NEST_ID && process.env.PTERODACTYL_EGG_ID && process.env.PTERODACTYL_LOCATION_ID);
 
+// Account ids are never reused (AUTOINCREMENT), so the id alone names a panel account.
+export const panelUserId = userId => `forgecenter-user-${userId}`;
+
 export class PanelError extends Error {
   constructor(message, status) { super(message); this.status = status; }
 }
@@ -43,6 +46,19 @@ export async function ensureUser({ externalId, email, username, firstName, lastN
     external_id: externalId, email, username, first_name: firstName || "Player", last_name: lastName || "ForgeCenter",
   });
   return created.attributes;
+}
+
+// Locks a panel account for good: new random email, username and password, so the
+// old login stops working and the email can be used again.
+export async function lockUser(externalId) {
+  const user = (await findOrNull(app("GET", `/users/external/${encodeURIComponent(externalId)}`)))?.attributes;
+  if (!user) return false;
+  const tag = `deleted-${crypto.randomUUID()}`;
+  await app("PATCH", `/users/${user.id}`, {
+    external_id: tag, email: `${tag}@users.forgecenter.invalid`, username: tag,
+    first_name: "Deleted", last_name: "Account", password: crypto.randomUUID() + crypto.randomUUID(),
+  });
+  return true;
 }
 
 let eggCache;

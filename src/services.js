@@ -88,13 +88,10 @@ async function provision(s) {
   const user = s.user_id && db.prepare("SELECT * FROM users WHERE id = ?").get(s.user_id);
   if (!user) throw new Error("The customer's account was deleted.");
   const [first, ...rest] = user.name.split(" ");
-  // SQLite can give a deleted account's id to the next new account, so the panel
-  // account is keyed on the id plus when the account was made, never the id alone.
-  const ref = `${user.id}-${(Date.parse(user.created_at) || 0).toString(36)}`;
   const panelUser = await panel.ensureUser({
-    externalId: `forgecenter-user-${ref}`,
-    email: user.email ?? `user${ref}@users.forgecenter.invalid`,
-    username: `fc${ref}`, firstName: first, lastName: rest.join(" ") || "Player",
+    externalId: panel.panelUserId(user.id),
+    email: user.email ?? `user${user.id}@users.forgecenter.invalid`,
+    username: `fc${user.id}`, firstName: first, lastName: rest.join(" ") || "Player",
   });
   const server = await panel.ensureServer({
     externalId: `forgecenter-order-${s.order_id}`, name: `ForgeCenter order ${s.order_id}`, userId: panelUser.id,
@@ -109,11 +106,30 @@ async function provision(s) {
   markDelivered(s.order_id);
 }
 
+// Deleted customers lose their panel login: it's locked and renamed, which also
+// frees their email in case they come back.
+async function lockDeletedPanelUsers(at) {
+  const rows = db.prepare("SELECT * FROM panel_cleanups WHERE next_attempt_at <= ?").all(at);
+  if (rows.length && !panel.panelEnabled()) return;
+  for (const row of rows) {
+    try {
+      await panel.lockUser(row.external_id);
+      db.prepare("DELETE FROM panel_cleanups WHERE external_id = ?").run(row.external_id);
+    } catch (e) {
+      const attempts = row.attempts + 1;
+      db.prepare("UPDATE panel_cleanups SET attempts = ?, next_attempt_at = ?, last_error = ? WHERE external_id = ?")
+        .run(attempts, at + Math.min(60 * 60_000, 30_000 * 2 ** (attempts - 1)), String(e.message).slice(0, 500), row.external_id);
+      console.error(`Locking panel user ${row.external_id} failed:`, e.message);
+    }
+  }
+}
+
 let running = false;
 export async function reconcileServices(at = Date.now()) {
   if (running) return;
   running = true;
   try {
+    await lockDeletedPanelUsers(at);
     const rows = db.prepare(`SELECT s.*, o.status AS order_status, o.subscription_status, o.user_id
       FROM services s JOIN orders o ON o.id = s.order_id
       WHERE s.kind = 'minecraft' AND s.state IN ('provisioning', 'active', 'suspended')`).all();

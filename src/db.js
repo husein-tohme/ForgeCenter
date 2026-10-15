@@ -15,8 +15,10 @@ PRAGMA foreign_keys = ON;
 
 -- email is only ever set from a provider that verified it, because it decides
 -- who can open the owner panel. WhatsApp-only accounts have a phone instead.
+-- AUTOINCREMENT so a deleted account's id is never given to someone new: other
+-- systems (the game panel, Stripe metadata) remember users by id.
 CREATE TABLE IF NOT EXISTS users (
-  id INTEGER PRIMARY KEY,
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
   email TEXT,
   phone TEXT,
   name TEXT NOT NULL,
@@ -150,6 +152,14 @@ CREATE TABLE IF NOT EXISTS services (
   updated_at TEXT NOT NULL
 );
 
+-- Game panel accounts of deleted customers, waiting to be locked.
+CREATE TABLE IF NOT EXISTS panel_cleanups (
+  external_id TEXT PRIMARY KEY,
+  attempts INTEGER NOT NULL DEFAULT 0,
+  next_attempt_at INTEGER NOT NULL DEFAULT 0,
+  last_error TEXT
+);
+
 CREATE TABLE IF NOT EXISTS webhook_events (
   id TEXT PRIMARY KEY,
   received_at TEXT NOT NULL
@@ -160,18 +170,22 @@ CREATE TABLE IF NOT EXISTS webhook_events (
 const columns = table => db.prepare(`PRAGMA table_info(${table})`).all().map(c => c.name);
 if (!columns("mods").includes("kind")) db.exec("ALTER TABLE mods ADD COLUMN kind TEXT NOT NULL DEFAULT 'mod'");
 
-// v0.2 stored one Google ID per user. Move it to identities and allow other providers.
-if (columns("users").includes("google_sub")) {
+// Rebuild users when it comes from an older version: v0.2 stored one Google ID per
+// user (moved to identities), and versions before 0.4 could reuse deleted ids.
+const usersSql = db.prepare("SELECT sql FROM sqlite_master WHERE type = 'table' AND name = 'users'").get()?.sql ?? "";
+const userColumns = columns("users");
+if (userColumns.includes("google_sub") || !/AUTOINCREMENT/i.test(usersSql)) {
+  const phone = userColumns.includes("phone") ? "phone" : "NULL";
   db.exec("PRAGMA foreign_keys = OFF");
   db.exec(`BEGIN;
     CREATE TABLE users_new (
-      id INTEGER PRIMARY KEY, email TEXT, phone TEXT, name TEXT NOT NULL, picture TEXT,
+      id INTEGER PRIMARY KEY AUTOINCREMENT, email TEXT, phone TEXT, name TEXT NOT NULL, picture TEXT,
       stripe_customer_id TEXT, created_at TEXT NOT NULL
     );
-    INSERT INTO users_new (id, email, name, picture, stripe_customer_id, created_at)
-      SELECT id, email, name, picture, stripe_customer_id, created_at FROM users;
-    INSERT INTO identities (provider, subject, user_id, display, created_at)
-      SELECT 'google', google_sub, id, email, created_at FROM users;
+    INSERT INTO users_new (id, email, phone, name, picture, stripe_customer_id, created_at)
+      SELECT id, email, ${phone}, name, picture, stripe_customer_id, created_at FROM users;
+    ${userColumns.includes("google_sub") ? `INSERT INTO identities (provider, subject, user_id, display, created_at)
+      SELECT 'google', google_sub, id, email, created_at FROM users;` : ""}
     DROP TABLE users;
     ALTER TABLE users_new RENAME TO users;
     CREATE INDEX IF NOT EXISTS users_email ON users(lower(email));

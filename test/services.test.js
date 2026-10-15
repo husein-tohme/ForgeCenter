@@ -58,10 +58,20 @@ beforeEach(() => {
       const user = panel.users.get(decodeURIComponent(m[1]));
       return user ? json({ attributes: user }) : json({ errors: [{ detail: "Not found" }] }, 404);
     }
+    // Like the real panel, emails and usernames must be unique.
+    const taken = (b, exceptId) => [...panel.users.values()].some(x => x.id !== exceptId && (x.email === b.email || x.username === b.username));
     if (u.pathname === "/api/application/users" && method === "POST") {
+      if (taken(body)) return json({ errors: [{ detail: "The email or username has already been taken." }] }, 422);
       const user = { id: panel.nextId++, ...body };
       panel.users.set(body.external_id, user);
       return json({ attributes: user }, 201);
+    }
+    if ((m = u.pathname.match(/^\/api\/application\/users\/(\d+)$/)) && method === "PATCH") {
+      const [key, user] = [...panel.users.entries()].find(([, x]) => x.id === Number(m[1]));
+      if (taken(body, user.id)) return json({ errors: [{ detail: "The email or username has already been taken." }] }, 422);
+      panel.users.delete(key);
+      panel.users.set(body.external_id, { ...user, ...body });
+      return json({ attributes: { ...user, ...body } });
     }
     if (u.pathname === "/api/application/nests/1/eggs/5") {
       return json({ attributes: { docker_image: "ghcr.io/pterodactyl/yolks:java_21", startup: "java -jar {{SERVER_JARFILE}}",
@@ -126,21 +136,34 @@ test("a paid hosting order becomes a Minecraft server with the advertised limits
   assert.match(order.service.panelUrl, /^https:\/\/panel\.test\/server\/abcd/);
 });
 
-test("a reused account id never inherits a deleted customer's panel account", async () => {
-  const gone = await paidOrder("leaver@example.com", "mcserver", "sub_reuse1");
+test("account ids are never reused", async () => {
+  const first = signIn("first-in@example.com");
+  db.prepare("DELETE FROM users WHERE id = ?").run(first.user.id);
+  const next = signIn("next-in@example.com");
+  assert.ok(next.user.id > first.user.id);
+});
+
+test("deleting an account locks its game panel login, and the person can come back", async () => {
+  const o = await paidOrder("returning@example.com", "mcserver", "sub_return1");
   await reconcileServices();
-  // Deleting the newest account lets SQLite hand its id to the next sign-up.
-  db.prepare("UPDATE users SET created_at = '2026-01-01T00:00:00.000Z' WHERE id = ?").run(gone.user.id);
-  db.prepare("DELETE FROM users WHERE id = ?").run(gone.user.id);
-  const next = await paidOrder("newcomer@example.com", "mcserver", "sub_reuse2");
-  assert.equal(next.user.id, gone.user.id, "the id was reused");
+  const oldPanelUser = [...panel.users.values()].find(x => x.email === "returning@example.com");
+  db.prepare("UPDATE orders SET subscription_status = 'canceled' WHERE id = ?").run(o.orderId);
+  assert.equal((await api("/api/me", { method: "DELETE", body: {}, cookie: o.cookie })).status, 200);
+
   await reconcileServices();
-  const userCreates = calls.filter(c => c.method === "POST" && c.path === "/api/application/users").map(c => c.body);
-  assert.equal(userCreates.length, 2);
-  assert.notEqual(userCreates[0].external_id, userCreates[1].external_id);
-  assert.notEqual(userCreates[0].username, userCreates[1].username);
-  const newServer = calls.filter(c => c.method === "POST" && c.path === "/api/application/servers").at(-1).body;
-  assert.equal(newServer.user, panel.users.get(userCreates[1].external_id).id);
+  const patch = calls.find(c => c.method === "PATCH" && c.path === `/api/application/users/${oldPanelUser.id}`);
+  assert.ok(patch, "the old panel login was changed");
+  assert.match(patch.body.email, /^deleted-.+@users\.forgecenter\.invalid$/);
+  assert.notEqual(patch.body.username, oldPanelUser.username);
+  assert.ok(patch.body.password.length >= 32);
+  assert.equal(db.prepare("SELECT COUNT(*) AS n FROM panel_cleanups").get().n, 0);
+
+  // Same Google email, new account: gets its own panel login without a clash.
+  const back = await paidOrder("returning@example.com", "mcserver", "sub_return2");
+  await reconcileServices();
+  assert.equal(back.service().state, "active");
+  const fresh = [...panel.users.values()].find(x => x.email === "returning@example.com");
+  assert.notEqual(fresh.id, oldPanelUser.id);
 });
 
 test("retries never create a second server", async () => {

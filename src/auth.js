@@ -6,6 +6,7 @@ import { OAuth2Client } from "google-auth-library";
 import { createHash, randomBytes } from "node:crypto";
 import { db, now } from "./db.js";
 import { rateLimit } from "./limit.js";
+import { panelUserId } from "./pterodactyl.js";
 
 const COOKIE = "fc_session";
 const MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000;
@@ -160,6 +161,11 @@ meRouter.delete("/", requireUser, (req, res) => {
   const activeSubs = db.prepare(`SELECT COUNT(*) AS n FROM orders WHERE user_id = ?
     AND subscription_status IN ('active', 'past_due')`).get(req.user.id).n;
   if (activeSubs) return res.status(409).json({ error: "Cancel your subscriptions in Manage billing before deleting your account." });
+  // If they ever had a Minecraft server, queue their game panel login to be locked.
+  db.prepare(`INSERT OR IGNORE INTO panel_cleanups (external_id) SELECT ? WHERE EXISTS (
+      SELECT 1 FROM services s JOIN orders o ON o.id = s.order_id
+      WHERE o.user_id = ? AND s.kind = 'minecraft' AND s.panel_server_id IS NOT NULL)`)
+    .run(panelUserId(req.user.id), req.user.id);
   // Orders are kept for tax records, but without the person's name, brief or messages.
   db.prepare("DELETE FROM order_messages WHERE order_id IN (SELECT id FROM orders WHERE user_id = ?)").run(req.user.id);
   db.prepare("UPDATE orders SET brief = '' WHERE user_id = ?").run(req.user.id);
