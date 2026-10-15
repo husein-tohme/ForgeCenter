@@ -73,7 +73,7 @@ function showResult(item) {
 
 // ---------- Villager-style trade list ----------
 function renderTrades() {
-  const order = ["website", "mcserver", "discord", "game", "ai", "showcase"];
+  const order = ["website", "mcserver", "discord", "game", "roblox", "launcher", "ai", "showcase"];
   $("trades").innerHTML = order.filter(k => catalog[k]).map(k => {
     const p = catalog[k];
     return `<div class="trade${k === "website" ? " featured" : ""}">

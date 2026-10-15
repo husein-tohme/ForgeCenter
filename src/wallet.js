@@ -51,23 +51,46 @@ function creditTopup(session) {
 const setTopupStatus = (session, status) => db.prepare(`UPDATE wallet_topups SET status = ?, updated_at = ?
   WHERE stripe_session_id = ? AND status = 'awaiting_payment'`).run(status, now(), session.id);
 
+const piOf = obj => (typeof obj.payment_intent === "string" ? obj.payment_intent : obj.payment_intent?.id);
+const topupFor = obj => { const pi = piOf(obj); return pi ? db.prepare("SELECT * FROM wallet_topups WHERE stripe_payment_intent = ?").get(pi) : null; };
+
 // A top-up refunded from the Stripe Dashboard takes the same amount out of the wallet.
+// The charge can be in another currency (Adaptive Pricing), so work in shares of it.
 function refundTopup(charge) {
-  const pi = typeof charge.payment_intent === "string" ? charge.payment_intent : charge.payment_intent?.id;
-  const topup = pi && db.prepare("SELECT * FROM wallet_topups WHERE stripe_payment_intent = ?").get(pi);
+  const topup = topupFor(charge);
   if (!topup) return;
+  const share = charge.refunded || !charge.amount ? 1 : Math.min(1, charge.amount_refunded / charge.amount);
   transaction(() => {
     const fresh = db.prepare("SELECT refunded FROM wallet_topups WHERE id = ?").get(topup.id);
-    const delta = Math.min(charge.amount_refunded, topup.amount) - fresh.refunded;
+    const delta = Math.round(topup.amount * share) - fresh.refunded;
     if (delta <= 0) return;
     db.prepare("UPDATE wallet_topups SET refunded = refunded + ?, updated_at = ? WHERE id = ?").run(delta, now(), topup.id);
     addEntry({ userId: topup.user_id, amount: -delta, kind: "topup_refund", topupId: topup.id, ref: `refund:${charge.id}:${charge.amount_refunded}` });
   });
 }
 
+// A chargeback on a top-up takes its credit back while the bank decides; winning the
+// dispute gives it back. Either way the owner hears about it.
+function disputeTopup(dispute, won) {
+  const topup = topupFor(dispute);
+  if (!topup) return;
+  const held = topup.amount - topup.refunded;
+  if (held <= 0) return;
+  const added = won
+    ? addEntry({ userId: topup.user_id, amount: held, kind: "dispute", topupId: topup.id, ref: `dispute-won:${dispute.id}`, note: "Card dispute closed in your favour" })
+    : addEntry({ userId: topup.user_id, amount: -held, kind: "dispute", topupId: topup.id, ref: `dispute:${dispute.id}`, note: "Card dispute opened with your bank" });
+  if (added) notify.topupDisputed(topup, won);
+}
+
 export function handleWalletEvent(event) {
   const obj = event.data.object;
   if (event.type === "charge.refunded") return refundTopup(obj);
+  if (event.type === "charge.dispute.created") return disputeTopup(obj, false);
+  if (event.type === "charge.dispute.closed") {
+    // Only give credit back if it was taken for this dispute in the first place.
+    const taken = db.prepare("SELECT 1 FROM wallet_entries WHERE ref = ?").get(`dispute:${obj.id}`);
+    return obj.status === "won" && taken ? disputeTopup(obj, true) : undefined;
+  }
   if (checkoutKind(obj) !== "wallet_topup") return;
   switch (event.type) {
     case "checkout.session.completed":
@@ -133,6 +156,8 @@ walletRouter.post("/topup", requireUser, rateLimit({ windowMs: 60_000, max: 5 })
         name: "ForgeCenter wallet credit", description: "Store credit to spend on ForgeCenter. It can't be withdrawn or transferred." } } }],
       metadata, payment_intent_data: { metadata },
       success_url: `${baseUrl(req)}/account?topup=${id}#wallet`, cancel_url: `${baseUrl(req)}/account#wallet`,
+      // Just over Stripe's 30-minute minimum, so an abandoned checkout clears quickly.
+      expires_at: Math.floor(Date.now() / 1000) + 31 * 60,
       integration_identifier: CHECKOUT_LABELS.wallet,
     });
     db.prepare("UPDATE wallet_topups SET stripe_session_id = ? WHERE id = ?").run(session.id, id);
@@ -155,8 +180,8 @@ walletRouter.post("/pay", requireUser, rateLimit({ windowMs: 60_000, max: 10 }),
     const balance = walletBalance(req.user.id);
     if (balance < item.price) return null;
     const t = now();
-    const id = Number(db.prepare(`INSERT INTO orders (user_id, product, amount, monthly, status, paid_with, created_at, updated_at)
-      VALUES (?, ?, ?, 0, 'paid', 'wallet', ?, ?)`).run(req.user.id, key, item.price, t, t).lastInsertRowid);
+    const id = Number(db.prepare(`INSERT INTO orders (user_id, product, amount, monthly, status, paid_with, paid_at, created_at, updated_at)
+      VALUES (?, ?, ?, 0, 'paid', 'wallet', ?, ?, ?)`).run(req.user.id, key, item.price, t, t, t).lastInsertRowid);
     addEntry({ userId: req.user.id, amount: -item.price, kind: "purchase", orderId: id, ref: `order:${id}` });
     return id;
   });
@@ -172,14 +197,14 @@ walletRouter.post("/pay", requireUser, rateLimit({ windowMs: 60_000, max: 10 }),
 export const adminWalletRouter = express.Router();
 adminWalletRouter.use(requireUser, requireAdmin);
 
-const PAID_OR_DONE = ["paid", "in_progress", "delivered", "canceled"];
 
 // Refund part or all of an order as wallet credit. Card refunds go through the Stripe Dashboard.
 adminWalletRouter.post("/orders/:id/wallet-refund", (req, res) => {
   const order = db.prepare("SELECT * FROM orders WHERE id = ?").get(Number(req.params.id));
   if (!order) return res.status(404).json({ error: "Order not found." });
   if (!order.user_id) return res.status(409).json({ error: "This customer deleted their account, so there's no wallet to refund to." });
-  if (!PAID_OR_DONE.includes(order.status)) return res.status(409).json({ error: "Only paid orders can be refunded." });
+  // paid_at, not the status: the owner can mark any order canceled, paid or not.
+  if (!order.paid_at) return res.status(409).json({ error: "This order was never paid, so there's nothing to refund." });
   const amount = Number(req.body?.amount);
   const refunded = db.prepare("SELECT COALESCE(SUM(amount), 0) AS c FROM wallet_entries WHERE order_id = ? AND kind = 'refund'").get(order.id).c;
   const left = order.amount + order.monthly - refunded;

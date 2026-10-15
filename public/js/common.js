@@ -30,6 +30,10 @@ const ICONS = {
     "........", "cccccccc", "kkkkkkkk", "cccccccc", "cggccccc", "cggcwwwc", "cccccccc", "........"] },
   idcard: { c: { f: "#5c5f66", p: "#ede6d6", s: "#e0ac69", h: "#3b7bd6", k: "#8b8b8b" }, m: [
     "........", "ffffffff", "fsspkkpf", "fssppppf", "fhhpkkpf", "fhhppppf", "ffffffff", "........"] },
+  gamepad: { c: { k: "#3a3a3a", K: "#6b6f78", w: "#ffffff", r: "#d9372b", b: "#3b7bd6" }, m: [
+    "........", "..kkkk..", ".kKKKKk.", "kKwKKrKk", "kwwwKKbk", "kKwKKKKk", "kKKkkKKk", ".kk..kk."] },
+  rocket: { c: { w: "#e8e8e8", b: "#3b7bd6", r: "#d9372b", o: "#f2c230" }, m: [
+    "...ww...", "..wbbw..", "..wbbw..", "..wwww..", ".rwwwwr.", "rr.ww.rr", "...oo...", "..o..o.."] },
   barrier: { c: { r: "#d9372b" }, m: [
     "..rrrr..", ".rr...r.", "r.rr...r", "r..rr..r", "r...rr.r", "r....rrr", ".r....r.", "..rrrr.."] },
 };
@@ -47,7 +51,7 @@ export function icon(name, label = "") {
   return `<svg class="px" viewBox="0 0 8 8" shape-rendering="crispEdges" ${a11y}>${rects}</svg>`;
 }
 
-export const PRODUCT_ICON = { website: "monitor", mcserver: "grass", discord: "bot", game: "diamond", ai: "eye", showcase: "frame" };
+export const PRODUCT_ICON = { website: "monitor", mcserver: "grass", discord: "bot", game: "diamond", roblox: "gamepad", launcher: "rocket", ai: "eye", showcase: "frame" };
 
 // Order status: label shown on the pill, and what it means for the customer.
 export const STATUS = {
@@ -300,8 +304,12 @@ export async function requireSignIn(action, resume = null) {
 let catalogPromise;
 export const getCatalog = () => catalogPromise ??= api("/api/catalog").then(r => (r.ok ? r.data : {}));
 
+// Actions waiting for a brand-new account to answer the birthday question.
+let afterBirthday = null;
+
 export function checkout(product, button) {
   return requireSignIn(async () => {
+    if (!currentUser.ageGroup) { afterBirthday = () => checkout(product, button); return openBirthday(); }
     const item = (await getCatalog())[product];
     if (item?.adultOnly && currentUser.ageGroup !== "adult") {
       return openAgeConfirm(`Confirm you're an adult to buy a ${item.name.toLowerCase()}.`);
@@ -378,7 +386,12 @@ function birthdayDialog() {
     e.preventDefault();
     const f = e.target.elements;
     const r = await api("/api/me/birthday", { method: "POST", body: { year: Number(f.year.value), month: Number(f.month.value), day: Number(f.day.value) } });
-    if (r.ok) { d.close(); setUser(r.data.user); return; }
+    if (r.ok) {
+      d.close(); setUser(r.data.user);
+      const next = afterBirthday; afterBirthday = null;
+      next?.();
+      return;
+    }
     if (r.data.needs === "closed" || r.data.needs === "blocked") { d.close(); setUser(null); openClosed(r.data.error); return; }
     $("birthday-error").textContent = r.data.error;
     $("birthday-error").hidden = false;
@@ -411,7 +424,7 @@ function openClosed(message = "This account is closed because ForgeCenter accoun
 }
 
 // What confirming unlocks, from the catalog's adult-only products.
-const PLURAL = { website: "websites", game: "games", discord: "Discord bots", mcserver: "server hosting", ai: "AI assistants", showcase: "showcase slots" };
+const PLURAL = { website: "websites", game: "games", roblox: "Roblox games", launcher: "launchers", discord: "Discord bots", mcserver: "server hosting", ai: "AI assistants", showcase: "showcase slots" };
 export async function adultPerks() {
   const items = Object.entries(await getCatalog()).filter(([, i]) => i.adultOnly).map(([k, i]) => PLURAL[k] ?? i.name);
   const buy = items.length > 1 ? `${items.slice(0, -1).join(", ")} and ${items.at(-1)}` : items[0];
@@ -429,7 +442,7 @@ function ageDialog() {
           <span><strong>Credit card</strong><span class="small">ForgeCenter never sees your card details, and you aren't charged. Your bank may show a small temporary hold that disappears on its own.</span>
           <span class="small provider">Provided by Stripe</span></span></button>
         <button class="choice" type="button" data-age-method="id"><span class="slot">${icon("idcard")}</span>
-          <span><strong>ID scan</strong><span class="small">Scan a photo ID and take a selfie to show it's yours. Both are deleted right after, and ForgeCenter only learns whether you're 18 or over.</span>
+          <span><strong>ID scan</strong><span class="small">Scan a photo ID and take a selfie to show it's yours. ForgeCenter only learns whether you're 18 or over, and asks Stripe to delete both straight after.</span>
           <span class="small provider">Provided by Stripe Identity</span></span></button>
       </div>
       <p class="error" id="age-error" role="alert" hidden></p>
@@ -450,6 +463,7 @@ function ageDialog() {
 
 export function openAgeConfirm(reason = null) {
   return requireSignIn(async () => {
+    if (!currentUser.ageGroup) { afterBirthday = () => openAgeConfirm(reason); return openBirthday(); }
     if (currentUser.ageGroup === "adult") return toast("Your age is already confirmed.");
     const d = $("age-dialog") ?? ageDialog();
     $("age-reason").textContent = reason ?? `Confirmed adults can ${await adultPerks()}. ForgeCenter keeps only the result.`;

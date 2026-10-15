@@ -31,6 +31,9 @@ test("a top-up goes through Stripe Checkout and is added once, by the webhook", 
   assert.equal(session.params.line_items[0].price_data.unit_amount, "2500");
   assert.equal(session.params.metadata.kind, "wallet_topup");
   assert.match(session.params.integration_identifier, /^forgecenter-wallet-[a-z]{8}$/);
+  // An abandoned checkout expires after about half an hour instead of a day.
+  const expiresIn = Number(session.params.expires_at) - Date.now() / 1000;
+  assert.ok(expiresIn > 30 * 60 && expiresIn < 40 * 60, String(expiresIn));
   assert.equal(await balance(cookie), 0);
 
   // A bank payment completes unpaid first, and only counts once it settles.
@@ -89,15 +92,53 @@ test("a top-up refunded from the Stripe Dashboard comes out of the wallet, once"
   const { cookie } = signIn("refundme@example.com");
   const session = await topUp(cookie, 3000);
   await event("checkout.session.completed", paid(session, "pi_refundme"));
-  const charge = { id: "ch_refundme", object: "charge", payment_intent: "pi_refundme" };
-  await event("charge.refunded", { ...charge, amount_refunded: 1000 });
-  await event("charge.refunded", { ...charge, amount_refunded: 1000 });
+  const charge = { id: "ch_refundme", object: "charge", payment_intent: "pi_refundme", amount: 3000 };
+  await event("charge.refunded", { ...charge, amount_refunded: 1000, refunded: false });
+  await event("charge.refunded", { ...charge, amount_refunded: 1000, refunded: false });
   assert.equal(await balance(cookie), 2000);
-  await event("charge.refunded", { ...charge, amount_refunded: 3000 });
+  await event("charge.refunded", { ...charge, amount_refunded: 3000, refunded: true });
   assert.equal(await balance(cookie), 0);
   // Refunds of ordinary orders aren't wallet business.
-  await event("charge.refunded", { id: "ch_other", object: "charge", payment_intent: "pi_other", amount_refunded: 500 });
+  await event("charge.refunded", { id: "ch_other", object: "charge", payment_intent: "pi_other", amount: 500, amount_refunded: 500, refunded: true });
   assert.equal(await balance(cookie), 0);
+});
+
+test("a refund in another currency takes out the same share of the top-up", async () => {
+  stripe = installFakeStripe();
+  const { cookie } = signIn("euros@example.com");
+  const session = await topUp(cookie, 5000);
+  await event("checkout.session.completed", paid(session, "pi_euros"));
+  // Charged as 4,600 euro cents; half refunded.
+  await event("charge.refunded", { id: "ch_euros", object: "charge", payment_intent: "pi_euros", amount: 4600, amount_refunded: 2300, refunded: false });
+  assert.equal(await balance(cookie), 2500);
+  await event("charge.refunded", { id: "ch_euros", object: "charge", payment_intent: "pi_euros", amount: 4600, amount_refunded: 4600, refunded: true });
+  assert.equal(await balance(cookie), 0);
+});
+
+test("a disputed top-up's credit is held back until the bank decides, and the owner is told", async () => {
+  stripe = installFakeStripe();
+  const { user, cookie } = signIn("disputer@example.com");
+  const session = await topUp(cookie, 4000);
+  await event("checkout.session.completed", paid(session, "pi_dispute"));
+  give(user.id, -1500); // they already spent some of it
+  const dispute = { id: "dp_1", object: "dispute", payment_intent: "pi_dispute", amount: 4000 };
+  await event("charge.dispute.created", dispute);
+  await event("charge.dispute.created", dispute); // replayed
+  assert.equal(await balance(cookie), -1500);
+  assert.ok(emails.some(m => /Dispute opened/.test(m.subject) && m.to.includes("owner@example.com")));
+  // A negative balance stops the account being deleted to walk away from it.
+  const del = await api("/api/me", { method: "DELETE", cookie, body: {} });
+  assert.equal(del.status, 409);
+  assert.match(del.body.error, /below zero/);
+  // A lost dispute changes nothing; a won one gives the credit back, once.
+  await event("charge.dispute.closed", { ...dispute, status: "lost" });
+  assert.equal(await balance(cookie), -1500);
+  await event("charge.dispute.closed", { ...dispute, status: "won" });
+  await event("charge.dispute.closed", { ...dispute, status: "won" });
+  assert.equal(await balance(cookie), 2500);
+  // Disputes on ordinary card orders aren't wallet business.
+  await event("charge.dispute.created", { id: "dp_2", object: "dispute", payment_intent: "pi_not_a_topup", amount: 999 });
+  assert.equal(await balance(cookie), 2500);
 });
 
 test("the owner can refund an order or give credit to a wallet, within limits", async () => {
@@ -114,6 +155,13 @@ test("the owner can refund an order or give credit to a wallet, within limits", 
   assert.equal(ok.body.balance, 6000);
   assert.equal((await api(`/api/admin/orders/${orderId}/wallet-refund`, { method: "POST", cookie: owner.cookie, body: { amount: 4001 } })).status, 400);
   assert.ok(emails.some(m => m.to.includes("refunded@example.com") && /\$60\.00 added/.test(m.subject)));
+
+  // An order the owner marked canceled before anyone paid can't be "refunded" as credit.
+  const unpaid = Number(db.prepare(`INSERT INTO orders (user_id, product, amount, status, created_at, updated_at)
+    VALUES (?, 'ai', 10000, 'canceled', 'now', 'now')`).run(c.user.id).lastInsertRowid);
+  const never = await api(`/api/admin/orders/${unpaid}/wallet-refund`, { method: "POST", cookie: owner.cookie, body: { amount: 100 } });
+  assert.equal(never.status, 409);
+  assert.match(never.body.error, /never paid/);
 
   const noNote = await api(`/api/admin/users/${c.user.id}/wallet-credit`, { method: "POST", cookie: owner.cookie, body: { amount: 500 } });
   assert.equal(noNote.status, 400);

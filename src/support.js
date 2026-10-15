@@ -23,7 +23,9 @@ export const CATEGORIES = {
 const MAX_OPEN = 5;
 const DAILY_AI_REPLIES = 40;
 const MAX_TURNS = 4;
-const HANDED_OVER = "I've passed this to the ForgeCenter team. A person will reply here, and you'll get an email when they do.";
+// WhatsApp-only accounts have no email address, so only promise an email when there is one.
+const afterReply = user => (user.email ? "and you'll get an email when they do." : "so check back here for their reply.");
+const handedOver = user => `I've passed this to the ForgeCenter team. A person will reply here, ${afterReply(user)}`;
 
 // ---------- The model ----------
 let client;
@@ -43,7 +45,7 @@ const SYSTEM = `You are Forge Support, the support assistant for ForgeCenter, a 
 
 How to help:
 - Answer from the help notes below and the customer details you're given. If the notes don't cover something, say you're not sure and hand the ticket to a person. Never guess about prices, policies or what happened with an order.
-- Use the hand_to_person tool when the customer asks for a person; when money is involved (refunds, chargebacks, cancelling a project, discounts, wallet credit, refunding unused wallet funds); when a payment went through but an order is missing; when a server or bot is still broken after the steps in the notes; for sign-in or account problems you can't solve; for anything only the team can do; or when two tries haven't solved it. After handing over, tell the customer in one or two sentences that a person will reply here and by email, usually within a day.
+- Use the hand_to_person tool when the customer asks for a person; when money is involved (refunds, chargebacks, cancelling a project, discounts, wallet credit, refunding unused wallet funds); when a payment went through but an order is missing; when a server or bot is still broken after the steps in the notes; for sign-in or account problems you can't solve; for anything only the team can do; or when two tries haven't solved it. After handing over, tell the customer in one or two sentences that a person will reply on this ticket, usually within a day (and by email only if the customer details say the account has an email address).
 - Never promise refunds, credit, discounts or deadlines, and never say the team has done something unless the ticket shows it.
 - Never ask for passwords, sign-in codes, card numbers, Discord bot tokens or API keys. If the customer pastes a token or key, tell them to reset it right away; for a Discord bot that's Developer Portal, then Bot, then Reset Token, then paste the new token on the order page.
 - Keep replies short: a few sentences or a short list of steps. Write plain text without Markdown headings, tables or bold. Reply in the customer's language.
@@ -131,6 +133,7 @@ function customerContext(user, ticket) {
 - Name, as the customer typed it: ${JSON.stringify(user.name)}
 - Age group: ${user.age_group === "adult" ? "adult (confirmed)" : "teen"}
 - Signs in with: ${providers.join(", ") || "unknown"}
+- Email address on the account: ${user.email ? "yes" : "no (replies only appear on the ticket)"}
 - Wallet balance: ${usd(walletBalance(user.id))}
 Orders, newest first:
 ${lines.join("\n") || "- No orders yet."}
@@ -162,7 +165,7 @@ async function askForgeSupport(ticket, user) {
       fallbacks: "default",
       system, tools: TOOLS, messages,
     }, { timeout: 90_000, maxRetries: 1 });
-    if (r.stop_reason === "refusal") return { text: HANDED_OVER, note: note ?? "Forge Support couldn't answer this ticket." };
+    if (r.stop_reason === "refusal") return { text: handedOver(user), note: note ?? "Forge Support couldn't answer this ticket." };
     const said = r.content.filter(b => b.type === "text").map(b => b.text).join("").trim();
     if (said) text = said;
     const calls = r.content.filter(b => b.type === "tool_use");
@@ -176,7 +179,7 @@ async function askForgeSupport(ticket, user) {
     }) });
     text = "";
   }
-  return { text: text || (note ? HANDED_OVER : ""), note };
+  return { text: text || (note ? handedOver(user) : ""), note };
 }
 
 // ---------- Ticket helpers ----------
@@ -197,7 +200,7 @@ const busy = new Set(); // tickets Forge Support is answering right now
 // Lets Forge Support answer the newest customer message, or hands over when it can't.
 async function respond(ticket, user) {
   if (aiRepliesToday(user.id) >= DAILY_AI_REPLIES) {
-    addMessage(ticket.id, "ai", HANDED_OVER);
+    addMessage(ticket.id, "ai", handedOver(user));
     return handOver(ticket, "The customer reached the assistant's daily limit.");
   }
   db.prepare(`INSERT INTO support_usage (user_id, day, count) VALUES (?, ?, 1)
@@ -205,12 +208,12 @@ async function respond(ticket, user) {
   busy.add(ticket.id);
   try {
     const { text, note } = await askForgeSupport(ticket, user);
-    addMessage(ticket.id, "ai", text || HANDED_OVER);
+    addMessage(ticket.id, "ai", text || handedOver(user));
     if (note || !text) handOver(ticket, note ?? "Forge Support had no answer.");
     else db.prepare("UPDATE tickets SET updated_at = ? WHERE id = ?").run(now(), ticket.id);
   } catch (e) {
     console.error("Forge Support failed", e.message);
-    addMessage(ticket.id, "ai", "Our assistant couldn't answer just now, so a person will reply here soon. You'll get an email when they do.");
+    addMessage(ticket.id, "ai", `Our assistant couldn't answer just now, so a person will reply here soon, ${afterReply(user)}`);
     handOver(ticket, "Forge Support had an error, so it couldn't answer.");
   } finally {
     busy.delete(ticket.id);
@@ -295,7 +298,7 @@ supportRouter.post("/:id/messages", requireUser, loadOwnTicket, customerOnly, ra
 // "Talk to a person"
 supportRouter.post("/:id/handoff", requireUser, loadOwnTicket, customerOnly, (req, res) => {
   if (req.ticket.status !== "ai") return res.status(409).json({ error: "This ticket is already with the team." });
-  addMessage(req.ticket.id, "ai", HANDED_OVER);
+  addMessage(req.ticket.id, "ai", handedOver(req.user));
   handOver(req.ticket, "The customer asked for a person.");
   res.json({ ticket: publicTicket(getTicket(req.ticket.id)) });
 });

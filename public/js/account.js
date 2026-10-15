@@ -170,6 +170,7 @@ const ENTRY_TEXT = {
   refund: e => `Refund for order ${e.orderId}`,
   credit: e => `Credit from ForgeCenter: ${e.note}`,
   topup_refund: () => "Top-up refunded to your card",
+  dispute: e => e.note || "Card dispute",
 };
 
 async function loadWallet(retry = toppedUp) {
@@ -230,14 +231,18 @@ async function loadAge(polls = 0) {
       <span class="slot">${icon("book")}</span>
       <div class="grow">
         <p><span class="pill pill-muted">Teen</span> Every account starts in the teen group, like on Discord. Confirm you're an adult to ${await adultPerks()}.</p>
-        ${latest?.status === "pending" ? `<p class="small">Checking your ${latest.method === "id_scan" ? "ID" : "card"}… This updates by itself.</p>` : ""}
+        ${latest?.status === "pending" ? `<p class="small">Checking your ${latest.method === "id_scan" ? "ID" : "card"}… ${ageCheck ? "This updates by itself, and an ID check can take a few minutes." : "Reload this page in a minute to see the result."}</p>` : ""}
         ${latest?.status === "failed" && latest.message && latest.message !== "You started a newer check." ? `<p class="error">${esc(latest.message)}</p>` : ""}
       </div>
       ${available ? `<button class="btn btn-buy" type="button" data-confirm-age>Confirm your age</button>` : ""}`;
-  // Back from Stripe: keep checking for a short while until the result is in.
-  if (check?.status === "pending" && ageCheck && polls < 8) setTimeout(() => loadAge(polls + 1), 2500);
-  if (ageCheck && check?.status === "passed") toast("You're confirmed as an adult.");
-  if (ageCheck && adult) refreshUser();
+  // Back from Stripe: keep checking until the result is in. Card checks take seconds;
+  // ID checks can take minutes, so slow down after the first half minute (up to 10 minutes).
+  if (check?.status === "pending" && ageCheck && polls < 60) setTimeout(() => loadAge(polls + 1), polls < 12 ? 2500 : 10_000);
+  if (ageCheck && check?.status === "passed") {
+    toast("You're confirmed as an adult.");
+    await refreshUser();
+    loadShowcase(); // offers the 18+ option now
+  }
 }
 
 // ---------- Showcase ----------

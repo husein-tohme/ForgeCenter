@@ -240,7 +240,7 @@ async function loadTicket(d) {
   d.dataset.loaded = "1";
   d.querySelector(".pill").outerHTML = ticketPill(t.status);
   body.innerHTML = `
-    ${t.handoffNote && t.status !== "closed" ? `<p class="note"><strong>Why it needs you:</strong> ${esc(t.handoffNote)}</p>` : ""}
+    ${t.handoffNote && t.status !== "closed" ? `<p class="note"><strong>Forge Support's note:</strong> ${esc(t.handoffNote)}<br><span class="small">Written by the AI from the customer's messages. Check the facts before refunding or giving credit.</span></p>` : ""}
     ${c ? `<p class="small">${esc(c.name)}, ${esc(c.email ?? c.phone ?? "no email")}, ${c.ageGroup === "adult" ? "confirmed adult" : "teen group"}, ${cash(c.wallet)} in their wallet${t.orderId ? `, about order ${t.orderId}` : ""}</p>` : ""}
     <div class="thread">${t.messages.map(m => {
       const [who, cls] = TICKET_AUTHOR[m.author] ?? [m.author, ""];

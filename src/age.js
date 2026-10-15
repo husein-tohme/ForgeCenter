@@ -72,17 +72,19 @@ async function completeCardCheck(session) {
 }
 
 // ---------- ID scan ----------
-async function completeIdCheck(sessionId) {
+async function completeIdCheck(sessionId, { forAgeCheck = false } = {}) {
   const check = checkFor(sessionId, "id_scan");
-  if (!check) return;
+  // No row: the account was deleted mid-check. The data at Stripe still has to go.
+  if (!check && !forAgeCheck) return;
   const stripe = getStripe();
-  const pending = check.status === "pending";
+  const pending = check?.status === "pending";
   const vs = await stripe.identity.verificationSessions.retrieve(sessionId, pending ? { expand: ["verified_outputs.dob"] } : {});
   if (pending) {
     if (vs.status === "verified") {
       const dob = vs.verified_outputs?.dob;
+      // A missing month or day counts as the end of the year, so nobody passes early.
       if (!dob?.year) finish(check, false, "no_birth_date");
-      else finish(check, ageOn(new Date(), dob.year, dob.month, dob.day) >= ADULT_AGE, "under_18");
+      else finish(check, ageOn(new Date(), dob.year, dob.month ?? 12, dob.day ?? 31) >= ADULT_AGE, "under_18");
     } else if (vs.status === "requires_input" && vs.last_error?.code) {
       finish(check, false, vs.last_error.code === "under_supported_age" ? "under_18" : vs.last_error.code);
     } else if (vs.status === "canceled") {
@@ -91,17 +93,20 @@ async function completeIdCheck(sessionId) {
       return; // still processing, or not submitted yet
     }
   }
-  // The outcome is saved (or a newer check replaced this one), so have Stripe delete
-  // the ID images and personal details.
+  // The outcome is saved (or the check was replaced or its account deleted), so have
+  // Stripe delete the ID images and personal details. A failure throws, so the webhook
+  // answers 500 and Stripe tries again.
   if (["verified", "requires_input"].includes(vs.status) && !vs.redaction) {
-    await stripe.identity.verificationSessions.redact(sessionId).catch(e => console.error("Identity redaction failed", e.message));
+    await stripe.identity.verificationSessions.redact(sessionId);
   }
 }
 
 // Webhook events for age checks: Checkout Sessions with kind age_check, and Identity.
 export async function handleAgeEvent(event) {
   const obj = event.data.object;
-  if (event.type.startsWith("identity.verification_session.")) return completeIdCheck(obj.id);
+  if (event.type.startsWith("identity.verification_session.")) {
+    return completeIdCheck(obj.id, { forAgeCheck: obj.metadata?.kind === "age_check" });
+  }
   if (checkoutKind(obj) !== "age_check") return;
   if (event.type === "checkout.session.completed" || event.type === "checkout.session.expired") return completeCardCheck(obj);
 }
@@ -111,7 +116,7 @@ async function sync(check) {
   const stripe = getStripe();
   if (!stripe || check.status !== "pending" || !check.stripe_id) return;
   if (check.method === "credit_card") await completeCardCheck(await stripe.checkout.sessions.retrieve(check.stripe_id));
-  else await completeIdCheck(check.stripe_id);
+  else await completeIdCheck(check.stripe_id).catch(e => console.error("Identity sync failed", e.message));
 }
 
 // ---------- Routes ----------
@@ -165,6 +170,8 @@ ageRouter.post("/card", requireUser, rateLimit({ windowMs: 60_000, max: 5 }), ca
       metadata, setup_intent_data: { metadata },
       custom_text: { submit: { message: "This only checks that you're an adult. You won't be charged and the card isn't saved. Your bank may show a small temporary hold that disappears on its own." } },
       success_url: returnUrl(req, id), cancel_url: `${baseUrl(req)}/account#age`,
+      // Just over Stripe's 30-minute minimum, so an abandoned checkout clears quickly.
+      expires_at: Math.floor(Date.now() / 1000) + 31 * 60,
       integration_identifier: CHECKOUT_LABELS.ageCheck,
     });
     db.prepare("UPDATE age_checks SET stripe_id = ? WHERE id = ?").run(session.id, id);

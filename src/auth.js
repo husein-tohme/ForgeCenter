@@ -184,6 +184,7 @@ function deleteBlocker(userId) {
   if (activeSubs) return "Cancel your subscriptions in Manage billing before deleting your account.";
   const balance = walletBalance(userId);
   if (balance > 0) return `You have $${(balance / 100).toFixed(2)} in your wallet. Spend it, or open a support ticket to have it refunded, before deleting your account.`;
+  if (balance < 0) return `Your wallet is $${(-balance / 100).toFixed(2)} below zero because a top-up was refunded or disputed after it was spent. Add funds or open a support ticket before deleting your account.`;
   return null;
 }
 

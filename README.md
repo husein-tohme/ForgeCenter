@@ -8,7 +8,7 @@ Minecraft mods, websites, Discord bots, games, Minecraft server hosting and an A
 - **Shop and Stripe Checkout** for every service. Hosting and website domains ($2/month) are monthly subscriptions.
 - **Order tracking** at `/account`: status, a project brief, a message thread with you, and the delivery link.
 - **Owner panel** at `/admin`: sales overview, support inbox, order status, delivery links, replies to customers, wallet refunds and credit, showcase approvals.
-- **Age groups like Discord's**: a birthday question after the first sign-in turns away under-13s, and every account starts in the teen group. Adults confirm once with a Stripe credit card check or a Stripe Identity ID scan with a selfie. ForgeCenter keeps only the result. Websites and games (configurable) and 18+ showcase listings are for confirmed adults, and the AI mentor and support assistant are told when someone is a teen.
+- **Age groups like Discord's**: a birthday question after the first sign-in turns away under-13s, and every account starts in the teen group. Adults confirm once with a Stripe credit card check or a Stripe Identity ID scan with a selfie. ForgeCenter keeps only the result. Big custom projects (configurable) and 18+ showcase listings are for confirmed adults, and the AI mentor and support assistant are told when someone is a teen.
 - **Wallet**: store credit customers top up by card ($5 to $500 at a time, up to $2,000) and spend on one-time items in one step. You can refund orders as credit or give goodwill credit. It's closed-loop: no withdrawals or transfers.
 - **Help desk** at `/support`: Forge Support (Claude) answers tickets straight away using built-in help notes and the customer's own orders, and hands anything involving money, broken services or a request for a person to you, with a note. You reply from the owner panel; customers get emails.
 - **Self-service billing** through the Stripe Customer Portal (update card, cancel subscriptions, download invoices).
@@ -114,6 +114,7 @@ Each provider turns on when its two values are in `.env`. Register this redirect
    `checkout.session.completed`, `checkout.session.async_payment_succeeded`, `checkout.session.async_payment_failed`,
    `checkout.session.expired`, `customer.subscription.created`, `customer.subscription.updated`,
    `customer.subscription.deleted`, `invoice.paid`, `invoice.payment_failed`, `charge.refunded`,
+   `charge.dispute.created`, `charge.dispute.closed`,
    `identity.verification_session.verified`, `identity.verification_session.requires_input`,
    `identity.verification_session.canceled`.
    Webhooks are required: they are how orders, subscriptions, wallet top-ups and age checks get their results.
@@ -124,11 +125,11 @@ Each provider turns on when its two values are in `.env`. Register this redirect
 ### Age checks
 - **Credit card check** works as soon as Stripe is set up. It runs Checkout in setup mode, so nobody is charged, then removes the card. Only credit cards pass, because card issuers only give those to adults. Customers who pay with a card wallet such as Link may be asked to use a plain credit card instead.
 - **ID scan** needs [Stripe Identity](https://dashboard.stripe.com/identity) turned on for your account (Stripe charges per check). ForgeCenter reads the date of birth once to decide adult or not, never stores it, and then redacts the session so Stripe deletes the images.
-- `ADULT_ONLY_PRODUCTS` chooses what only confirmed adults can buy (default `game,website`, since minors can back out of contracts). Leave it empty to allow everything.
+- `ADULT_ONLY_PRODUCTS` chooses what only confirmed adults can buy (default `game,website,roblox,launcher`, the big custom projects, since minors can back out of contracts). Leave it empty to allow everything.
 - Someone who says they're under 13 has their new account deleted, and that browser can't try again for a day. An older account with paid subscriptions or credit is locked instead, and you get an email to refund it.
 
 ### Wallet
-Top-ups go through Stripe Checkout and are added by the webhook. To refund unused credit, refund the top-up's payment in the Stripe Dashboard: the wallet goes down by the same amount automatically. Refunds for orders can be given as credit from the order in the owner panel, and goodwill credit from any support ticket. Check with an accountant how your state treats unused store credit.
+Top-ups go through Stripe Checkout and are added by the webhook. To refund unused credit, refund the top-up's payment in the Stripe Dashboard: the wallet goes down by the same amount automatically. If a customer disputes a top-up with their bank, its credit is taken back until the dispute closes, and you get an email. Refunds for orders can be given as credit from the order in the owner panel, and goodwill credit from any support ticket. Check with an accountant how your state treats unused store credit.
 
 ### Forge mentor and Forge Support
 Put an Anthropic API key in `ANTHROPIC_API_KEY`. The mentor uses `AI_MODEL` and Forge Support uses `SUPPORT_AI_MODEL` (default `claude-opus-5-5`, with Anthropic's automatic fallback model if it declines a request). Each customer gets up to 40 Forge Support replies a day and 5 open tickets. Without a key, tickets go straight to you.

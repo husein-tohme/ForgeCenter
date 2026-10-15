@@ -93,6 +93,7 @@ CREATE TABLE IF NOT EXISTS orders (
   brief TEXT NOT NULL DEFAULT '',
   deliverable_url TEXT,
   paid_with TEXT,
+  paid_at TEXT,
   created_at TEXT NOT NULL,
   updated_at TEXT NOT NULL
 );
@@ -283,4 +284,9 @@ addColumn("users", "age_group", "TEXT");
 addColumn("users", "age_method", "TEXT");
 addColumn("users", "age_confirmed_at", "TEXT");
 addColumn("orders", "paid_with", "TEXT");
+if (!columns("orders").includes("paid_at")) {
+  addColumn("orders", "paid_at", "TEXT");
+  // Older orders: anything that got past payment was paid when it was last updated, near enough.
+  db.exec("UPDATE orders SET paid_at = updated_at WHERE status IN ('paid', 'in_progress', 'delivered')");
+}
 addColumn("showcase", "adult_only", "INTEGER NOT NULL DEFAULT 0");

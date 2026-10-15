@@ -82,6 +82,7 @@ test("a credit card check confirms an adult, and the card isn't kept", async () 
   assert.equal(session.params.currency, "usd");
   assert.equal(session.params.metadata.kind, "age_check");
   assert.match(session.params.integration_identifier, /^forgecenter-agecheck-[a-z]{8}$/);
+  assert.ok(Number(session.params.expires_at) - Date.now() / 1000 > 30 * 60);
 
   const completed = completeCardCheck(session, "credit");
   assert.equal((await event("checkout.session.completed", completed)).status, 200);
@@ -134,6 +135,44 @@ test("an ID scan reads the date of birth, then has Stripe delete the data", asyn
   const status = await api("/api/age", { cookie: teen.cookie });
   assert.match(status.body.check.message, /under 18/);
   assert.equal((await api("/api/age/card", { method: "POST", cookie: teen.cookie, body: {} })).status, 403);
+});
+
+test("an ID with only a birth year counts the birthday as the end of that year", async () => {
+  stripe = installFakeStripe();
+  const { user, cookie } = signIn("year-only@example.com");
+  await api("/api/age/id", { method: "POST", cookie, body: {} });
+  const vs = stripe.lastVerification();
+  // Turns 18 this calendar year, so without a month and day they might still be 17.
+  Object.assign(vs, { status: "verified", verified_outputs: { dob: { year: new Date().getUTCFullYear() - 18, month: null, day: null } } });
+  await event("identity.verification_session.verified", { id: vs.id, object: "identity.verification_session", metadata: { kind: "age_check" } });
+  assert.equal(userRow(user.id).age_group, "teen");
+});
+
+test("ID data is deleted at Stripe even if the account is gone, and a failed delete is retried", async () => {
+  stripe = installFakeStripe();
+  const { user, cookie } = signIn("gone@example.com");
+  await api("/api/age/id", { method: "POST", cookie, body: {} });
+  const vs = stripe.lastVerification();
+  db.prepare("DELETE FROM users WHERE id = ?").run(user.id);
+  Object.assign(vs, { status: "verified", verified_outputs: { dob: yearsAgo(30) } });
+  await event("identity.verification_session.verified", { id: vs.id, object: "identity.verification_session", metadata: { kind: "age_check" } });
+  assert.ok(stripe.state.redacted.includes(vs.id));
+
+  // Stripe is briefly down when we ask it to delete: the webhook fails so Stripe sends it again.
+  const other = signIn("retry-redact@example.com");
+  await api("/api/age/id", { method: "POST", cookie: other.cookie, body: {} });
+  const vs2 = stripe.lastVerification();
+  Object.assign(vs2, { status: "verified", verified_outputs: { dob: yearsAgo(30) } });
+  const fakeFetch = globalThis.fetch;
+  globalThis.fetch = (input, init) => (String(input.url ?? input).endsWith("/redact")
+    ? Promise.resolve(new Response(JSON.stringify({ error: { message: "down" } }), { status: 500, headers: { "content-type": "application/json" } }))
+    : fakeFetch(input, init));
+  const body = { id: "evt_redact_retry", type: "identity.verification_session.verified", data: { object: { id: vs2.id, object: "identity.verification_session", metadata: { kind: "age_check" } } } };
+  assert.equal((await sendWebhook(body)).status, 500);
+  globalThis.fetch = fakeFetch;
+  assert.equal(userRow(other.user.id).age_group, "adult"); // the result itself was kept
+  assert.equal((await sendWebhook(body)).status, 200);
+  assert.ok(stripe.state.redacted.includes(vs2.id));
 });
 
 test("a failed ID scan explains why and still deletes the data", async () => {

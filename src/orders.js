@@ -34,10 +34,10 @@ export function fulfillCheckout(session) {
   const order = getOrder(orderId);
   if (!order || !["awaiting_payment", "payment_failed", "expired"].includes(order.status)) return;
   const subId = typeof session.subscription === "string" ? session.subscription : session.subscription?.id ?? null;
-  db.prepare(`UPDATE orders SET status = 'paid',
+  db.prepare(`UPDATE orders SET status = 'paid', paid_at = COALESCE(paid_at, ?),
       subscription_status = CASE WHEN ? THEN COALESCE(subscription_status, 'active') ELSE subscription_status END,
       stripe_subscription_id = COALESCE(?, stripe_subscription_id), updated_at = ? WHERE id = ?`)
-    .run(session.mode === "subscription" ? 1 : 0, subId, now(), orderId);
+    .run(now(), session.mode === "subscription" ? 1 : 0, subId, now(), orderId);
   afterPayment(getOrder(orderId));
 }
 

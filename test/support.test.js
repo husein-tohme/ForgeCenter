@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { api, db, signIn } from "./helpers.js";
 import { setSupportModel } from "../src/support.js";
 import { setEmailTransport } from "../src/email.js";
+import { signInWith, createSession } from "../src/auth.js";
 
 const emails = [];
 setEmailTransport(async m => { emails.push(m); return true; });
@@ -93,6 +94,19 @@ test("if the AI fails or declines, the ticket goes to a person instead of errori
   replies.push({ stop_reason: "refusal", content: [] });
   const declined = (await open(cookie, { subject: "Another" })).body.ticket;
   assert.equal(declined.status, "waiting");
+});
+
+test("accounts without an email aren't promised one", async () => {
+  const u = signInWith({ provider: "whatsapp", subject: "+447700900123", phone: "+447700900123", name: "Pat" });
+  db.prepare("UPDATE users SET age_group = 'teen' WHERE id = ?").run(u.id);
+  const cookie = `fc_session=${createSession(u.id)}`;
+  replies.push(new Error("overloaded"));
+  const t = (await open(cookie)).body.ticket;
+  assert.doesNotMatch(t.messages.at(-1).body, /email/i);
+  assert.match(t.messages.at(-1).body, /check back here/);
+  replies.push(text("Sure."));
+  await open(cookie, { subject: "Second" });
+  assert.match(requests.at(-1).system[1].text, /Email address on the account: no/);
 });
 
 test("customers see only their own tickets, and the owner can reply and close them", async () => {

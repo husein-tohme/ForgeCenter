@@ -19,6 +19,14 @@ export const catalog = {
     name: "Minecraft server hosting", monthly: 10000, monthlyName: "Minecraft server hosting",
     desc: "10 players, 2 GB RAM, 100 GB storage, a dedicated CPU and DDoS protection. Billed monthly.",
   },
+  roblox: {
+    name: "Custom Roblox game (deposit)", price: 200000,
+    desc: "A Roblox game built for you, $2,000 to $8,000 depending on scope, published to your Roblox group with game passes set up. This deposit starts the project.",
+  },
+  launcher: {
+    name: "Custom Minecraft launcher", price: 50000,
+    desc: "Your own branded launcher for your server or modpack: your logo and news, one-click install and updates, for Windows, macOS and Linux.",
+  },
   ai: {
     name: "Dedicated AI assistant", price: 10000,
     desc: "Your own branded AI assistant, plus 10 times the daily Forge mentor limit.",
@@ -34,7 +42,7 @@ export const modeOf = item => (item.monthly ? "subscription" : "payment");
 // Products only adults can buy (age confirmed by a credit card check or an ID scan).
 // Big projects are contracts, and minors can back out of contracts.
 export const isAdultOnly = key =>
-  (process.env.ADULT_ONLY_PRODUCTS ?? "game,website").split(",").map(s => s.trim()).includes(key);
+  (process.env.ADULT_ONLY_PRODUCTS ?? "game,website,roblox,launcher").split(",").map(s => s.trim()).includes(key);
 
 // One-time products can be paid from the wallet; monthly plans go through Stripe.
 export const walletPayable = item => !!item?.price && !item.monthly;

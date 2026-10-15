@@ -16,7 +16,7 @@ export async function handleStripeEvent(event) {
     if (kind === "order") return handleOrderEvent(event);
     return;
   }
-  if (event.type === "charge.refunded") return handleWalletEvent(event);
+  if (event.type === "charge.refunded" || event.type.startsWith("charge.dispute.")) return handleWalletEvent(event);
   return handleOrderEvent(event);
 }
 

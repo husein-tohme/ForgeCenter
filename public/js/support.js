@@ -1,4 +1,4 @@
-import { $, api, esc, date, toast, onUser, openSignIn } from "./common.js";
+import { $, api, esc, date, toast, onUser, openSignIn, getUser } from "./common.js";
 
 const STATE = {
   ai: ["Forge Support is helping", "info"],
@@ -55,7 +55,7 @@ async function showNewForm() {
         ${orders.map(o => `<option value="${o.id}">Order ${o.id}: ${esc(o.name)}</option>`).join("")}</select></label>` : ""}
       <label>Subject<input name="subject" required maxlength="120" placeholder="My server won't start"></label>
       <label>Message<textarea name="body" required rows="6" maxlength="4000" placeholder="What happened, and what have you tried?"></textarea></label>
-      <p class="small">${aiOn ? "Forge Support usually answers within a minute." : "A person will reply here, and you'll get an email."} Never share passwords, sign-in codes or bot tokens.</p>
+      <p class="small">${aiOn ? "Forge Support usually answers within a minute." : `A person will reply here${getUser()?.email ? ", and you'll get an email" : ""}.`} Never share passwords, sign-in codes or bot tokens.</p>
       <button class="btn btn-buy" type="submit">Send</button>
     </form>`;
   $("ticket-form").addEventListener("submit", async e => {

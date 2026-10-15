@@ -91,7 +91,7 @@ export const notify = {
   ticketWaiting(ticket) {
     const c = db.prepare("SELECT email, phone, name FROM users WHERE id = ?").get(ticket.user_id);
     send(owners(), `Support ticket ${ticket.id} needs you: ${ticket.subject}`,
-      `${c?.name ?? "A customer"} (${c?.email ?? c?.phone ?? "no email"}) needs a person.${ticket.handoff_note ? `\n\n${ticket.handoff_note}` : ""}\n\nReply in the owner panel: ${site()}/admin#tickets`);
+      `${c?.name ?? "A customer"} (${c?.email ?? c?.phone ?? "no email"}) needs a person.${ticket.handoff_note ? `\n\nForge Support's note (written by the AI from the customer's messages, so check it before acting): ${ticket.handoff_note}` : ""}\n\nReply in the owner panel: ${site()}/admin#tickets`);
   },
 
   ticketAnswered(ticket, body) {
@@ -99,5 +99,13 @@ export const notify = {
     const preview = body.length > 500 ? `${body.slice(0, 500)}…` : body;
     if (c) send(c.email, `Reply to your ticket: ${ticket.subject}`,
       `Hi ${c.name},\n\nForgeCenter wrote:\n\n${preview}\n\nReply here: ${site()}/support?ticket=${ticket.id}`);
+  },
+
+  topupDisputed(topup, won) {
+    const c = topup.user_id ? db.prepare("SELECT email, name FROM users WHERE id = ?").get(topup.user_id) : null;
+    send(owners(), won ? `Dispute won: wallet top-up ${topup.id}` : `Dispute opened: wallet top-up ${topup.id}`,
+      won
+        ? `The card dispute on ${c?.name ?? "a customer"}'s $${(topup.amount / 100).toFixed(2)} top-up closed in your favour, so the credit went back into their wallet.`
+        : `${c?.name ?? "A customer"} (${c?.email ?? "no email"}) disputed a $${(topup.amount / 100).toFixed(2)} wallet top-up with their bank. That credit was taken out of their wallet, which may now be below zero. Respond to the dispute in the Stripe Dashboard.`);
   },
 };
