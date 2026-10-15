@@ -126,6 +126,23 @@ test("a paid hosting order becomes a Minecraft server with the advertised limits
   assert.match(order.service.panelUrl, /^https:\/\/panel\.test\/server\/abcd/);
 });
 
+test("a reused account id never inherits a deleted customer's panel account", async () => {
+  const gone = await paidOrder("leaver@example.com", "mcserver", "sub_reuse1");
+  await reconcileServices();
+  // Deleting the newest account lets SQLite hand its id to the next sign-up.
+  db.prepare("UPDATE users SET created_at = '2026-01-01T00:00:00.000Z' WHERE id = ?").run(gone.user.id);
+  db.prepare("DELETE FROM users WHERE id = ?").run(gone.user.id);
+  const next = await paidOrder("newcomer@example.com", "mcserver", "sub_reuse2");
+  assert.equal(next.user.id, gone.user.id, "the id was reused");
+  await reconcileServices();
+  const userCreates = calls.filter(c => c.method === "POST" && c.path === "/api/application/users").map(c => c.body);
+  assert.equal(userCreates.length, 2);
+  assert.notEqual(userCreates[0].external_id, userCreates[1].external_id);
+  assert.notEqual(userCreates[0].username, userCreates[1].username);
+  const newServer = calls.filter(c => c.method === "POST" && c.path === "/api/application/servers").at(-1).body;
+  assert.equal(newServer.user, panel.users.get(userCreates[1].external_id).id);
+});
+
 test("retries never create a second server", async () => {
   const o = await paidOrder("retry@example.com", "mcserver", "sub_mc2");
   await reconcileServices();

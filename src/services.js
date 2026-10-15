@@ -88,10 +88,13 @@ async function provision(s) {
   const user = s.user_id && db.prepare("SELECT * FROM users WHERE id = ?").get(s.user_id);
   if (!user) throw new Error("The customer's account was deleted.");
   const [first, ...rest] = user.name.split(" ");
+  // SQLite can give a deleted account's id to the next new account, so the panel
+  // account is keyed on the id plus when the account was made, never the id alone.
+  const ref = `${user.id}-${(Date.parse(user.created_at) || 0).toString(36)}`;
   const panelUser = await panel.ensureUser({
-    externalId: `forgecenter-user-${user.id}`,
-    email: user.email ?? `user${user.id}@users.forgecenter.invalid`,
-    username: `fc${user.id}`, firstName: first, lastName: rest.join(" ") || "Player",
+    externalId: `forgecenter-user-${ref}`,
+    email: user.email ?? `user${ref}@users.forgecenter.invalid`,
+    username: `fc${ref}`, firstName: first, lastName: rest.join(" ") || "Player",
   });
   const server = await panel.ensureServer({
     externalId: `forgecenter-order-${s.order_id}`, name: `ForgeCenter order ${s.order_id}`, userId: panelUser.id,
