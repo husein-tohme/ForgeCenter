@@ -275,8 +275,8 @@ if (userColumns.includes("google_sub") || !/AUTOINCREMENT/i.test(usersSql)) {
   db.exec("PRAGMA foreign_keys = ON");
 }
 
-// Columns added after the tables above first shipped.
-const addColumn = (table, column, type) => {
+// Columns added after the tables above first shipped. Feature modules use it for theirs too.
+export const addColumn = (table, column, type) => {
   if (!columns(table).includes(column)) db.exec(`ALTER TABLE ${table} ADD COLUMN ${column} ${type}`);
 };
 addColumn("users", "age_group", "TEXT");

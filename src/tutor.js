@@ -18,9 +18,19 @@ const TEEN_NOTE = "\n\nThis learner's account is in the teen age group. Keep eve
 let client;
 const ai = () => (process.env.ANTHROPIC_API_KEY ? (client ??= new Anthropic()) : null);
 const today = () => new Date().toISOString().slice(0, 10);
-const dailyLimit = userId => (paidOrderCount(userId, "ai") > 0 ? AI_PLAN_DAILY : FREE_DAILY);
+export const dailyLimit = userId => (paidOrderCount(userId, "ai") > 0 ? AI_PLAN_DAILY : FREE_DAILY);
 const usedToday = userId =>
   db.prepare("SELECT count FROM tutor_usage WHERE user_id = ? AND day = ?").get(userId, today())?.count ?? 0;
+
+// The daily AI allowance is shared by the mentor, AI Maker and Site Maker. Spends `cost`
+// messages if they're left; returns whether it could, and what's left afterwards.
+export function spendAllowance(userId, cost = 1) {
+  const limit = dailyLimit(userId);
+  if (usedToday(userId) + cost > limit) return { ok: false, limit, remaining: Math.max(0, limit - usedToday(userId)) };
+  db.prepare(`INSERT INTO tutor_usage (user_id, day, count) VALUES (?, ?, ?)
+    ON CONFLICT(user_id, day) DO UPDATE SET count = count + ?`).run(userId, today(), cost, cost);
+  return { ok: true, limit, remaining: Math.max(0, limit - usedToday(userId)) };
+}
 
 export const tutorRouter = express.Router();
 
@@ -37,12 +47,10 @@ tutorRouter.post("/", requireUser, rateLimit({ windowMs: 60_000, max: 10 }), asy
   while (messages.length && messages[0].role !== "user") messages.shift();
   if (!messages.length) return res.status(400).json({ error: "Ask a question first." });
 
-  const limit = dailyLimit(req.user.id);
-  if (usedToday(req.user.id) >= limit) {
-    return res.status(429).json({ error: `You've used all ${limit} messages for today. Forge resets at midnight UTC.` });
+  const spent = spendAllowance(req.user.id);
+  if (!spent.ok) {
+    return res.status(429).json({ error: `You've used all ${spent.limit} messages for today. Forge resets at midnight UTC.` });
   }
-  db.prepare(`INSERT INTO tutor_usage (user_id, day, count) VALUES (?, ?, 1)
-    ON CONFLICT(user_id, day) DO UPDATE SET count = count + 1`).run(req.user.id, today());
 
   try {
     const r = await ai().messages.create({
@@ -51,7 +59,7 @@ tutorRouter.post("/", requireUser, rateLimit({ windowMs: 60_000, max: 10 }), asy
     });
     res.json({
       reply: r.content.filter(b => b.type === "text").map(b => b.text).join(""),
-      remaining: Math.max(0, limit - usedToday(req.user.id)),
+      remaining: spent.remaining,
     });
   } catch (e) {
     console.error("Tutor failed", e.message);

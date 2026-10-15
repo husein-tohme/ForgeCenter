@@ -12,7 +12,7 @@ import { gameVersions, searchMods, planModpack, mrpackFiles, isGameVersion } fro
 export const toolsRouter = express.Router();
 
 const zipName = name => String(name || "pack").replace(/\W+/g, "-").replace(/^-|-$/g, "") || "pack";
-function saveCreation(req, kind, name, url = null) {
+export function saveCreation(req, kind, name, url = null) {
   if (req.user) db.prepare("INSERT INTO mods (user_id, kind, name, modrinth_url, created_at) VALUES (?, ?, ?, ?, ?)")
     .run(req.user.id, kind, String(name).slice(0, 60), url, now());
 }

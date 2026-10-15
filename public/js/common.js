@@ -34,6 +34,9 @@ const ICONS = {
     "..rrrr..", ".rr...r.", "r.rr...r", "r..rr..r", "r...rr.r", "r....rrr", ".r....r.", "..rrrr.."] },
 };
 
+// Pages add their own pixel icons, in the same { c: colours, m: 8 rows } format.
+export function registerIcons(map) { Object.assign(ICONS, map); }
+
 export function icon(name, label = "") {
   const { c, m } = ICONS[name];
   let rects = "";
