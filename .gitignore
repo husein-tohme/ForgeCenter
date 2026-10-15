@@ -152,3 +152,6 @@ vite.config.ts.timestamp-*
 data/
 *.db
 *.db-*
+
+# Claude Code workflow worktrees
+.claude/worktrees/
