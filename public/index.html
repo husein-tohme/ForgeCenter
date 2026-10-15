@@ -4,116 +4,160 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>ForgeCenter</title>
-<style>
-  :root { --bg:#0e1116; --card:#171b22; --line:#262c36; --text:#e8ecf2; --muted:#9aa4b2; --accent:#4ade80; }
-  * { box-sizing:border-box; }
-  body { margin:0; font:16px/1.5 system-ui,sans-serif; background:var(--bg); color:var(--text); }
-  header, section { max-width:1040px; margin:0 auto; padding:24px 16px; }
-  h1 { font-size:clamp(2rem,6vw,3.2rem); margin:.2em 0; } h1 span { color:var(--accent); }
-  h2 { margin-top:0; } p.muted, .muted { color:var(--muted); }
-  nav a { color:var(--muted); margin-right:16px; text-decoration:none; }
-  .grid { display:grid; gap:16px; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); }
-  .card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:20px; display:flex; flex-direction:column; }
-  .price { font-size:1.6rem; font-weight:700; margin:8px 0; }
-  .card p { flex:1; }
-  button { background:var(--accent); color:#06210f; border:0; border-radius:8px; padding:10px 16px; font-weight:600; cursor:pointer; }
-  input, textarea, select { width:100%; background:#0b0e12; color:var(--text); border:1px solid var(--line); border-radius:8px; padding:10px; margin:6px 0 12px; font:inherit; }
-  .row { display:flex; gap:12px; flex-wrap:wrap; }
-  #chat { height:320px; overflow:auto; background:#0b0e12; border:1px solid var(--line); border-radius:8px; padding:12px; white-space:pre-wrap; }
-  .msg-user { color:var(--accent); } #status { min-height:1.5em; }
-</style>
+<meta name="description" content="Minecraft mods, websites, Discord bots, games and server hosting, built for you and published in your name.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=Pixelify+Sans:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
 </head>
 <body>
-<header>
-  <nav><a href="#pricing">Pricing</a><a href="#mods">Mod Forge</a><a href="#learn">Learn to code</a></nav>
-  <h1>Forge<span>Center</span></h1>
-  <p class="muted">Minecraft mods, websites, Discord bots, games and servers, plus an AI mentor that helps you become a pro developer.</p>
-  <p id="status"></p>
+
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="top">
+  <div class="wrap top-inner">
+    <a class="logo" href="#" aria-label="ForgeCenter home"><span class="logo-icon" data-icon="anvil"></span>ForgeCenter</a>
+    <nav aria-label="Main">
+      <a href="#shop">Prices</a>
+      <a href="#forge">Mod Forge</a>
+      <a href="#mentor">Learn to code</a>
+      <a href="#faq">Questions</a>
+    </nav>
+  </div>
 </header>
 
-<section id="pricing">
-  <h2>Services</h2>
-  <div class="grid" id="products"></div>
-</section>
+<main id="main">
 
-<section id="mods">
-  <h2>Mod Forge</h2>
-  <p class="muted">Generate a Fabric mod project in your name. Download it, or create a draft on Modrinth with your own token. You stay the owner and review it before publishing.</p>
-  <div class="card">
-    <div class="row">
-      <div style="flex:1;min-width:200px"><label>Mod name<input id="m-name" placeholder="Ruby Tools"></label></div>
-      <div style="flex:1;min-width:200px"><label>Author (you)<input id="m-author" placeholder="YourName"></label></div>
+<section class="hero">
+  <div class="wrap hero-grid">
+    <div class="hero-copy">
+      <h1>Craft your mod, website, bot or server</h1>
+      <p class="lede">Pick what you want to make. ForgeCenter builds it, publishes it in your name and teaches you how it works.</p>
+      <div class="hero-actions">
+        <a class="btn btn-buy" href="#shop">See prices</a>
+        <a class="btn" href="#forge">Make a free mod</a>
+      </div>
     </div>
-    <label>Description<textarea id="m-desc" rows="2" placeholder="Adds ruby gems and tools."></textarea></label>
-    <label>Items (comma separated)<input id="m-items" placeholder="Ruby, Ruby Sword"></label>
-    <label>Modrinth token (optional, only for publishing)<input id="m-token" type="password" placeholder="mrp_..."></label>
-    <div class="row"><button onclick="modZip()">Download project</button><button onclick="modPublish()">Create Modrinth draft</button></div>
+
+    <div class="panel crafting" aria-labelledby="craft-title">
+      <h2 id="craft-title" class="panel-title">Crafting</h2>
+      <div class="craft-row">
+        <div class="grid3" id="grid" aria-hidden="true"></div>
+        <span class="craft-arrow" aria-hidden="true"></span>
+        <div class="slot slot-out" id="out" aria-hidden="true"></div>
+      </div>
+      <div class="hotbar" role="group" aria-label="Choose what to craft" id="hotbar"></div>
+      <div class="craft-result" id="result" aria-live="polite">
+        <p class="hint">Pick an item above to see what it crafts.</p>
+      </div>
+    </div>
   </div>
 </section>
 
-<section id="learn">
-  <h2>Forge, your coding mentor</h2>
-  <div id="chat"></div>
-  <div class="row" style="margin-top:8px">
-    <input id="q" style="flex:1" placeholder="I want to learn to make Minecraft mods. Where do I start?" onkeydown="if(event.key==='Enter')ask()">
-    <button onclick="ask()">Send</button>
+<section class="band" id="how">
+  <div class="wrap">
+    <h2>How it works</h2>
+    <ol class="steps">
+      <li><strong>Tell us what you want.</strong> Pick a service and describe it, or use the Mod Forge yourself.</li>
+      <li><strong>We build it.</strong> You see progress and approve before anything goes public.</li>
+      <li><strong>It launches in your name.</strong> Your Modrinth account, your Stripe, your domain. You own it.</li>
+    </ol>
   </div>
 </section>
 
-<script>
-const $ = id => document.getElementById(id);
-const status = t => $("status").textContent = t;
-if (location.search.includes("paid=1")) status("Payment received. Thanks! We'll be in touch.");
+<section class="band" id="shop">
+  <div class="wrap">
+    <h2>Prices</h2>
+    <p class="section-lede">One price per service. No hidden fees, except the $2 a month domain that comes with every website.</p>
+    <div class="panel trades" id="trades"></div>
+  </div>
+</section>
 
-fetch("/api/catalog").then(r => r.json()).then(cat => {
-  $("products").innerHTML = Object.entries(cat).map(([k, p]) => `
-    <div class="card"><strong>${p.name}</strong>
-      <div class="price">$${(p.price/100).toLocaleString()}${p.mode === "subscription" ? "/mo" : ""}</div>
-      <p class="muted">${p.desc}</p>
-      <button onclick="buy('${k}')">Get started</button></div>`).join("");
-});
+<section class="band band-alt" id="forge">
+  <div class="wrap">
+    <h2>Mod Forge</h2>
+    <p class="section-lede">Make a Fabric mod for Minecraft 1.21 in your own name. Download the project, or send it to Modrinth as a draft you can check before publishing.</p>
+    <div class="forge-grid">
+      <form class="panel form" id="mod-form" novalidate>
+        <label>Mod name<input name="name" required maxlength="60" placeholder="Ruby Tools"></label>
+        <label>Your name<input name="author" required maxlength="40" placeholder="Steve"></label>
+        <label>What does it add?<textarea name="description" required rows="3" maxlength="500" placeholder="Rubies that drop from deepslate, plus a ruby sword."></textarea></label>
+        <label>Items, separated by commas<input name="items" placeholder="Ruby, Ruby Sword"></label>
+        <details class="publish">
+          <summary>Publish to Modrinth</summary>
+          <label>Your Modrinth token<input name="token" type="password" autocomplete="off" placeholder="mrp_…"></label>
+          <p class="small">Create one at modrinth.com under Settings, then PATs, with the "Create projects" scope. It's only used for this request and never stored.</p>
+          <button type="button" class="btn" id="mod-publish">Create Modrinth draft</button>
+        </details>
+        <button type="submit" class="btn btn-buy">Download mod project</button>
+      </form>
+      <div class="panel preview">
+        <h3 class="panel-title">fabric.mod.json</h3>
+        <pre id="mod-preview"></pre>
+      </div>
+    </div>
+  </div>
+</section>
 
-async function buy(product) {
-  const r = await fetch("/api/checkout", { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({product}) });
-  const d = await r.json();
-  d.url ? location.href = d.url : status(d.error);
-}
+<section class="band" id="mentor">
+  <div class="wrap mentor-grid">
+    <div>
+      <h2>Learn to code with Forge</h2>
+      <p class="section-lede">Forge is an AI mentor that teaches you step by step, gives you small exercises and reviews your code honestly. The goal is that one day you won't need us.</p>
+      <div class="starters" id="starters">
+        <button class="chip" type="button">How do I start making Minecraft mods?</button>
+        <button class="chip" type="button">Explain what an API is like I'm 12</button>
+        <button class="chip" type="button">Give me my first JavaScript exercise</button>
+      </div>
+    </div>
+    <div class="panel chat">
+      <div class="chat-log" id="chat" aria-live="polite">
+        <p class="hint">Ask anything about code. Forge answers like a patient teacher.</p>
+      </div>
+      <form class="chat-input" id="chat-form">
+        <label class="sr-only" for="q">Your question</label>
+        <input id="q" autocomplete="off" placeholder="Ask Forge a question">
+        <button class="btn btn-buy" type="submit">Send</button>
+      </form>
+    </div>
+  </div>
+</section>
 
-function modBody() {
-  return { name:$("m-name").value, author:$("m-author").value, description:$("m-desc").value,
-    items:$("m-items").value.split(",").map(s => s.trim()).filter(Boolean), token:$("m-token").value };
-}
-async function modZip() {
-  const r = await fetch("/api/mod/zip", { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(modBody()) });
-  if (!r.ok) return status((await r.json()).error);
-  const a = Object.assign(document.createElement("a"), { href:URL.createObjectURL(await r.blob()), download:"mod.zip" });
-  a.click();
-}
-async function modPublish() {
-  const r = await fetch("/api/mod/modrinth", { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(modBody()) });
-  const d = await r.json();
-  status(d.url ? `Draft created: ${d.url}` : d.error);
-}
+<section class="band band-alt" id="showcase">
+  <div class="wrap">
+    <h2>Showcase</h2>
+    <div class="panel empty">
+      <span class="empty-icon" data-icon="frame"></span>
+      <div>
+        <p><strong>Nothing here yet.</strong> Websites and servers that owners choose to share will appear here.</p>
+        <button class="btn" type="button" data-buy="showcase">List your project for $10</button>
+      </div>
+    </div>
+  </div>
+</section>
 
-const history = [];
-async function ask() {
-  const text = $("q").value.trim(); if (!text) return;
-  $("q").value = ""; history.push({ role:"user", content:text }); render();
-  const r = await fetch("/api/tutor", { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({messages:history}) });
-  const d = await r.json();
-  if (d.reply) history.push({ role:"assistant", content:d.reply }); else { history.pop(); status(d.error); }
-  render();
-}
-function render() {
-  $("chat").innerHTML = "";
-  for (const m of history) {
-    const div = document.createElement("div");
-    div.className = m.role === "user" ? "msg-user" : "";
-    div.textContent = (m.role === "user" ? "You: " : "Forge: ") + m.content + "\n\n";
-    $("chat").appendChild(div);
-  }
-  $("chat").scrollTop = 1e9;
-}
-</script>
+<section class="band" id="faq">
+  <div class="wrap faq">
+    <h2>Questions</h2>
+    <details><summary>Who owns what ForgeCenter makes?</summary><p>You do. Mods are published from your Modrinth account, payments go to your Stripe account, and websites use your domain. We never publish anything without your approval.</p></details>
+    <details><summary>Do I need my own Stripe account?</summary><p>Only if your project takes payments. You connect it once and money from your customers goes straight to you.</p></details>
+    <details><summary>Why does a game cost $10,000 to $20,000?</summary><p>A finished game with art, sound, testing and a Steam launch is months of work. The $10,000 deposit starts the project, and the final price depends on its size.</p></details>
+    <details><summary>What do I get with Minecraft hosting?</summary><p>A server for 10 players with 2 GB of RAM, 100 GB of storage, a dedicated CPU and DDoS protection, billed monthly. Cancel any time.</p></details>
+    <details><summary>Is the AI assistant really mine?</summary><p>It's branded and set up for you, with its own instructions and higher limits. It runs on a leading AI model behind the scenes, so it stays fast and up to date.</p></details>
+  </div>
+</section>
+
+</main>
+
+<footer class="foot">
+  <div class="wrap foot-inner">
+    <span><span class="logo-icon" data-icon="anvil"></span>ForgeCenter</span>
+    <span>Not affiliated with Mojang or Microsoft. Minecraft is a trademark of Mojang AB.</span>
+  </div>
+</footer>
+
+<div class="toast" id="toast" role="status" hidden></div>
+
+<script src="app.js"></script>
 </body>
 </html>
