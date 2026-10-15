@@ -1,0 +1,17 @@
+{
+  "name": "forgecenter",
+  "version": "0.1.0",
+  "description": "ForgeCenter - Minecraft mods, websites, bots, servers and an AI dev tutor in one place",
+  "main": "src/server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.30.0",
+    "archiver": "^7.0.1",
+    "express": "^4.21.0",
+    "stripe": "^16.12.0"
+  }
+}

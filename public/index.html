@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ForgeCenter</title>
+<style>
+  :root { --bg:#0e1116; --card:#171b22; --line:#262c36; --text:#e8ecf2; --muted:#9aa4b2; --accent:#4ade80; }
+  * { box-sizing:border-box; }
+  body { margin:0; font:16px/1.5 system-ui,sans-serif; background:var(--bg); color:var(--text); }
+  header, section { max-width:1040px; margin:0 auto; padding:24px 16px; }
+  h1 { font-size:clamp(2rem,6vw,3.2rem); margin:.2em 0; } h1 span { color:var(--accent); }
+  h2 { margin-top:0; } p.muted, .muted { color:var(--muted); }
+  nav a { color:var(--muted); margin-right:16px; text-decoration:none; }
+  .grid { display:grid; gap:16px; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:20px; display:flex; flex-direction:column; }
+  .price { font-size:1.6rem; font-weight:700; margin:8px 0; }
+  .card p { flex:1; }
+  button { background:var(--accent); color:#06210f; border:0; border-radius:8px; padding:10px 16px; font-weight:600; cursor:pointer; }
+  input, textarea, select { width:100%; background:#0b0e12; color:var(--text); border:1px solid var(--line); border-radius:8px; padding:10px; margin:6px 0 12px; font:inherit; }
+  .row { display:flex; gap:12px; flex-wrap:wrap; }
+  #chat { height:320px; overflow:auto; background:#0b0e12; border:1px solid var(--line); border-radius:8px; padding:12px; white-space:pre-wrap; }
+  .msg-user { color:var(--accent); } #status { min-height:1.5em; }
+</style>
+</head>
+<body>
+<header>
+  <nav><a href="#pricing">Pricing</a><a href="#mods">Mod Forge</a><a href="#learn">Learn to code</a></nav>
+  <h1>Forge<span>Center</span></h1>
+  <p class="muted">Minecraft mods, websites, Discord bots, games and servers, plus an AI mentor that helps you become a pro developer.</p>
+  <p id="status"></p>
+</header>
+
+<section id="pricing">
+  <h2>Services</h2>
+  <div class="grid" id="products"></div>
+</section>
+
+<section id="mods">
+  <h2>Mod Forge</h2>
+  <p class="muted">Generate a Fabric mod project in your name. Download it, or create a draft on Modrinth with your own token. You stay the owner and review it before publishing.</p>
+  <div class="card">
+    <div class="row">
+      <div style="flex:1;min-width:200px"><label>Mod name<input id="m-name" placeholder="Ruby Tools"></label></div>
+      <div style="flex:1;min-width:200px"><label>Author (you)<input id="m-author" placeholder="YourName"></label></div>
+    </div>
+    <label>Description<textarea id="m-desc" rows="2" placeholder="Adds ruby gems and tools."></textarea></label>
+    <label>Items (comma separated)<input id="m-items" placeholder="Ruby, Ruby Sword"></label>
+    <label>Modrinth token (optional, only for publishing)<input id="m-token" type="password" placeholder="mrp_..."></label>
+    <div class="row"><button onclick="modZip()">Download project</button><button onclick="modPublish()">Create Modrinth draft</button></div>
+  </div>
+</section>
+
+<section id="learn">
+  <h2>Forge, your coding mentor</h2>
+  <div id="chat"></div>
+  <div class="row" style="margin-top:8px">
+    <input id="q" style="flex:1" placeholder="I want to learn to make Minecraft mods. Where do I start?" onkeydown="if(event.key==='Enter')ask()">
+    <button onclick="ask()">Send</button>
+  </div>
+</section>
+
+<script>
+const $ = id => document.getElementById(id);
+const status = t => $("status").textContent = t;
+if (location.search.includes("paid=1")) status("Payment received. Thanks! We'll be in touch.");
+
+fetch("/api/catalog").then(r => r.json()).then(cat => {
+  $("products").innerHTML = Object.entries(cat).map(([k, p]) => `
+    <div class="card"><strong>${p.name}</strong>
+      <div class="price">$${(p.price/100).toLocaleString()}${p.mode === "subscription" ? "/mo" : ""}</div>
+      <p class="muted">${p.desc}</p>
+      <button onclick="buy('${k}')">Get started</button></div>`).join("");
+});
+
+async function buy(product) {
+  const r = await fetch("/api/checkout", { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({product}) });
+  const d = await r.json();
+  d.url ? location.href = d.url : status(d.error);
+}
+
+function modBody() {
+  return { name:$("m-name").value, author:$("m-author").value, description:$("m-desc").value,
+    items:$("m-items").value.split(",").map(s => s.trim()).filter(Boolean), token:$("m-token").value };
+}
+async function modZip() {
+  const r = await fetch("/api/mod/zip", { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(modBody()) });
+  if (!r.ok) return status((await r.json()).error);
+  const a = Object.assign(document.createElement("a"), { href:URL.createObjectURL(await r.blob()), download:"mod.zip" });
+  a.click();
+}
+async function modPublish() {
+  const r = await fetch("/api/mod/modrinth", { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(modBody()) });
+  const d = await r.json();
+  status(d.url ? `Draft created: ${d.url}` : d.error);
+}
+
+const history = [];
+async function ask() {
+  const text = $("q").value.trim(); if (!text) return;
+  $("q").value = ""; history.push({ role:"user", content:text }); render();
+  const r = await fetch("/api/tutor", { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({messages:history}) });
+  const d = await r.json();
+  if (d.reply) history.push({ role:"assistant", content:d.reply }); else { history.pop(); status(d.error); }
+  render();
+}
+function render() {
+  $("chat").innerHTML = "";
+  for (const m of history) {
+    const div = document.createElement("div");
+    div.className = m.role === "user" ? "msg-user" : "";
+    div.textContent = (m.role === "user" ? "You: " : "Forge: ") + m.content + "\n\n";
+    $("chat").appendChild(div);
+  }
+  $("chat").scrollTop = 1e9;
+}
+</script>
+</body>
+</html>
