@@ -79,9 +79,17 @@ claude plugin install forgecenter --marketplace husein-tohme/ForgeCenter
 
 Its tests run with `claude plugin test claude-plugin/forgecenter`.
 
-## Run it locally
+## Try it in your browser (GitHub Codespaces)
 
-Needs Node.js 22.13 or newer.
+No installing needed. On the repository page, choose **Code**, then the **Codespaces** tab, then **Create codespace** on this branch. After a couple of minutes ForgeCenter starts by itself and opens in a new tab at an address like `https://<name>-3000.app.github.dev`.
+
+- The address is private to you. To share it, open the **Ports** tab, right-click port 3000 and set **Port visibility** to **Public**.
+- Add your keys as [Codespaces secrets](https://github.com/settings/codespaces) (for example `GOOGLE_CLIENT_ID`, `STRIPE_SECRET_KEY`, `ANTHROPIC_API_KEY`) and restart the codespace; they're used ahead of `.env`. For Google sign-in, add the codespace address under Authorized JavaScript origins.
+- A codespace stops after 30 minutes without use. It's a place to try things, not to run the real shop: use a host from **Deploy** for that.
+
+## Run it on your computer
+
+Needs Node.js 22.13 or newer. On Windows, `winget install OpenJS.NodeJS.LTS` and `winget install Git.Git` install both tools.
 
 ```bash
 npm install

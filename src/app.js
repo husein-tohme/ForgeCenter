@@ -46,12 +46,18 @@ export function createApp() {
   app.use(express.json({ limit: "100kb" }));
   app.use(loadUser);
 
-  // Basic CSRF protection: state-changing API calls must be same-origin JSON.
+  // Basic CSRF protection: state-changing API calls must be same-origin JSON. The site's
+  // own BASE_URL also counts, for hosts whose proxy passes a different Host header
+  // (such as GitHub Codespaces).
+  const siteHost = (() => { try { return new URL(process.env.BASE_URL).host; } catch { return null; } })();
   app.use("/api", (req, res, next) => {
     if (["GET", "HEAD", "OPTIONS"].includes(req.method)) return next();
     const origin = req.get("origin");
     let sameOrigin = true;
-    if (origin) { try { sameOrigin = new URL(origin).host === req.get("host"); } catch { sameOrigin = false; } }
+    if (origin) {
+      try { const host = new URL(origin).host; sameOrigin = host === req.get("host") || host === siteHost; }
+      catch { sameOrigin = false; }
+    }
     if (!sameOrigin) return res.status(403).json({ error: "Cross-site request blocked." });
     if (!req.is("application/json")) return res.status(415).json({ error: "Send requests as JSON." });
     next();

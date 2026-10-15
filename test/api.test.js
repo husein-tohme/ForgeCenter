@@ -30,6 +30,20 @@ test("cross-site and non-JSON writes are blocked", async () => {
   assert.equal(form.status, 415);
 });
 
+test("the site's own BASE_URL counts as same-origin behind a proxy, and nothing else does", async () => {
+  const { createApp } = await import("../src/app.js");
+  process.env.BASE_URL = "https://forge-3000.app.github.dev";
+  const server = createApp().listen(0);
+  await new Promise(r => server.once("listening", r));
+  try {
+    const { cookie } = signIn("proxy@example.com");
+    const post = origin => fetch(`http://127.0.0.1:${server.address().port}/api/auth/logout`, {
+      method: "POST", headers: { "Content-Type": "application/json", origin, cookie }, body: "{}" });
+    assert.equal((await post("https://forge-3000.app.github.dev")).status, 200);
+    assert.equal((await post("https://evil.app.github.dev")).status, 403);
+  } finally { server.close(); delete process.env.BASE_URL; }
+});
+
 test("unknown products are rejected", async () => {
   const { cookie } = signIn("buyer@example.com");
   assert.equal((await api("/api/checkout", { method: "POST", body: { product: "free-money" }, cookie })).status, 400);

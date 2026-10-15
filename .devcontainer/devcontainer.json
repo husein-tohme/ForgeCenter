@@ -1,0 +1,13 @@
+{
+  "name": "ForgeCenter",
+  "image": "mcr.microsoft.com/devcontainers/javascript-node:22",
+  "postCreateCommand": "npm install && ([ -f .env ] || printf 'NODE_ENV=development\\n' > .env)",
+  "postAttachCommand": "sh .devcontainer/start.sh",
+  "forwardPorts": [3000],
+  "portsAttributes": {
+    "3000": { "label": "ForgeCenter", "onAutoForward": "openBrowser" }
+  },
+  "customizations": {
+    "codespaces": { "openFiles": ["README.md"] }
+  }
+}
