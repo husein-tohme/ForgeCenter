@@ -6,6 +6,7 @@ A Minecraft-themed storefront: Minecraft server hosting, Discord bots, websites,
 
 - `npm run dev`: website with `.env` loaded and auto-restart
 - `npm test`: all API tests (node:test). Run before every commit.
+- `npm run check`: syntax-checks every JS file (there is no other linter)
 - `npm run bots`: customer Discord bot runner (separate process, same database)
 - `npm run setup:bots`: install `templates/discord-bot` packages once
 - `templates/discord-bot`: its own `npm test`

@@ -9,7 +9,8 @@
     "dev": "node --disable-warning=ExperimentalWarning --env-file-if-exists=.env --watch src/server.js",
     "test": "node --disable-warning=ExperimentalWarning --test test/*.test.js",
     "bots": "node --disable-warning=ExperimentalWarning src/bots.js",
-    "setup:bots": "npm ci --omit=dev --prefix templates/discord-bot"
+    "setup:bots": "npm ci --omit=dev --prefix templates/discord-bot",
+    "check": "node scripts/check.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.30.0",
