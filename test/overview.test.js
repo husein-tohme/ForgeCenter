@@ -33,6 +33,7 @@ test("the owner overview adds up sales, recurring revenue and what needs attenti
   assert.equal(o.activeServers, 1);
   assert.deepEqual(o.attention, { notStarted: 1, awaitingReply: 1, setupFailed: 1, pastDue: 1, pendingListings: 0, ticketsWaiting: 0 });
   assert.equal(o.walletCents, 0);
+  assert.equal(o.donationsCents, 0); // donations are counted separately from sales
 
   assert.equal((await api("/api/admin/overview", { cookie: c.cookie })).status, 403);
 });

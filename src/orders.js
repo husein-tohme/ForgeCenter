@@ -7,6 +7,7 @@ import { rateLimit } from "./limit.js";
 import { notify } from "./email.js";
 import { getStripe, ensureCustomer, baseUrl, CHECKOUT_LABELS } from "./stripe.js";
 import { createServiceForOrder, serviceForOrder, publicService } from "./services.js";
+import { donationsBetween } from "./donations.js";
 
 export const STATUSES = ["awaiting_payment", "paid", "in_progress", "delivered", "payment_failed", "expired", "canceled"];
 const PAID = "('paid', 'in_progress', 'delivered')";
@@ -260,6 +261,8 @@ adminOrdersRouter.get("/overview", (_req, res) => {
       ticketsWaiting: one("SELECT COUNT(*) AS n FROM tickets WHERE status = 'waiting'").n,
     },
     walletCents: one("SELECT COALESCE(SUM(amount), 0) AS c FROM wallet_entries WHERE user_id IS NOT NULL").c,
+    // One-time donations and monthly renewals received this month. They're gifts, not sales.
+    donationsCents: donationsBetween(monthStart, "9999"),
   });
 });
 

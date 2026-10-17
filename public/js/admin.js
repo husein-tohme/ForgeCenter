@@ -56,6 +56,7 @@ async function loadOverview() {
         <span class="stat-label">New sales in ${monthName(o.month)}</span>
         <span class="hero-figure">${dollars(o.sales.cents)}</span>
         <span class="stat-delta">${plural(o.sales.orders, "order", "orders")}. ${delta}</span>
+        ${o.donationsCents ? `<span class="stat-delta">Plus ${cash(o.donationsCents)} in donations.</span>` : ""}
         <span class="stat-delta">Customers hold ${cash(o.walletCents)} in wallet credit.</span>
       </div>
       <div class="stat-tiles">

@@ -109,6 +109,17 @@ export const notify = {
       `Hi ${c.name},\n\nForgeCenter wrote:\n\n${preview}\n\nReply here: ${site()}/support?ticket=${ticket.id}`);
   },
 
+  // Signed-in donors only; Stripe emails the receipt to everyone who gives.
+  donationThanks(donation) {
+    const c = donation.user_id ? db.prepare("SELECT email, name FROM users WHERE id = ?").get(donation.user_id) : null;
+    if (!c) return;
+    const amount = `$${(donation.amount / 100).toLocaleString("en-US")}${donation.monthly ? " a month" : ""}`;
+    send(c.email, "Thank you for supporting ForgeCenter",
+      `Hi ${c.name},\n\nThank you for your ${amount} donation. It keeps the free tools free and pays for the AI and servers behind them.${donation.monthly
+        ? `\n\nYour donation repeats every month. Change your card or cancel any time in Manage billing:\n${site()}/account`
+        : ""}\n\nStripe sends your receipt separately.\n\nForgeCenter`);
+  },
+
   topupDisputed(topup, won) {
     const c = topup.user_id ? db.prepare("SELECT email, name FROM users WHERE id = ?").get(topup.user_id) : null;
     send(owners(), won ? `Dispute won: wallet top-up ${topup.id}` : `Dispute opened: wallet top-up ${topup.id}`,

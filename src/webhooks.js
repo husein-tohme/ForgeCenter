@@ -6,6 +6,7 @@ import { handleOrderEvent } from "./orders.js";
 import { handleWalletEvent } from "./wallet.js";
 import { handleAgeEvent } from "./age.js";
 import { handleLaunchEvent } from "./launchpad.js";
+import { handleDonationEvent, isDonationEvent } from "./donations.js";
 
 // Orders first, then game launches, which are orders too and read what the order now says.
 async function handleOrderAndLaunch(event) {
@@ -20,10 +21,13 @@ export async function handleStripeEvent(event) {
     const kind = checkoutKind(obj);
     if (kind === "age_check") return handleAgeEvent(event);
     if (kind === "wallet_topup") return handleWalletEvent(event);
+    if (kind === "donation") return handleDonationEvent(event);
     if (kind === "order") return handleOrderAndLaunch(event);
     return;
   }
   if (event.type === "charge.refunded" || event.type.startsWith("charge.dispute.")) return handleWalletEvent(event);
+  // Monthly donations are subscriptions too, but they aren't orders.
+  if (isDonationEvent(event)) return handleDonationEvent(event);
   return handleOrderAndLaunch(event);
 }
 

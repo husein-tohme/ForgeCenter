@@ -15,6 +15,7 @@ import { whatsappRouter, whatsappEnabled } from "./whatsapp.js";
 import { servicesRouter, adminServicesRouter } from "./services.js";
 import { gamesRouter, adminGamesRouter } from "./launchpad.js";
 import { pagesRouter, notFound } from "./pages.js";
+import { donationsRouter, keepMonthlyDonors } from "./donations.js";
 
 export function createApp() {
   const app = express();
@@ -78,6 +79,8 @@ export function createApp() {
   app.use("/api/auth", authRouter);
   app.use("/api/auth/whatsapp", whatsappRouter);
   app.use("/api/auth", oauthRouter);
+  // A monthly donor cancels before deleting their account, or they couldn't stop it later.
+  app.delete("/api/me", keepMonthlyDonors);
   app.use("/api/me", meRouter);
   app.use("/api", ordersRouter);
   app.use("/api/admin", adminOrdersRouter, adminShowcaseRouter, adminServicesRouter, adminWalletRouter, adminSupportRouter, adminGamesRouter);
@@ -88,6 +91,7 @@ export function createApp() {
   app.use("/api/showcase", showcaseRouter);
   app.use("/api/tutor", tutorRouter);
   app.use("/api/games", gamesRouter);
+  app.use("/api/donations", donationsRouter);
 
   app.use("/api", toolsRouter);
 
