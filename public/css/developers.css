@@ -1,0 +1,116 @@
+/* Developer API page. Builds on styles.css: panels, slots, pills, ledger, steps, trades. */
+
+.dev-title { display: flex; align-items: center; gap: 16px; margin-bottom: 8px; }
+.dev-title .slot { width: 64px; height: 64px; flex: none; }
+.dev-title .page-title { margin: 0; }
+.dev-steps { margin: 8px 0 40px; }
+
+.dev-grid { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 24px; align-items: start; }
+.dev-grid > * { min-width: 0; }
+.dev-grid.single { grid-template-columns: minmax(0, 1fr); }
+.dev-panel-title { font-size: 1.5rem; margin: 0 0 12px; }
+
+/* Keys */
+.key-form { margin: 0 0 6px; }
+.key-form input { width: 100%; }
+.key-list { list-style: none; padding: 0; margin: 16px 0 0; display: grid; gap: 8px; }
+.key-row {
+  display: grid; grid-template-columns: 44px minmax(0, 1fr) auto; gap: 12px; align-items: center;
+  background: #d4d4d4; padding: 10px 12px;
+}
+.key-row .slot { width: 44px; height: 44px; padding: 6px; }
+.key-row strong { display: block; overflow-wrap: anywhere; }
+.key-row code { background: #b8b8b8; }
+.key-row .small { display: block; }
+
+.key-reveal { background: #f2e7b8; border: 3px solid #b8860b; padding: 14px 16px; margin: 0 0 16px; }
+.key-reveal h3 { margin: 0 0 6px; }
+.key-reveal p { margin: 0 0 10px; }
+.key-secret-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin: 0 0 10px; }
+code.key-secret {
+  flex: 1; min-width: 0; display: block; padding: 10px 12px; font-size: .95rem; line-height: 1.4;
+  background: #1e1e1e; color: #6fe0a0; overflow-wrap: anywhere; user-select: all;
+}
+
+/* Wallet and spending */
+.dev-wallet { display: flex; align-items: center; gap: 24px; flex-wrap: wrap; margin-bottom: 16px; }
+.dev-wallet .stat-label { display: block; margin-bottom: 6px; }
+.usage-stats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin: 0 0 12px; }
+.usage-stats > div { background: #d4d4d4; padding: 10px 12px; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.usage-stats .stat-value { font-size: 1.4rem; overflow-wrap: anywhere; }
+.dev-gate { align-items: flex-start; }
+.dev-gate p + p { margin-top: 8px; }
+.by-endpoint { list-style: none; padding: 0; margin: 0 0 8px; display: grid; gap: 2px; }
+.by-endpoint li { display: flex; justify-content: space-between; gap: 12px; padding: 4px 0; border-bottom: 1px solid #b0b0b0; font-size: .95rem; }
+.by-endpoint .num { font-variant-numeric: tabular-nums; }
+.usage-actions { display: flex; gap: 16px; align-items: center; flex-wrap: wrap; }
+
+/* Prices (villager trades without the trade button) */
+#price-list .trade { grid-template-columns: 64px minmax(0, 1fr) auto; }
+.dev-price { text-align: right; font-size: .95rem; color: var(--ink-soft); }
+.dev-price strong { font: 700 1.3rem var(--body); color: var(--ink); }
+.dev-price span { display: block; }
+
+/* Recent calls */
+.dev-calls li { grid-template-columns: minmax(0, 1fr) auto; }
+.dev-calls .key-name { color: var(--ink-soft); font-weight: 400; }
+
+/* Endpoints */
+.endpoint { padding: 0; margin-bottom: 12px; }
+.endpoint > summary {
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap; cursor: pointer; list-style: none;
+  padding: 14px 18px;
+}
+.endpoint > summary::-webkit-details-marker { display: none; }
+.endpoint > summary::after { content: "+"; margin-left: auto; font: 700 1.4rem var(--display); color: var(--ink-soft); }
+.endpoint[open] > summary::after { content: "−"; }
+.endpoint[open] > summary { border-bottom: 3px solid #a9a9a9; }
+.endpoint > summary code { font-size: 1.05rem; font-weight: 700; background: none; padding: 0; overflow-wrap: anywhere; }
+.endpoint-what { color: var(--ink-soft); }
+.endpoint-body { padding: 16px 18px 20px; }
+.endpoint-body p { max-width: 70ch; }
+.endpoint-body > :last-child { margin-bottom: 0; }
+.pill-get { background: var(--lapis); }
+.pill-post { background: var(--emerald-dark); }
+.params { padding-left: 1.2em; margin: 0 0 16px; }
+.params li { margin-bottom: 6px; max-width: 75ch; }
+
+/* A code window: a dark title bar with the Copy button, then the code, which scrolls on its own. */
+.code-block { margin: 0 0 16px; border: 3px solid var(--outline); background: #1e1e1e; }
+.code-bar { display: flex; justify-content: flex-end; background: #34373e; padding: 4px; }
+.copy-btn { min-height: 30px; padding: 2px 12px; font-size: .9rem; }
+pre.code {
+  margin: 0; color: #d7f5d7; padding: 12px 16px 14px; overflow-x: auto;
+  font: 14px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; white-space: pre;
+}
+
+/* Limits and errors */
+.status-list { margin: 0; display: grid; gap: 6px; }
+.status-list > div { display: grid; grid-template-columns: 56px minmax(0, 1fr); gap: 12px; align-items: baseline; }
+.status-list dt { font: 700 1.1rem var(--body); }
+.status-list dd { margin: 0; }
+.dev-rules { padding-left: 1.2em; max-width: 760px; }
+.dev-rules li { margin-bottom: 10px; }
+
+@media (max-width: 900px) {
+  .dev-grid { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 640px) {
+  .dev-title .slot { width: 52px; height: 52px; }
+  /* Steps with the number beside the text, so they don't fill the screen. */
+  .dev-steps { gap: 16px; margin-bottom: 32px; }
+  .dev-steps li { padding: 0 0 0 54px; min-height: 40px; max-width: none; }
+  #price-list .trade { align-items: start; }
+  .key-row { grid-template-columns: 40px minmax(0, 1fr); }
+  .key-row .slot { width: 40px; height: 40px; }
+  .key-row .btn { grid-column: 1 / -1; justify-self: start; }
+  #price-list .trade { grid-template-columns: 52px minmax(0, 1fr); }
+  .dev-price { grid-column: 2; text-align: left; }
+  .endpoint > summary { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 4px 10px; padding: 12px 14px; }
+  .endpoint > summary .pill { grid-area: 1 / 1; justify-self: start; }
+  .endpoint > summary code { grid-area: 1 / 2; }
+  .endpoint > summary::after { grid-area: 1 / 3; margin: 0; }
+  .endpoint-what { grid-column: 1 / -1; grid-row: 2; font-size: .95rem; }
+  .endpoint-body { padding: 14px; }
+  pre.code { font-size: 13px; }
+}

@@ -10,6 +10,7 @@ import { supportRouter, adminSupportRouter } from "./support.js";
 import { showcaseRouter, adminShowcaseRouter } from "./showcase.js";
 import { tutorRouter } from "./tutor.js";
 import { toolsRouter } from "./tools.js";
+import { developerRouter, developerApi, developerApiErrors } from "./developer.js";
 import { oauthRouter, enabledOAuthProviders } from "./oauth.js";
 import { whatsappRouter, whatsappEnabled } from "./whatsapp.js";
 import { servicesRouter, adminServicesRouter } from "./services.js";
@@ -46,6 +47,9 @@ export function createApp() {
   app.post("/api/stripe/webhook", express.raw({ type: "application/json", limit: "1mb" }), stripeWebhook);
 
   app.use(express.json({ limit: "100kb" }));
+  // The developer API signs in only with an API key, so it comes before loadUser: a
+  // session cookie can never authorize it, and it doesn't need the CSRF guard below.
+  app.use("/v1", developerApi, developerApiErrors);
   app.use(loadUser);
 
   // Basic CSRF protection: state-changing API calls must be same-origin JSON. The site's
@@ -92,6 +96,7 @@ export function createApp() {
   app.use("/api/tutor", tutorRouter);
   app.use("/api/games", gamesRouter);
   app.use("/api/donations", donationsRouter);
+  app.use("/api/developer", developerRouter);
 
   app.use("/api", toolsRouter);
 

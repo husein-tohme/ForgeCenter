@@ -183,6 +183,7 @@ const ENTRY_TEXT = {
   credit: e => `Credit from ForgeCenter: ${e.note}`,
   topup_refund: () => "Top-up refunded to your card",
   dispute: e => e.note || "Card dispute",
+  api: e => e.note || "Developer API call",
 };
 
 async function loadWallet(retry = toppedUp) {
