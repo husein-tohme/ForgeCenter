@@ -61,8 +61,10 @@ Each bot uses about 60 to 100 MB of memory, so plan the machine size around how 
 `claude-plugin/forgecenter` is a Claude Code plugin for working on this project:
 
 - **`/forgecenter`** opens a launch checklist: which `.env` settings are still missing (never showing their values), whether the tests pass, and what isn't committed or pushed yet.
-- **Secrets guard:** stops any commit or push that would include `.env`, `data/` or a database file.
+- **Secrets guard:** stops any commit or push that would include `.env`, `data/` or a database file, or that adds something that looks like a real key (Stripe, Anthropic, Pterodactyl, Discord, Resend, GitHub, Google, Meta, private keys). It names the file and line but never repeats the key.
+- **Tests before commits:** a commit that touches `src/`, `public/js/`, `test/` or the bot template is stopped until a full `npm test` run has passed since those files last changed.
 - **Project rules guard:** stops edits to `src/` that would pass `payment_method_types` to Stripe or store a date of birth.
+- **Skills:** `add-a-feature` (how features are built here: module, tables, permission checks, Stripe and wallet flows, Claude calls, pages, tests, docs) and `deploy-forgecenter` (hosts, settings, persistent disk, Stripe webhooks, sign-in URLs, domain).
 - **Status line:** shows the latest test result after the tests run.
 
 Install it at the prompt of a Claude Code terminal session:

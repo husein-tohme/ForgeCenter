@@ -8,7 +8,7 @@
     {
       "name": "forgecenter",
       "source": "./claude-plugin/forgecenter",
-      "description": "Launch checklist pane, /forgecenter command, test status line, and guards that keep secrets out of git and edits inside the project's payment and privacy rules"
+      "description": "Launch checklist pane, /forgecenter command, test status line, secret and test-before-commit guards, payment and privacy rule guards, and skills for adding features and deploying"
     }
   ]
 }

@@ -7,6 +7,7 @@ const PANE = 'forgecenter'
 const report = atom({ plugin: 'forgecenter', key: 'report' } as const, null)
 const checking = atom({ plugin: 'forgecenter', key: 'checking' } as const, false)
 const lastTests = atom({ plugin: 'forgecenter', key: 'lastTests' } as const, null)
+const lastPassAt = atom({ plugin: 'forgecenter', key: 'lastPassAt' } as const, null)
 
 // The .env settings a launch needs, in the order to fix them.
 const GROUPS: { label: string; required: boolean; keys: string[] }[] = [
@@ -78,6 +79,49 @@ export function brokenRule(path: string, before: string, after: string): string 
   return CODE_RULES.find(r => count(r.pattern, after) > count(r.pattern, before))?.why ?? null
 }
 
+// Things that look like real secrets. Example values in the repo (".env.example", tests
+// that build fakes from parts) are too short or broken up to match.
+const SECRET_PATTERNS: { kind: string; pattern: RegExp }[] = [
+  { kind: 'Stripe secret or restricted key', pattern: /\b[sr]k_(?:live|test)_[0-9A-Za-z]{16,}/ },
+  { kind: 'Stripe webhook signing secret', pattern: /\bwhsec_[0-9A-Za-z]{24,}/ },
+  { kind: 'Anthropic API key', pattern: /\bsk-ant-[0-9A-Za-z_-]{20,}/ },
+  { kind: 'Pterodactyl API key', pattern: /\bptl[ac]_[0-9A-Za-z]{20,}/ },
+  { kind: 'Discord bot token', pattern: /\b[MNO][0-9A-Za-z_-]{23,25}\.[0-9A-Za-z_-]{6}\.[0-9A-Za-z_-]{27,38}\b/ },
+  { kind: 'Resend API key', pattern: /\bre_[0-9A-Za-z]{8,}_[0-9A-Za-z]{12,}/ },
+  { kind: 'GitHub token', pattern: /\b(?:gh[pousr]_[0-9A-Za-z]{36,}|github_pat_[0-9A-Za-z_]{60,})/ },
+  { kind: 'Google OAuth client secret', pattern: /\bGOCSPX-[0-9A-Za-z_-]{20,}/ },
+  { kind: 'Meta (WhatsApp) access token', pattern: /\bEAA[0-9A-Za-z]{60,}/ },
+  { kind: 'private key', pattern: /-----BEGIN (?:[A-Z]+ )?PRIVATE KEY-----/ },
+]
+
+/** The lines a unified diff adds, with their file and new line number. */
+export function addedLines(diff: string): { file: string; line: number; text: string }[] {
+  const out: { file: string; line: number; text: string }[] = []
+  let file = ''
+  let line = 0
+  for (const raw of diff.split('\n')) {
+    if (raw.startsWith('+++ ')) { file = raw.slice(4).replace(/^b\//, ''); continue }
+    const hunk = /^@@ -\d+(?:,\d+)? \+(\d+)/.exec(raw)
+    if (hunk) { line = Number(hunk[1]); continue }
+    if (raw.startsWith('+')) { out.push({ file, line, text: raw.slice(1) }); line += 1 }
+    else if (raw.startsWith(' ')) line += 1
+  }
+  return out
+}
+
+/** Where an added line looks like a secret, never the secret itself. */
+export function findSecrets(diff: string): { file: string; line: number; kind: string }[] {
+  const found: { file: string; line: number; kind: string }[] = []
+  for (const l of addedLines(diff)) {
+    const hit = SECRET_PATTERNS.find(p => p.pattern.test(l.text))
+    if (hit) found.push({ file: l.file, line: l.line, kind: hit.kind })
+  }
+  return found
+}
+
+// Code the tests cover: a commit touching it needs a passing run from after the change.
+export const TESTED_CODE = /^(src|public\/js|test|templates\/discord-bot\/src)\//
+
 const lines = (text: string) => text.split('\n').map(s => s.trim()).filter(Boolean)
 
 /** The files a git commit or push in `command` would send, or null when it sends none. */
@@ -94,6 +138,34 @@ async function filesSentBy($: EngineInterface, command: string): Promise<string[
     return lines(log.stdout)
   }
   return null
+}
+
+const isCommit = (command: string) => /\bgit\b[^;&|]*\bcommit\b/.test(command)
+const isPush = (command: string) => /\bgit\b[^;&|]*\bpush\b/.test(command)
+const commitsAll = (command: string) => /\s-[a-zA-Z]*a|\s--all\b/.test(command)
+
+/** The added content a commit or push in `command` would send, as a zero-context diff. */
+async function diffSentBy($: EngineInterface, command: string): Promise<string> {
+  const git = (...argv: string[]) => $.process.run(['git', ...argv])
+  if (isCommit(command)) {
+    const staged = await git('diff', '--cached', '-U0', '--no-color', '--no-ext-diff')
+    const all = commitsAll(command) ? await git('diff', '-U0', '--no-color', '--no-ext-diff') : { stdout: '' }
+    return `${staged.stdout}\n${all.stdout}`
+  }
+  if (isPush(command)) {
+    let log = await git('log', '-p', '-U0', '--no-color', '--format=', '@{upstream}..HEAD')
+    if (log.exitCode !== 0) log = await git('log', '-p', '-U0', '--no-color', '--format=', 'HEAD', '--not', '--remotes')
+    return log.stdout
+  }
+  return ''
+}
+
+/** Tested code a commit in `command` would include (added, copied, modified or renamed). */
+async function codeCommittedBy($: EngineInterface, command: string): Promise<string[]> {
+  const git = (...argv: string[]) => $.process.run(['git', ...argv])
+  const staged = await git('diff', '--cached', '--name-only', '--diff-filter=ACMR')
+  const all = commitsAll(command) ? await git('diff', '--name-only', '--diff-filter=ACMR') : { stdout: '' }
+  return [...new Set([...lines(staged.stdout), ...lines(all.stdout)])].filter(f => TESTED_CODE.test(f))
 }
 
 async function runChecks($: EngineInterface) {
@@ -157,16 +229,51 @@ export const register: Register = on => {
       }
     }
 
+    if (isCommit(e.command) || isPush(e.command)) {
+      const secrets = findSecrets(await diffSentBy($, e.command))
+      if (secrets.length) {
+        const where = secrets.slice(0, 5).map(s => `${s.file}:${s.line} (${s.kind})`).join(', ')
+        return {
+          deny: `forgecenter: this ${isPush(e.command) ? 'push' : 'commit'} adds what looks like a real secret at ${where}. ` +
+            'Move it to .env or the host\'s secret settings and read it from process.env. If it was ever pushed, rotate it with the provider.',
+        }
+      }
+    }
+
+    if (isCommit(e.command)) {
+      const code = await codeCommittedBy($, e.command)
+      if (code.length) {
+        const passedAt = await read($, lastPassAt)
+        const root = (await $.process.run(['git', 'rev-parse', '--show-toplevel'])).stdout.trim()
+        const changedAfter: string[] = []
+        for (const f of code) {
+          const stat = await $.fs.stat(`${root}/${f}`).catch(() => undefined)
+          if (stat && (passedAt === null || stat.mtimeMs > passedAt)) changedAfter.push(f)
+        }
+        if (changedAfter.length) {
+          return {
+            deny: `forgecenter: ${changedAfter.slice(0, 5).join(', ')}${changedAfter.length > 5 ? ` and ${changedAfter.length - 5} more` : ''} ` +
+              `changed ${passedAt === null ? 'and the tests haven\'t passed in this session yet' : 'since the tests last passed'}. ` +
+              'Run npm test, fix anything failing, then commit again (CLAUDE.md: run tests before every commit).',
+          }
+        }
+      }
+    }
+
+    const startedAt = await $.clock.now()
     const ran = await next(e)
     const counts = /\bnpm (run )?test\b|\bnode\b[^;&|]*--test\b/.test(e.command) && typeof ran.text === 'string'
       ? parseTestOutput(ran.text) : null
     if (counts) {
       await update($, lastTests, () => counts)
+      // Only a full run counts (not one test file), and only when nothing failed.
+      const fullRun = /\bnpm (run )?test\b/.test(e.command) && !/\bnpm (run )?test\b\S*\s+--?\s*\S/.test(e.command)
+      if (fullRun && counts.failed === 0 && counts.passed > 0) await update($, lastPassAt, () => startedAt)
       $.ui.status(counts.failed ? `ForgeCenter tests: ${counts.failed} failing` : `ForgeCenter tests: all ${counts.passed} passing`)
     }
     return ran
   }).catch(($, e, next) =>
-    // If the guard itself breaks, block only what it guards: commits and pushes.
+    // If a guard itself breaks, block only what it guards: commits and pushes.
     next.called || !/\bgit\b[^;&|]*\b(commit|push)\b/.test(e.command)
       ? next(e)
       : { deny: 'forgecenter: the secrets check failed, so this commit or push was stopped. Try again.' },

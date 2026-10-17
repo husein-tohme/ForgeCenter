@@ -17,6 +17,8 @@ declare module 'claude-code' {
       report: Report | null
       checking: boolean
       lastTests: TestCount | null
+      /** When the latest fully passing test run started ($.clock.now() milliseconds). */
+      lastPassAt: number | null
     }
   }
 }
