@@ -8,8 +8,10 @@ if (!process.env.BASE_URL && process.env.RENDER_EXTERNAL_URL) process.env.BASE_U
 const node = (script) => spawn(process.execPath, ["--disable-warning=ExperimentalWarning", script], { stdio: "inherit", env: process.env });
 
 const children = [node("src/server.js")];
-// Customer bots need SECRET_KEY to decrypt their tokens; without it, run the website only.
-if ((process.env.SECRET_KEY ?? "").length >= 32) children.push(node("src/bots.js"));
+// Customer bots need SECRET_KEY to decrypt their tokens; without it (or with BOTS=off,
+// e.g. on a free plan that sleeps), run the website only.
+if (process.env.BOTS === "off") console.log("BOTS=off, so customer Discord bots won't run. The website runs as normal.");
+else if ((process.env.SECRET_KEY ?? "").length >= 32) children.push(node("src/bots.js"));
 else console.log("SECRET_KEY isn't set, so customer Discord bots won't run. The website runs as normal.");
 
 let stopping = false;

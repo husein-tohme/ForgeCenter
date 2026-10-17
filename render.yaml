@@ -1,44 +1,51 @@
 # One-click deploy to Render: https://dashboard.render.com/blueprint/new?repo=https://github.com/husein-tohme/ForgeCenter
-# The website and the customer bot runner run in one service because they share the
-# SQLite database on the disk (a Render disk attaches to a single service).
+#
+# Free plan ($0, no card): the free plan's disk is wiped on every restart, so Litestream
+# restores the database from Supabase Storage when the site starts and backs it up every
+# second (Dockerfile.render, scripts/render-start.sh). The site sleeps after 15 minutes
+# without visitors and takes about a minute to wake. Customer Discord bots don't run on
+# the free plan (they'd stop whenever it sleeps).
+#
+# For a paid always-on setup with a real disk, see the "Paid plan" notes at the bottom.
 services:
   - type: web
     name: forgecenter
-    runtime: node
-    # Disks need a paid instance; on the free plan accounts and orders would be wiped on every restart.
-    plan: starter
+    runtime: docker
+    plan: free
+    region: frankfurt
     branch: main
-    buildCommand: npm ci && npm run setup:bots
-    startCommand: npm run start:all
+    dockerfilePath: ./Dockerfile.render
     healthCheckPath: /
-    disk:
-      name: forgecenter-data
-      mountPath: /var/data
-      sizeGB: 1
     envVars:
-      - key: NODE_VERSION
-        value: "22"
-      - key: NODE_ENV
-        value: production
       - key: DATABASE_PATH
-        value: /var/data/forgecenter.db
-      - key: BOT_DATA_DIR
-        value: /var/data/bots
-      # Encrypts customers' bot tokens. Generated once; never change it.
+        value: /app/data/forgecenter.db
+      - key: BOTS
+        value: "off"
+      # Encrypts stored secrets. Generated once; never change it.
       - key: SECRET_KEY
         generateValue: true
+      # Backups to Supabase Storage (Storage > Settings > S3 connection in Supabase).
+      - key: LITESTREAM_BUCKET
+        value: forgecenter-backups
+      - key: LITESTREAM_ENDPOINT
+        sync: false   # e.g. https://<project-ref>.supabase.co/storage/v1/s3
+      - key: LITESTREAM_REGION
+        sync: false   # the region Supabase shows, e.g. eu-west-1
+      - key: LITESTREAM_ACCESS_KEY_ID
+        sync: false
+      - key: LITESTREAM_SECRET_ACCESS_KEY
+        sync: false
       # Your verified sign-in email, so you get the owner panel.
       - key: ADMIN_EMAILS
         sync: false
-      # Payments
+      # Everything below is optional: each turns a feature on once it's filled in
+      # (the owner page /sign-in-setup explains the sign-in ones).
       - key: STRIPE_SECRET_KEY
         sync: false
       - key: STRIPE_WEBHOOK_SECRET
         sync: false
-      # AI mentor, Forge Support, AI Maker, Site Maker, developer API
       - key: ANTHROPIC_API_KEY
         sync: false
-      # Sign-in (each provider turns on when its values are set; see /sign-in-setup)
       - key: GOOGLE_CLIENT_ID
         sync: false
       - key: GITHUB_CLIENT_ID
@@ -53,8 +60,14 @@ services:
         sync: false
       - key: DISCORD_CLIENT_SECRET
         sync: false
-      # Email (optional)
       - key: RESEND_API_KEY
         sync: false
       - key: EMAIL_FROM
         sync: false
+
+# Paid plan (always on, real disk, customer bots): change the service to
+#   runtime: node, plan: starter, buildCommand: npm ci && npm run setup:bots,
+#   startCommand: npm run start:all, add
+#   disk: { name: forgecenter-data, mountPath: /var/data, sizeGB: 1 },
+#   set DATABASE_PATH=/var/data/forgecenter.db and BOT_DATA_DIR=/var/data/bots,
+#   and remove BOTS=off and the LITESTREAM_* settings.
