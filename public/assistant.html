@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chat with an assistant · ForgeCenter</title>
+<meta name="description" content="Chat with an AI assistant someone made on ForgeCenter.">
+<meta name="robots" content="noindex">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<meta name="theme-color" content="#2a2d33">
+<meta property="og:site_name" content="ForgeCenter">
+<meta property="og:title" content="Chat with an assistant · ForgeCenter">
+<meta property="og:description" content="Chat with an AI assistant someone made on ForgeCenter.">
+<meta property="og:type" content="website">
+<meta property="og:image" content="%BASE_URL%/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=Pixelify+Sans:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/styles.css">
+<link rel="stylesheet" href="/css/ai-maker.css">
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="top">
+  <div class="wrap top-inner">
+    <a class="logo" href="/" aria-label="ForgeCenter home"><span class="logo-icon" data-icon="anvil"></span>ForgeCenter</a>
+    <nav aria-label="Main"><a href="/#shop">Prices</a><a href="/#tools">Free tools</a><a href="/#mentor">Learn to code</a><a href="/support">Help</a></nav>
+    <div class="auth" id="auth-slot"></div>
+  </div>
+</header>
+
+<main id="main" class="page">
+  <div class="wrap narrow-wrap">
+    <p class="hint" id="loading">Loading the assistant…</p>
+
+    <section class="panel missing" id="missing" hidden>
+      <span class="slot missing-slot" data-icon="barrier"></span>
+      <div>
+        <h1 class="page-title">This link doesn't work</h1>
+        <p>The assistant isn't shared any more, or its maker made a new link. Ask the person who sent it for the new one, or <a href="/ai-maker">make your own assistant</a>.</p>
+      </div>
+    </section>
+
+    <section class="panel assistant-card" id="card" hidden>
+      <div class="assistant-head">
+        <span class="slot assistant-avatar" id="avatar"></span>
+        <div class="assistant-who">
+          <h1 id="name"></h1>
+          <p class="small"><span class="pill pill-info">AI assistant</span> <span id="maker"></span></p>
+        </div>
+      </div>
+      <p class="note">This is an AI, not a real person, and it can get things wrong. Never share passwords, sign-in codes or personal details like where you live.</p>
+
+      <div class="thread maker-thread" id="thread" aria-live="polite"></div>
+
+      <form class="msg-form" id="chat-form" hidden>
+        <label class="sr-only" for="chat-input">Message</label>
+        <textarea id="chat-input" rows="2" maxlength="4000" placeholder="Type a message"></textarea>
+        <div class="form-actions">
+          <button class="btn btn-buy" type="submit" id="chat-send">Send</button>
+          <button class="link-btn" type="button" id="chat-clear">Start over</button>
+        </div>
+        <p class="small" id="chat-note">Chats aren't saved. Each message uses one of your daily AI messages.</p>
+      </form>
+
+      <div class="chat-signin" id="chat-signin" hidden>
+        <p>Sign in to chat. It's free, and your chats aren't saved.</p>
+        <button class="btn btn-buy" type="button" id="signin-here">Sign in to chat</button>
+      </div>
+
+      <p class="small card-foot"><a href="/ai-maker">Make your own assistant</a> · Did it say something it shouldn't? <a href="/support">Tell us</a> and include this page's link.</p>
+    </section>
+  </div>
+</main>
+
+<footer class="foot">
+  <div class="wrap foot-inner">
+    <span><span class="logo-icon" data-icon="anvil"></span>ForgeCenter</span>
+    <nav aria-label="Legal"><a href="/privacy">Privacy</a> <a href="/terms">Terms</a> <a href="/support">Help</a></nav>
+  </div>
+</footer>
+<div class="toast" id="toast" role="status" hidden></div>
+<script type="module" src="/js/assistant.js"></script>
+</body>
+</html>

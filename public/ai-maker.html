@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AI Maker · ForgeCenter</title>
+<meta name="description" content="Build your own AI assistant with a name, a look and its own knowledge, then share it with a link.">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<meta name="theme-color" content="#2a2d33">
+<link rel="canonical" href="%PAGE_URL%">
+<meta property="og:site_name" content="ForgeCenter">
+<meta property="og:title" content="AI Maker · ForgeCenter">
+<meta property="og:description" content="Build your own AI assistant with a name, a look and its own knowledge, then share it with a link.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="%PAGE_URL%">
+<meta property="og:image" content="%BASE_URL%/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=Pixelify+Sans:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/styles.css">
+<link rel="stylesheet" href="/css/ai-maker.css">
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="top">
+  <div class="wrap top-inner">
+    <a class="logo" href="/" aria-label="ForgeCenter home"><span class="logo-icon" data-icon="anvil"></span>ForgeCenter</a>
+    <nav aria-label="Main"><a href="/#shop">Prices</a><a href="/#tools">Free tools</a><a href="/#mentor">Learn to code</a><a href="/support">Help</a></nav>
+    <div class="auth" id="auth-slot"></div>
+  </div>
+</header>
+
+<main id="main" class="page">
+  <div class="wrap">
+    <h1 class="page-title">AI Maker</h1>
+    <p class="section-lede">Build your own AI assistant: a character, a helper for your server or a study buddy. Give it a name, a look and some knowledge, test it, then share it with a link.</p>
+
+    <section class="panel signed-out" id="signed-out" hidden>
+      <p>Sign in to make your own assistant. It's free, and you can make up to 3.</p>
+      <button class="btn btn-buy" type="button" id="signin-here">Sign in</button>
+    </section>
+
+    <div id="maker" hidden>
+      <section class="panel maker-bar" aria-labelledby="bar-title">
+        <div class="maker-bar-head">
+          <h2 class="panel-title" id="bar-title">Your assistants</h2>
+          <p class="small" id="count"></p>
+        </div>
+        <ul class="maker-bar-slots" id="assistants"></ul>
+      </section>
+
+      <div class="maker-grid">
+        <section class="panel maker-editor" id="editor" aria-labelledby="editor-title">
+          <form class="maker-form" id="assistant-form" novalidate>
+            <h2 class="maker-heading" id="editor-title">New assistant</h2>
+            <p class="note" id="hidden-note" hidden>ForgeCenter hid this assistant because it may break the <a href="/terms">terms</a>, so its link doesn't work. You can still edit and test it. Open a <a href="/support">support ticket</a> if you think this is a mistake.</p>
+
+            <fieldset class="avatar-pick">
+              <legend>Look</legend>
+              <div class="avatar-grid" id="avatar-grid"></div>
+            </fieldset>
+
+            <div class="field">
+              <div class="field-top"><label for="f-name">Name</label><span class="counter" data-for="f-name"></span></div>
+              <input id="f-name" name="name" maxlength="40" required placeholder="Redstone Rex" autocomplete="off">
+            </div>
+
+            <div class="field">
+              <div class="field-top"><label for="f-greeting">Greeting</label><span class="counter" data-for="f-greeting"></span></div>
+              <span class="field-hint" id="greeting-hint">The first thing it says when a chat starts.</span>
+              <textarea id="f-greeting" name="greeting" rows="2" maxlength="300" aria-describedby="greeting-hint" placeholder="Hey! I'm Rex. Ask me anything about redstone."></textarea>
+            </div>
+
+            <div class="field">
+              <div class="field-top"><label for="f-instructions">Instructions</label><span class="counter" data-for="f-instructions"></span></div>
+              <span class="field-hint" id="instructions-hint">Who it is, how it talks and what it helps with.</span>
+              <textarea id="f-instructions" name="instructions" rows="6" maxlength="4000" aria-describedby="instructions-hint" placeholder="You're a cheerful redstone engineer. Explain builds step by step, keep answers short, and end with a small challenge."></textarea>
+            </div>
+
+            <div class="field">
+              <div class="field-top"><label for="f-knowledge">Knowledge</label><span class="counter" data-for="f-knowledge"></span></div>
+              <span class="field-hint" id="knowledge-hint">Facts it should know, like your server's rules, commands or study notes.</span>
+              <textarea id="f-knowledge" name="knowledge" rows="8" maxlength="20000" aria-describedby="knowledge-hint" placeholder="Server address: play.example.net&#10;Rule 1: be kind in chat.&#10;/spawn takes you back to the hub."></textarea>
+            </div>
+
+            <p class="note warn-line">Anyone who chats with it could get it to repeat its setup, so never put passwords, tokens or personal details here.</p>
+
+            <div class="form-actions">
+              <button class="btn btn-buy" type="submit" id="save">Save</button>
+              <span class="small" id="save-state" role="status"></span>
+              <button class="btn btn-small btn-danger" type="button" id="delete" hidden>Delete</button>
+            </div>
+          </form>
+        </section>
+
+        <div class="maker-side">
+          <section class="panel share-panel" id="share" aria-labelledby="share-title" hidden>
+            <h2 class="maker-heading" id="share-title">Share</h2>
+            <label class="switch-row" for="share-toggle">
+              <input type="checkbox" id="share-toggle" role="switch">
+              <span class="switch" aria-hidden="true"></span>
+              <span>Share with a link</span>
+            </label>
+            <div id="share-on" hidden>
+              <label class="sr-only" for="share-link">Share link</label>
+              <div class="link-row">
+                <input id="share-link" readonly>
+                <button class="btn btn-small btn-buy" type="button" id="copy-link">Copy link</button>
+              </div>
+              <button class="link-btn" type="button" id="new-link">Make a new link</button>
+            </div>
+            <p class="small">People with the link see its name, look and greeting, and your display name. They sign in to chat, and their chats use their own daily AI messages, not yours.</p>
+          </section>
+
+          <section class="panel tester" id="tester" aria-labelledby="tester-title">
+            <div class="tester-head">
+              <span class="slot tester-avatar" id="tester-avatar"></span>
+              <div>
+                <h2 class="maker-heading" id="tester-title">Test chat</h2>
+                <p class="small" id="tester-sub">Try it out before you share it.</p>
+              </div>
+            </div>
+            <div class="thread maker-thread" id="test-thread" aria-live="polite"></div>
+            <form class="msg-form" id="test-form">
+              <label class="sr-only" for="test-input">Message</label>
+              <textarea id="test-input" rows="2" maxlength="4000" placeholder="Say hi to your assistant"></textarea>
+              <div class="form-actions">
+                <button class="btn btn-buy" type="submit" id="test-send">Send</button>
+                <button class="link-btn" type="button" id="test-clear">Start over</button>
+              </div>
+            </form>
+            <p class="small" id="test-note">Chats aren't saved. Each message uses one of your daily AI messages.</p>
+          </section>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<footer class="foot">
+  <div class="wrap foot-inner">
+    <span><span class="logo-icon" data-icon="anvil"></span>ForgeCenter</span>
+    <nav aria-label="Legal"><a href="/privacy">Privacy</a> <a href="/terms">Terms</a> <a href="/support">Help</a></nav>
+  </div>
+</footer>
+<div class="toast" id="toast" role="status" hidden></div>
+<script type="module" src="/js/ai-maker.js"></script>
+</body>
+</html>
