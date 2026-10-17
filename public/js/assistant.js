@@ -1,5 +1,6 @@
 import { $, api, esc, toast, onUser, openSignIn } from "./common.js";
 import { avatarIcon, avatarLabel } from "./ai-avatars.js";
+import { reportButton } from "./report.js";
 
 // The link's token is the only way in, so it stays in this tab and is sent with each message.
 const token = new URLSearchParams(location.search).get("t") || "";
@@ -31,7 +32,7 @@ async function load() {
   document.title = `${assistant.name} · ForgeCenter`;
   $("avatar").innerHTML = avatarIcon(assistant.avatar, avatarLabel(assistant.avatar));
   $("name").textContent = assistant.name;
-  $("maker").textContent = `Made by ${assistant.maker} on ForgeCenter`;
+  $("maker").innerHTML = `Made by ${esc(assistant.maker)} on ForgeCenter ${reportButton("assistant", token)}`;
   renderChat();
   renderAccess();
 }

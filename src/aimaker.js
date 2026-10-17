@@ -11,6 +11,7 @@ import { paidOrderCount } from "./orders.js";
 import { baseUrl } from "./stripe.js";
 import { spendAllowance } from "./tutor.js";
 import { ask, textOf, aiEnabled, cleanHistory } from "./ai.js";
+import { registerReportTarget } from "./reports.js";
 
 db.exec(`CREATE TABLE IF NOT EXISTS assistants (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -125,7 +126,7 @@ const writeLimit = rateLimit({ windowMs: 60_000, max: 30 });
 // Public info for the shared page. Signed-out visitors can see who they'd be chatting with.
 assistantsRouter.get("/shared/:token", (req, res) => {
   const a = db.prepare(`SELECT a.*, u.name AS maker FROM assistants a JOIN users u ON u.id = a.user_id
-    WHERE a.share_token = ? AND a.shared = 1 AND a.hidden = 0`).get(String(req.params.token));
+    WHERE a.share_token = ? AND a.shared = 1 AND a.hidden = 0 AND u.suspended_at IS NULL`).get(String(req.params.token));
   if (!a) return res.status(404).json({ error: "This assistant isn't shared any more. Ask its maker for a new link." });
   res.json({ assistant: { id: a.id, name: a.name, avatar: a.avatar, greeting: a.greeting, maker: a.maker } });
 });
@@ -188,11 +189,13 @@ assistantsRouter.post("/:id/share", writeLimit, (req, res) => {
   res.json({ assistant: view(byId(a.id), req) });
 });
 
+const makerSuspended = userId => !!db.prepare("SELECT suspended_at FROM users WHERE id = ?").get(userId)?.suspended_at;
+
 assistantsRouter.post("/:id/chat", rateLimit({ windowMs: 60_000, max: 15 }), async (req, res) => {
   const a = byId(Number(req.params.id) || 0);
   const token = typeof req.body?.token === "string" ? req.body.token : "";
   // The maker can always test it; anyone else needs the current link of a shared, visible assistant.
-  const allowed = a && (a.user_id === req.user.id || (a.shared && !a.hidden && token && token === a.share_token));
+  const allowed = a && (a.user_id === req.user.id || (a.shared && !a.hidden && token && token === a.share_token && !makerSuspended(a.user_id)));
   if (!allowed) return res.status(404).json({ error: "We couldn't find that assistant. Ask its maker for a new link." });
   if (!aiEnabled()) return res.status(503).json({ error: "AI chat isn't set up on this site yet. Try again later." });
 
@@ -243,4 +246,15 @@ adminAssistantsRouter.patch("/assistants/:id", requireAdmin, (req, res) => {
   const hidden = req.body.hidden;
   db.prepare("UPDATE assistants SET hidden = ?, updated_at = ? WHERE id = ?").run(hidden ? 1 : 0, now(), a.id);
   res.json({ ok: true, hidden });
+});
+
+// People report a shared assistant by its share link's token; the owner can hide it.
+registerReportTarget("assistant", {
+  exists: token => !!db.prepare(`SELECT 1 FROM assistants a JOIN users u ON u.id = a.user_id
+    WHERE a.share_token = ? AND a.shared = 1 AND a.hidden = 0 AND u.suspended_at IS NULL`).get(token),
+  describe: token => {
+    const a = db.prepare("SELECT name, user_id, hidden, share_token FROM assistants WHERE share_token = ?").get(token);
+    return a && { title: a.name, url: `/assistant?t=${a.share_token}`, ownerUserId: a.user_id, state: a.hidden ? "hidden" : "visible" };
+  },
+  hide: token => db.prepare("UPDATE assistants SET hidden = 1, updated_at = ? WHERE share_token = ?").run(now(), token).changes > 0,
 });

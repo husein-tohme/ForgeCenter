@@ -297,7 +297,7 @@ async function loadTicket(d) {
 // ---------- Reports and suspensions (src/reports.js) ----------
 const REPORT_STATE = { open: ["Open", "wait"], actioned: ["Resolved", "done"], dismissed: ["Dismissed", "muted"] };
 const reportPill = s => { const [label, tone] = REPORT_STATE[s] ?? [s, "muted"]; return `<span class="pill pill-${tone}">${esc(label)}</span>`; };
-const TYPE_NAME = { listing: "Showcase listing" };
+const TYPE_NAME = { listing: "Showcase listing", creator: "Creator page", game: "Game", assistant: "Shared assistant" };
 const who = u => u ? `${esc(u.name)}${u.contact ? ` (${esc(u.contact)})` : ""}` : "a deleted account";
 
 async function loadReports() {

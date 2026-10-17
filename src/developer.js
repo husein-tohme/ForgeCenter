@@ -125,10 +125,11 @@ developerApi.use((req, res, next) => {
 developerApi.use((req, res, next) => {
   const match = /^Bearer\s+(\S+)\s*$/i.exec(req.get("authorization") ?? "");
   if (!match) return fail(res, 401, `Send your API key in the Authorization header: "Bearer fc_live_…". Make a key at ${baseUrl(req)}/developers.`);
-  const key = KEY_PATTERN.test(match[1]) && db.prepare(`SELECT k.*, u.name AS account_name, u.age_group FROM api_keys k
+  const key = KEY_PATTERN.test(match[1]) && db.prepare(`SELECT k.*, u.name AS account_name, u.age_group, u.suspended_at FROM api_keys k
     JOIN users u ON u.id = k.user_id WHERE k.key_hash = ?`).get(hash(match[1]));
   if (!key) return fail(res, 401, "That API key isn't valid. Check you copied all of it, or make a new one on the developers page.");
   if (key.revoked_at) return fail(res, 401, "That API key was revoked. Make a new one on the developers page.");
+  if (key.suspended_at) return fail(res, 403, "This account is suspended, so its API keys don't work. To appeal, open a support ticket on the Help page.");
   if (!isAdult(key)) return fail(res, 403, "API keys only work for accounts of confirmed adults.");
   db.prepare("UPDATE api_keys SET last_used_at = ? WHERE id = ?").run(now(), key.id);
   req.apiKey = key;

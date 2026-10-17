@@ -218,6 +218,8 @@ function deleteAccount(userId) {
 }
 
 meRouter.delete("/", requireSignedIn, (req, res) => {
+  // Deleting and signing in again would start a fresh, unsuspended account.
+  if (req.user.suspended_at) return res.status(409).json({ error: "Your account is suspended, so it can't be deleted from here. Open a support ticket on the Help page and the team will help." });
   const blocker = deleteBlocker(req.user.id);
   if (blocker) return res.status(409).json({ error: blocker });
   deleteAccount(req.user.id);

@@ -11,6 +11,7 @@ import { isAdmin, isAdult, requireAdmin, requireUser } from "./auth.js";
 import { rateLimit } from "./limit.js";
 import { getStripe, ensureCustomer, baseUrl, CHECKOUT_LABELS } from "./stripe.js";
 import { fulfillCheckout } from "./orders.js";
+import { registerReportTarget } from "./reports.js";
 
 // AUTOINCREMENT because Stripe metadata remembers games by id, so an id is never reused.
 db.exec(`
@@ -73,7 +74,8 @@ export const LAUNCH_TERMS = "$1 a month keeps this game on the ForgeCenter games
 // subscription active until the paid month ends, so a canceled game stays up until then.
 // A failed renewal (past_due) or the end of the subscription (canceled) takes it off.
 const PAID = ["paid", "in_progress", "delivered"];
-export const LIVE = `(g.hidden = 0 AND EXISTS (SELECT 1 FROM orders lo WHERE lo.id = g.order_id
+export const LIVE = `(g.hidden = 0
+  AND NOT EXISTS (SELECT 1 FROM users su WHERE su.id = g.user_id AND su.suspended_at IS NOT NULL) AND EXISTS (SELECT 1 FROM orders lo WHERE lo.id = g.order_id
   AND lo.status IN ('paid', 'in_progress', 'delivered') AND lo.subscription_status = 'active'))`;
 
 const SELECT = `SELECT g.*, ${LIVE} AS live, u.name AS creator_name,
@@ -516,4 +518,15 @@ adminGamesRouter.patch("/games/:id(\\d+)", requireUser, requireAdmin, (req, res)
     .run(hidden === undefined ? null : hidden ? 1 : 0, adultOnly === undefined ? null : adultOnly ? 1 : 0, Number(req.params.id));
   if (!r.changes) return res.status(404).json({ error: "Game not found." });
   res.json({ game: adminGame(getGame(req.params.id)) });
+});
+
+// People can report a game on the games page; the owner can take it down from the reports queue.
+const gameId = id => /^[1-9][0-9]{0,15}$/.test(id) ? Number(id) : null;
+registerReportTarget("game", {
+  exists: id => gameId(id) !== null && !!db.prepare(`SELECT 1 FROM games g WHERE g.id = ? AND ${LIVE}`).get(gameId(id)),
+  describe: id => {
+    const g = gameId(id) && db.prepare("SELECT id, title, user_id, hidden FROM games WHERE id = ?").get(gameId(id));
+    return g && { title: g.title, url: `/game?id=${g.id}`, ownerUserId: g.user_id, state: g.hidden ? "hidden" : "visible" };
+  },
+  hide: id => gameId(id) !== null && db.prepare("UPDATE games SET hidden = 1 WHERE id = ?").run(gameId(id)).changes > 0,
 });

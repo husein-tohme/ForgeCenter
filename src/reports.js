@@ -3,7 +3,7 @@
 // accounts. A suspended account can still sign in, read its own details and open
 // support tickets to appeal, but every other signed-in route turns it away (auth.js).
 import express from "express";
-import { addColumn, db, now } from "./db.js";
+import { db, now } from "./db.js";
 import { isAdmin, requireAdmin, requireUser } from "./auth.js";
 import { rateLimit } from "./limit.js";
 
@@ -23,8 +23,6 @@ CREATE TABLE IF NOT EXISTS reports (
 CREATE INDEX IF NOT EXISTS reports_status ON reports(status, id);
 CREATE INDEX IF NOT EXISTS reports_target ON reports(target_type, target_id);
 `);
-addColumn("users", "suspended_at", "TEXT");
-addColumn("users", "suspended_reason", "TEXT");
 
 export const REASONS = {
   scam: "Scam or phishing",
@@ -99,8 +97,8 @@ const userSummary = id => {
 function adminReport(r) {
   const target = targets.get(r.target_type);
   const about = target?.describe(r.target_id) ?? null;
-  // Links are shown in the owner panel, so only plain web addresses go out.
-  const url = about?.url && /^https?:\/\/\S+$/i.test(about.url) ? about.url : null;
+  // Links are shown in the owner panel, so only plain web addresses and paths on this site go out.
+  const url = about?.url && /^(https?:\/\/\S+|\/[^\s/]\S*)$/i.test(about.url) ? about.url : null;
   return {
     id: r.id, type: r.target_type, targetId: r.target_id, reason: r.reason, reasonName: REASONS[r.reason] ?? r.reason,
     details: r.details, status: r.status, createdAt: r.created_at, resolvedAt: r.resolved_at, resolvedNote: r.resolved_note,

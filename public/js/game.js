@@ -1,6 +1,7 @@
 // One game's public page (/game?id=). Its creator also sees where the launch is, and the
 // site owner can take the game down from here.
 import { $, api, esc, icon, date, toast, onUser, ready } from "./common.js";
+import { reportButton } from "./report.js";
 import { getOptions, gameIcon, accentClass, playActions, tagList, nameOf, statusPill, statusInfo, confirmDialog } from "./launchpad.js";
 
 const id = Number(new URLSearchParams(location.search).get("id")) || null;
@@ -37,7 +38,7 @@ function render({ game: g, mine, canModerate }) {
           <h1 class="page-title">${esc(g.title)}</h1>
           ${g.tagline ? `<p class="lp-detail-tagline">${esc(g.tagline)}</p>` : ""}
           <p class="small">${esc(platform)}${g.creator ? `, by ${esc(g.creator)}` : ""}${g.launchedAt ? `. On ForgeCenter since ${date(g.launchedAt)}` : ""}
-            ${g.adultOnly ? ` <span class="pill pill-adult">18+</span>` : ""}</p>
+            ${g.adultOnly ? ` <span class="pill pill-adult">18+</span>` : ""}${mine || canModerate ? "" : ` ${reportButton("game", g.id)}`}</p>
           ${tagList(g.tags, opts)}
         </div>
       </header>

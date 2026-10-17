@@ -1,5 +1,6 @@
 import { $, api, esc, icon, toast, ready, onUser } from "./common.js";
 import { avatar, badgeList, badgeRow } from "./creator-badges.js";
+import { reportButton } from "./report.js";
 
 // The page lives at /c/<handle>.
 const handle = (() => { try { return decodeURIComponent(location.pathname.split("/")[2] ?? "").toLowerCase(); } catch { return ""; } })();
@@ -36,7 +37,7 @@ function render(c) {
       <span class="slot creator-avatar">${avatar(c.picture)}</span>
       <div class="creator-who">
         <h1 class="page-title">${name}</h1>
-        <p class="small">@${esc(c.handle)}, member since ${esc(monthYear(c.memberSince))}</p>
+        <p class="small">@${esc(c.handle)}, member since ${esc(monthYear(c.memberSince))}${c.isOwner || c.hidden ? "" : ` ${reportButton("creator", c.handle)}`}</p>
         ${c.badges.length ? badgeRow(c.badges.map(b => b.key), info) : ""}
       </div>
       ${c.isOwner || c.canModerate ? `<div class="creator-actions">

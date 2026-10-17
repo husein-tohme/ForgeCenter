@@ -9,6 +9,7 @@ import { isAdmin, isAdult, requireAdmin, requireUser } from "./auth.js";
 import { rateLimit } from "./limit.js";
 import { addEntry } from "./wallet.js";
 import { baseUrl } from "./stripe.js";
+import { registerReportTarget } from "./reports.js";
 
 db.exec(`
 CREATE TABLE IF NOT EXISTS creator_profiles (
@@ -170,7 +171,7 @@ const STATS = `
 // Profile rows with only what a public page may show: never email, phone, age group,
 // wallet or orders. Accounts closed for being under 13 have no public page.
 const PROFILE_SELECT = `SELECT p.user_id, p.handle, p.bio, p.links, p.support_links, p.hidden, p.created_at AS profile_created_at,
-    u.name, u.picture, u.created_at AS member_since, u.age_group = 'adult' AS owner_adult, ${STATS}
+    u.name, u.picture, u.created_at AS member_since, u.age_group = 'adult' AS owner_adult, u.suspended_at IS NOT NULL AS owner_suspended, ${STATS}
   FROM creator_profiles p JOIN users u ON u.id = p.user_id
   WHERE COALESCE(u.age_group, '') != 'under13'`;
 
@@ -178,7 +179,7 @@ const profileByHandle = handle => db.prepare(`${PROFILE_SELECT} AND p.handle = ?
 const canSeeHidden = (row, viewer) => !!viewer && (viewer.id === row.user_id || isAdmin(viewer));
 const visibleProfile = (handle, viewer) => {
   const row = HANDLE_RE.test(handle) ? profileByHandle(handle) : null;
-  return row && (!row.hidden || canSeeHidden(row, viewer)) ? row : null;
+  return row && ((!row.hidden && !row.owner_suspended) || canSeeHidden(row, viewer)) ? row : null;
 };
 
 // WhatsApp accounts start out named "Player 1234" after the end of the phone number,
@@ -303,7 +304,7 @@ function mine(req) {
 
 // The directory: visible creators, best known first (most badges, then most creations).
 creatorsRouter.get("/", (req, res) => {
-  const rows = db.prepare(`${PROFILE_SELECT} AND p.hidden = 0`).all();
+  const rows = db.prepare(`${PROFILE_SELECT} AND p.hidden = 0 AND u.suspended_at IS NULL`).all();
   const list = rows.map(r => ({ row: r, badges: earnedBadges(r) }));
   if (req.query.sort === "new") list.sort((a, b) => b.row.profile_created_at.localeCompare(a.row.profile_created_at) || b.row.user_id - a.row.user_id);
   else list.sort((a, b) => b.badges.length - a.badges.length || b.row.creations - a.row.creations || a.row.user_id - b.row.user_id);
@@ -361,7 +362,7 @@ creatorsRouter.delete("/mine", requireUser, (req, res) => {
 creatorsRouter.post("/referral/claim", requireUser, rateLimit({ windowMs: 60_000, max: 10 }), (req, res) => {
   const code = cleanHandle(req.body?.code);
   const referrer = HANDLE_RE.test(code) && db.prepare(`SELECT p.user_id, p.handle FROM creator_profiles p JOIN users u ON u.id = p.user_id
-    WHERE p.handle = ? AND p.hidden = 0 AND COALESCE(u.age_group, '') != 'under13'`).get(code);
+    WHERE p.handle = ? AND p.hidden = 0 AND u.suspended_at IS NULL AND COALESCE(u.age_group, '') != 'under13'`).get(code);
   if (!referrer) return res.status(404).json({ error: "That referral link doesn't work any more. Check it with the person who shared it." });
   if (referrer.user_id === req.user.id) return res.status(409).json({ error: "You can't use your own referral link." });
   if (db.prepare("SELECT 1 FROM referrals WHERE referred_user_id = ?").get(req.user.id)) {
@@ -409,4 +410,14 @@ adminCreatorsRouter.patch("/creators/:handle", (req, res) => {
   if (!row) return res.status(404).json({ error: "Creator not found." });
   db.prepare("UPDATE creator_profiles SET hidden = ?, updated_at = ? WHERE user_id = ?").run(hidden ? 1 : 0, now(), row.user_id);
   res.json({ creator: adminView(adminRow(row.handle)) });
+});
+
+// People can report a creator page; the owner can hide it from the reports queue.
+registerReportTarget("creator", {
+  exists: handle => !!visibleProfile(handle, null),
+  describe: handle => {
+    const p = HANDLE_RE.test(handle) && db.prepare("SELECT p.user_id, p.handle, p.hidden, u.name FROM creator_profiles p JOIN users u ON u.id = p.user_id WHERE p.handle = ?").get(handle);
+    return p && { title: `${p.name} (@${p.handle})`, url: `/c/${p.handle}`, ownerUserId: p.user_id, state: p.hidden ? "hidden" : "visible" };
+  },
+  hide: handle => db.prepare("UPDATE creator_profiles SET hidden = 1 WHERE handle = ?").run(handle).changes > 0,
 });

@@ -283,6 +283,9 @@ export const addColumn = (table, column, type) => {
 addColumn("users", "age_group", "TEXT");
 addColumn("users", "age_method", "TEXT");
 addColumn("users", "age_confirmed_at", "TEXT");
+// Set by the site owner (reports.js); several features hide a suspended account's content.
+addColumn("users", "suspended_at", "TEXT");
+addColumn("users", "suspended_reason", "TEXT");
 addColumn("orders", "paid_with", "TEXT");
 if (!columns("orders").includes("paid_at")) {
   addColumn("orders", "paid_at", "TEXT");
