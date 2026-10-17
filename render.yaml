@@ -1,0 +1,60 @@
+# One-click deploy to Render: https://dashboard.render.com/blueprint/new?repo=https://github.com/husein-tohme/ForgeCenter
+# The website and the customer bot runner run in one service because they share the
+# SQLite database on the disk (a Render disk attaches to a single service).
+services:
+  - type: web
+    name: forgecenter
+    runtime: node
+    # Disks need a paid instance; on the free plan accounts and orders would be wiped on every restart.
+    plan: starter
+    branch: main
+    buildCommand: npm ci && npm run setup:bots
+    startCommand: npm run start:all
+    healthCheckPath: /
+    disk:
+      name: forgecenter-data
+      mountPath: /var/data
+      sizeGB: 1
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_PATH
+        value: /var/data/forgecenter.db
+      - key: BOT_DATA_DIR
+        value: /var/data/bots
+      # Encrypts customers' bot tokens. Generated once; never change it.
+      - key: SECRET_KEY
+        generateValue: true
+      # Your verified sign-in email, so you get the owner panel.
+      - key: ADMIN_EMAILS
+        sync: false
+      # Payments
+      - key: STRIPE_SECRET_KEY
+        sync: false
+      - key: STRIPE_WEBHOOK_SECRET
+        sync: false
+      # AI mentor, Forge Support, AI Maker, Site Maker, developer API
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      # Sign-in (each provider turns on when its values are set; see /sign-in-setup)
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: GITHUB_CLIENT_ID
+        sync: false
+      - key: GITHUB_CLIENT_SECRET
+        sync: false
+      - key: MICROSOFT_CLIENT_ID
+        sync: false
+      - key: MICROSOFT_CLIENT_SECRET
+        sync: false
+      - key: DISCORD_CLIENT_ID
+        sync: false
+      - key: DISCORD_CLIENT_SECRET
+        sync: false
+      # Email (optional)
+      - key: RESEND_API_KEY
+        sync: false
+      - key: EMAIL_FROM
+        sync: false
