@@ -1,5 +1,5 @@
 import { renderService } from "./service.js";
-import { $, api, esc, icon, money, cash, date, toast, getUser, onUser, adultPerks, openSignIn, signOut, pill, renderSignInOptions, refreshUser, stack, STATUS, SUB_STATUS, PRODUCT_ICON, PROVIDER_NAMES } from "./common.js";
+import { $, api, esc, icon, registerIcons, money, cash, date, toast, getUser, onUser, adultPerks, openSignIn, signOut, pill, renderSignInOptions, refreshUser, stack, STATUS, SUB_STATUS, PRODUCT_ICON, PROVIDER_NAMES } from "./common.js";
 
 const params = new URLSearchParams(location.search);
 const focusOrder = Number(params.get("order")) || null;
@@ -297,11 +297,14 @@ async function loadShowcase() {
 }
 
 // ---------- Saved creations ----------
+registerIcons({ "rbx-brick": { c: { h: "#f07a6e", r: "#d9372b", R: "#9b1c14" }, m: [
+  "........", ".hr..hr.", ".rR..rR.", "hhhhhhhh", "hrrrrrrR", "hrrrrrrR", "hrrrrrrR", "RRRRRRRR"] } });
 const KINDS = {
   mod: { icon: "pickaxe", label: "Mod", again: "/#forge" },
   texturepack: { icon: "painting", label: "Texture pack", again: "/textures" },
   modpack: { icon: "chest", label: "Modpack", again: "/modpacks" },
   plugin: { icon: "anvil", label: "Server plugin", again: "/plugins" },
+  roblox: { icon: "rbx-brick", label: "Roblox game", again: "/roblox" },
 };
 async function loadMods() {
   const r = await api("/api/creations");
@@ -312,7 +315,7 @@ async function loadMods() {
         return `<li><span class="mod-icon">${icon(k.icon)}</span><strong>${esc(m.name)}</strong>
           <span class="small">${k.label}, ${date(m.createdAt)}</span>${m.modrinthUrl ? ` <a href="${esc(m.modrinthUrl)}" target="_blank" rel="noopener">View on Modrinth</a>` : ""}</li>`;
       }).join("")}</ul>`
-    : `<p class="hint">Mods, plugins, texture packs and modpacks you make while signed in show up here.</p><a class="btn" href="/#tools">Open the free tools</a>`;
+    : `<p class="hint">Mods, plugins, texture packs, modpacks and Roblox games you make while signed in show up here.</p><a class="btn" href="/#tools">Open the free tools</a>`;
 }
 
 // ---------- Creator page (after saved creations) ----------

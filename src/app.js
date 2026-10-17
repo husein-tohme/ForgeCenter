@@ -11,6 +11,7 @@ import { showcaseRouter, adminShowcaseRouter } from "./showcase.js";
 import { tutorRouter } from "./tutor.js";
 import { toolsRouter } from "./tools.js";
 import { developerRouter, developerApi, developerApiErrors } from "./developer.js";
+import { robloxRouter } from "./roblox.js";
 import { oauthRouter, enabledOAuthProviders } from "./oauth.js";
 import { whatsappRouter, whatsappEnabled } from "./whatsapp.js";
 import { servicesRouter, adminServicesRouter } from "./services.js";
@@ -99,6 +100,7 @@ export function createApp() {
   app.use("/api/donations", donationsRouter);
   app.use("/api/developer", developerRouter);
   app.use("/api/creators", creatorsRouter);
+  app.use("/api/roblox", robloxRouter);
 
   app.use("/api", toolsRouter);
 
