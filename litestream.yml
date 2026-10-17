@@ -1,0 +1,16 @@
+# Continuous backup of the database to S3-compatible storage (Supabase Storage on the
+# free Render plan). Used by scripts/render-start.sh; values come from the environment.
+dbs:
+  - path: ${DATABASE_PATH}
+    replicas:
+      - type: s3
+        bucket: ${LITESTREAM_BUCKET}
+        path: forgecenter.db
+        endpoint: ${LITESTREAM_ENDPOINT}
+        region: ${LITESTREAM_REGION}
+        access-key-id: ${LITESTREAM_ACCESS_KEY_ID}
+        secret-access-key: ${LITESTREAM_SECRET_ACCESS_KEY}
+        force-path-style: true
+        sync-interval: 1s
+        # Keep a day of history so a bad change can be rolled back.
+        retention: 24h
