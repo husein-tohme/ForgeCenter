@@ -6,6 +6,7 @@
 #   sudo bash free-host.sh
 #
 # Run it again any time to update the site to the latest code. Your data is kept.
+# Switch to your own domain later with: sudo DOMAIN=forgecenter.eu.org bash free-host.sh
 set -euo pipefail
 
 REPO=https://github.com/husein-tohme/ForgeCenter.git
@@ -21,23 +22,31 @@ ask() { # ask VAR "question" : keeps an existing value from the environment or t
 
 # Answers from an earlier run, so updating doesn't ask again.
 [ -f /etc/forgecenter.conf ] && . /etc/forgecenter.conf
-ask DUCKDNS_NAME "Your DuckDNS name (the part before .duckdns.org):"
-DUCKDNS_NAME=${DUCKDNS_NAME%.duckdns.org}
-ask DUCKDNS_TOKEN "Your DuckDNS token (shown at the top of duckdns.org after you sign in):"
+# DOMAIN=forgecenter.eu.org uses a domain you own (its DNS A record pointing at this
+# server) instead of a DuckDNS address.
+DOMAIN=${DOMAIN:-${SAVED_DOMAIN:-}}
+if [ -z "$DOMAIN" ] || [[ "$DOMAIN" == *.duckdns.org ]]; then
+  ask DUCKDNS_NAME "Your DuckDNS name (the part before .duckdns.org):"
+  DUCKDNS_NAME=${DUCKDNS_NAME%.duckdns.org}
+  ask DUCKDNS_TOKEN "Your DuckDNS token (shown at the top of duckdns.org after you sign in):"
+  DOMAIN="$DUCKDNS_NAME.duckdns.org"
+fi
 ask OWNER_EMAIL "Your email (the one you'll sign in with, to get the owner panel):"
 umask 077
-printf 'DUCKDNS_NAME=%q\nDUCKDNS_TOKEN=%q\nOWNER_EMAIL=%q\n' "$DUCKDNS_NAME" "$DUCKDNS_TOKEN" "$OWNER_EMAIL" > /etc/forgecenter.conf
+printf 'SAVED_DOMAIN=%q\nDUCKDNS_NAME=%q\nDUCKDNS_TOKEN=%q\nOWNER_EMAIL=%q\n' "$DOMAIN" "${DUCKDNS_NAME:-}" "${DUCKDNS_TOKEN:-}" "$OWNER_EMAIL" > /etc/forgecenter.conf
 umask 022
-DOMAIN="$DUCKDNS_NAME.duckdns.org"
 
-echo "==> Pointing $DOMAIN at this server"
-result=$(curl -fsS "https://www.duckdns.org/update?domains=$DUCKDNS_NAME&token=$DUCKDNS_TOKEN&ip=")
-if [ "$result" != "OK" ]; then echo "DuckDNS said no. Check the name and token at duckdns.org and try again."; exit 1; fi
-# Keep it pointed here if the server's address ever changes.
-cat > /etc/cron.d/duckdns <<EOF
-*/5 * * * * root curl -fsS "https://www.duckdns.org/update?domains=$DUCKDNS_NAME&token=$DUCKDNS_TOKEN&ip=" >/dev/null 2>&1
-EOF
-chmod 600 /etc/cron.d/duckdns
+if [[ "$DOMAIN" == *.duckdns.org ]]; then
+  echo "==> Pointing $DOMAIN at this server"
+  result=$(curl -fsS "https://www.duckdns.org/update?domains=$DUCKDNS_NAME&token=$DUCKDNS_TOKEN&ip=")
+  if [ "$result" != "OK" ]; then echo "DuckDNS said no. Check the name and token at duckdns.org and try again."; exit 1; fi
+  # Keep it pointed here if the server's address ever changes.
+  echo "*/5 * * * * root curl -fsS \"https://www.duckdns.org/update?domains=$DUCKDNS_NAME&token=$DUCKDNS_TOKEN&ip=\" >/dev/null 2>&1" > /etc/cron.d/duckdns
+  chmod 600 /etc/cron.d/duckdns
+else
+  rm -f /etc/cron.d/duckdns
+  echo "==> Using $DOMAIN. Its DNS A record must point at this server's public IP."
+fi
 
 echo "==> Installing Docker (first run only)"
 if ! command -v docker >/dev/null || ! docker compose version >/dev/null 2>&1; then
@@ -74,6 +83,9 @@ SECRET_KEY=$(head -c 32 /dev/urandom | base64)
 EOF
   umask 022
 fi
+
+# Keep the site's address in step with the domain on later runs.
+sed -i "s|^BASE_URL=.*|BASE_URL=https://$DOMAIN|" .env
 
 echo "==> Starting the site (the first build takes a few minutes)"
 SITE_DOMAIN="$DOMAIN" docker compose -f docker-compose.yml -f docker-compose.caddy.yml up -d --build

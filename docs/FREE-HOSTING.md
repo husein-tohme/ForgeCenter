@@ -49,3 +49,11 @@ Then open `/sign-in-setup` (owner only): it lists every sign-in option with the 
 - Settings live in `/opt/forgecenter/.env` on the server (`sudo nano /opt/forgecenter/.env`). After changing them, run `sudo bash free-host.sh` again.
 - The same command also updates the site to the newest code. Accounts and orders are kept in a Docker volume.
 - Free extras: Stripe has no monthly fee, Resend sends 3,000 emails a month free. The AI features need a paid Anthropic key; leave `ANTHROPIC_API_KEY` empty and they simply stay off.
+
+## Later: switch to forgecenter.eu.org (free, slow approval)
+
+1. Make a free [Cloudflare](https://dash.cloudflare.com/sign-up) account, choose **Add a domain**, type `forgecenter.eu.org`, pick the **Free** plan, and note the two nameservers it gives you (like `ada.ns.cloudflare.com`).
+2. At [nic.eu.org](https://nic.eu.org), create an account (real name and email), then **New domain**: `forgecenter.eu.org`, with the two Cloudflare nameservers. Submit.
+3. Wait for the approval email. It can take a few days to a few weeks.
+4. In Cloudflare **DNS**, add an **A** record: name `@`, your server's public IP, proxy **off** (grey cloud).
+5. On the server: `sudo DOMAIN=forgecenter.eu.org bash free-host.sh`. The site moves to the new address with its own padlock; the data stays.
