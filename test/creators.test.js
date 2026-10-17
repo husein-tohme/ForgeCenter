@@ -385,8 +385,11 @@ test("donors and creators with a live game get badges for it", async () => {
   const c = person();
   assert.equal((await save(c.cookie, { handle: "giving-gwen" })).status, 200);
   const t = new Date().toISOString();
-  db.prepare(`INSERT INTO donations (user_id, amount, monthly, status, created_at, updated_at, paid_at)
-    VALUES (?, 500, 0, 'paid', ?, ?, ?)`).run(c.user.id, t, t, t);
+  const gift = Number(db.prepare(`INSERT INTO donations (user_id, amount, monthly, status, created_at, updated_at, paid_at)
+    VALUES (?, 500, 0, 'paid', ?, ?, ?)`).run(c.user.id, t, t, t).lastInsertRowid);
+  // A donation counts only once the donor chooses to show it on the supporters wall.
+  assert.ok(!(await profile("giving-gwen")).body.creator.badges.some(b => b.key === "donor"));
+  db.prepare("UPDATE donations SET public_name = 1 WHERE id = ?").run(gift);
   const orderId = Number(db.prepare(`INSERT INTO orders (user_id, product, amount, status, subscription_status, created_at, updated_at)
     VALUES (?, 'launch', 100, 'delivered', 'active', ?, ?)`).run(c.user.id, t, t).lastInsertRowid);
   db.prepare(`INSERT INTO games (user_id, title, platform, icon, accent, order_id, created_at, updated_at)

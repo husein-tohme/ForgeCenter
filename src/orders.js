@@ -2,7 +2,7 @@
 import express from "express";
 import { db, now } from "./db.js";
 import { catalog, modeOf, isAdultOnly } from "./catalog.js";
-import { isAdmin, isAdult, requireAdmin, requireUser } from "./auth.js";
+import { isAdmin, isAdult, requireAdmin, requireUser, requireUserOrSuspended } from "./auth.js";
 import { rateLimit } from "./limit.js";
 import { notify } from "./email.js";
 import { getStripe, ensureCustomer, baseUrl, CHECKOUT_LABELS } from "./stripe.js";
@@ -147,7 +147,8 @@ ordersRouter.post("/checkout", requireUser, rateLimit({ windowMs: 60_000, max: 1
   }
 });
 
-ordersRouter.post("/billing-portal", requireUser, async (req, res) => {
+// Suspended accounts can still reach billing, so they can stop paying for things they can't use.
+ordersRouter.post("/billing-portal", requireUserOrSuspended, async (req, res) => {
   const stripe = getStripe();
   if (!stripe) return res.status(503).json({ error: "Payments aren't set up yet." });
   if (!req.user.stripe_customer_id) return res.status(400).json({ error: "You don't have any billing yet." });

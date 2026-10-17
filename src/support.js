@@ -95,7 +95,9 @@ Accounts and sign-in
 
 Showcase and free tools
 - A showcase slot lists a website or server on the home page; submit it on the account page and it goes live after a review. Adults can mark a listing 18+.
-- Free tools: Mod Forge (a Fabric mod project, with an optional Modrinth draft), Texture Forge (resource packs), Modpack Forge (.mrpack files) and Plugin Forge (Paper plugins). The Forge coding mentor gives 30 free messages a day, resetting at midnight UTC.
+- Free tools: Mod Forge (a Fabric mod project, with an optional Modrinth draft), Texture Forge (resource packs), Modpack Forge (.mrpack files), Plugin Forge (Paper plugins) and Roblox Forge (a Roblox game project for Roblox Studio). AI Maker (/ai-maker) builds your own AI assistant you can share with a link, and Site Maker (/site-maker) builds a one-page website from a description. The Forge coding mentor gives 30 free messages a day, resetting at midnight UTC; AI Maker chats and Site Maker builds use the same daily allowance.
+- Creators can make a public creator page at /creators and launch a game on the games page (/games) for $1 a month from /my-games. They can cancel a launch any time; the game stays up until the end of the paid month, which isn't refunded.
+- Donations to ForgeCenter are at /donate. The developer API (/developers) lets confirmed adults make API keys paid from the wallet.
 
 Help articles
 - Step-by-step articles on the Help page. When one covers the question, give its link (the path exactly as shown) along with your answer.

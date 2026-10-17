@@ -443,9 +443,10 @@ function openSuspended(reason) {
       <h2 id="suspended-title">Your account is suspended</h2>
       <p>The ForgeCenter team suspended this account because it broke the <a href="/rules">ForgeCenter rules</a>. While it's suspended you can't buy, post or use the signed-in tools.</p>
       ${reason ? `<p class="note"><strong>Reason:</strong> ${esc(reason)}</p>` : ""}
-      <p>Think it's a mistake? Open a support ticket to appeal, and a person will look at it again.</p>
+      <p>Think it's a mistake? Open a support ticket to appeal, and a person will look at it again.${currentUser?.hasBilling ? " You can still cancel monthly plans, game launches and donations in Manage billing." : ""}</p>
       <div class="ticket-actions">
         <a class="btn btn-buy" href="/support" autofocus>Appeal on the Help page</a>
+        ${currentUser?.hasBilling ? `<button class="btn" type="button" id="suspended-billing">Manage billing</button>` : ""}
         <button class="btn" type="button" id="suspended-signout">Sign out</button>
       </div>
     </dialog>`);
@@ -455,6 +456,12 @@ function openSuspended(reason) {
   d.addEventListener("cancel", e => e.preventDefault());
   d.addEventListener("close", () => { if (d.isConnected) d.showModal(); });
   $("suspended-signout").addEventListener("click", async () => { await signOut(); d.remove(); });
+  $("suspended-billing")?.addEventListener("click", async e => {
+    e.target.disabled = true;
+    const r = await api("/api/billing-portal", { method: "POST" });
+    e.target.disabled = false;
+    if (r.data.url) location.href = r.data.url; else toast(r.data.error);
+  });
   d.showModal();
 }
 

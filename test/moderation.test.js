@@ -77,6 +77,10 @@ test("suspending an account takes down its public things, stops its API keys and
   const v1 = await api("/v1/me", { headers: { authorization: `Bearer ${key}` } });
   assert.equal(v1.status, 403);
   assert.match(v1.body.error, /suspended/);
+  // They can still reach billing, to stop paying for things that are now hidden.
+  const billing = await api("/api/billing-portal", { method: "POST", cookie: maker.cookie, body: {} });
+  assert.notEqual(billing.status, 403, billing.body?.error);
+  assert.notEqual((await api(`/api/games/${gameId}/cancel`, { method: "POST", cookie: maker.cookie, body: {} })).status, 403);
   // Deleting the account and signing up again would shake off the suspension.
   const del = await api("/api/me", { method: "DELETE", cookie: maker.cookie, body: {} });
   assert.equal(del.status, 409);

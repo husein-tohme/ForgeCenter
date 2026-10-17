@@ -7,7 +7,7 @@
 import express from "express";
 import { addColumn, db, now } from "./db.js";
 import { catalog, isAdultOnly } from "./catalog.js";
-import { isAdmin, isAdult, requireAdmin, requireUser } from "./auth.js";
+import { isAdmin, isAdult, requireAdmin, requireUser, requireUserOrSuspended } from "./auth.js";
 import { rateLimit } from "./limit.js";
 import { getStripe, ensureCustomer, baseUrl, CHECKOUT_LABELS } from "./stripe.js";
 import { fulfillCheckout } from "./orders.js";
@@ -461,7 +461,8 @@ gamesRouter.post("/:id(\\d+)/launch", requireUser, rateLimit({ windowMs: 60_000,
 
 // Cancel: Stripe stops renewing at the end of the paid month. The game stays up until
 // then and that month isn't refunded.
-gamesRouter.post("/:id(\\d+)/cancel", requireUser, rateLimit({ windowMs: 60_000, max: 10 }), handle(async (req, res) => {
+// Suspended creators can still stop paying for a game that's been taken off the games page.
+gamesRouter.post("/:id(\\d+)/cancel", requireUserOrSuspended, rateLimit({ windowMs: 60_000, max: 10 }), handle(async (req, res) => {
   const g = ownGame(req);
   if (!g) return notYours(res);
   if (!PAID.includes(g.o_status) || !["active", "past_due", "paused"].includes(g.o_sub_status)) {

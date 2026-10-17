@@ -154,7 +154,7 @@ export const BADGES = [
   { key: "showcased", name: "Showcased", meaning: "Has a project live in the ForgeCenter showcase.", earned: s => s.listings > 0 },
   { key: "supporter", name: "Supporter", meaning: "Bought something from ForgeCenter.", earned: s => s.supporter > 0 },
   { key: "recruiter", name: "Recruiter", meaning: "Brought a new customer to ForgeCenter.", earned: s => s.recruits > 0 },
-  { key: "donor", name: "Donor", meaning: "Donated to support ForgeCenter.", earned: s => s.donor > 0 },
+  { key: "donor", name: "Donor", meaning: "Donated to support ForgeCenter and chose to show it.", earned: s => s.donor > 0 },
   { key: "game_launcher", name: "Game launcher", meaning: "Has a game on the ForgeCenter games page.", earned: s => s.launched > 0 },
 ];
 const badgeInfo = ({ key, name, meaning }) => ({ key, name, meaning });
@@ -170,7 +170,8 @@ const STATS = `
   (SELECT COUNT(*) FROM showcase s WHERE s.user_id = u.id AND s.status = 'approved') AS listings,
   EXISTS (SELECT 1 FROM orders o WHERE o.user_id = u.id AND o.status IN ('paid', 'in_progress', 'delivered')) AS supporter,
   (SELECT COUNT(*) FROM referrals r WHERE r.referrer_user_id = u.id AND r.rewarded_order_id IS NOT NULL) AS recruits,
-  EXISTS (SELECT 1 FROM donations d WHERE d.user_id = u.id AND d.paid_at IS NOT NULL AND d.status IN ('paid', 'canceled')) AS donor,
+  -- Only donors who chose to show their name on the supporters wall.
+  EXISTS (SELECT 1 FROM donations d WHERE d.user_id = u.id AND d.public_name = 1 AND d.paid_at IS NOT NULL AND d.status IN ('paid', 'canceled')) AS donor,
   EXISTS (SELECT 1 FROM games g WHERE g.user_id = u.id AND ${LIVE}) AS launched`;
 
 // Profile rows with only what a public page may show: never email, phone, age group,
