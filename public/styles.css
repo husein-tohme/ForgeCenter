@@ -616,6 +616,18 @@ dialog.gate h2 { font-size: 1.6rem; }
 .ticket-form .btn { justify-self: start; }
 .note { background: #f2e7b8; border: 2px solid #b8860b; padding: 10px 14px; margin: 0 0 12px; }
 @media (max-width: 900px) { .support-grid { grid-template-columns: 1fr; } }
+.help-articles { margin-bottom: 32px; }
+.help-search { display: block; font-weight: 700; max-width: 520px; }
+.help-articles .faq details { max-width: none; padding: 12px 0; }
+.help-articles .faq details:last-child { border-bottom: 0; }
+.help-articles summary { scroll-margin-top: 16px; }
+.article-body { max-width: 760px; }
+.article-body h3 { margin: 16px 0 0; }
+.article-body ol, .article-body ul { margin: 8px 0 0; padding-left: 24px; display: grid; gap: 4px; }
+.help-articles .article-body p { color: var(--ink); }
+.article-body .note { margin: 12px 0 0; }
+.help-articles .article-body p.small { color: var(--ink-soft); }
+.tickets-title { font-size: 1.5rem; margin: 0 0 12px; }
 
 .inline-form { display: flex; gap: 8px; align-items: flex-end; flex-wrap: wrap; margin-top: 8px; }
 .inline-form label { font-weight: 700; margin: 0; }

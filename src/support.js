@@ -3,6 +3,7 @@
 // when money is involved, when the team has to act, or when the customer asks for a
 // person. It can't change anything itself: its only tool is the hand-over.
 import express from "express";
+import { ARTICLES } from "../public/js/help-articles.js";
 import Anthropic from "@anthropic-ai/sdk";
 import { db, now, walletBalance } from "./db.js";
 import { catalog, isAdultOnly } from "./catalog.js";
@@ -94,7 +95,11 @@ Accounts and sign-in
 
 Showcase and free tools
 - A showcase slot lists a website or server on the home page; submit it on the account page and it goes live after a review. Adults can mark a listing 18+.
-- Free tools: Mod Forge (a Fabric mod project, with an optional Modrinth draft), Texture Forge (resource packs), Modpack Forge (.mrpack files) and Plugin Forge (Paper plugins). The Forge coding mentor gives 30 free messages a day, resetting at midnight UTC.`;
+- Free tools: Mod Forge (a Fabric mod project, with an optional Modrinth draft), Texture Forge (resource packs), Modpack Forge (.mrpack files) and Plugin Forge (Paper plugins). The Forge coding mentor gives 30 free messages a day, resetting at midnight UTC.
+
+Help articles
+- Step-by-step articles on the Help page. When one covers the question, give its link (the path exactly as shown) along with your answer.
+${ARTICLES.map(a => `- ${a.title}: /support#${a.id}`).join("\n")}`;
 
 const TOOLS = [{
   name: "hand_to_person",

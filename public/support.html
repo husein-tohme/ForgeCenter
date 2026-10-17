@@ -25,8 +25,18 @@
 <main id="main" class="page">
   <div class="wrap">
     <h1 class="page-title">Help</h1>
-    <p class="section-lede">Ask about an order, a server, a bot or your account. Forge Support, an AI assistant, answers straight away and passes anything it can't solve to a person.</p>
+    <p class="section-lede">Find a quick answer below, or open a ticket. Forge Support, an AI assistant, answers tickets straight away and passes anything it can't solve to a person.</p>
 
+    <section class="panel help-articles" aria-labelledby="articles-title">
+      <h2 class="panel-title" id="articles-title">Help articles</h2>
+      <label class="help-search">Search help articles
+        <input type="search" id="article-search" placeholder="wallet, bot token, refund…" autocomplete="off">
+      </label>
+      <p class="small" id="article-count" role="status"></p>
+      <div class="faq" id="articles"></div>
+    </section>
+
+    <h2 class="tickets-title">Support tickets</h2>
     <section class="panel signed-out" id="signed-out" hidden>
       <p>Sign in to open a support ticket. You'll get answers here and by email.</p>
       <button class="btn btn-buy" type="button" id="signin-here">Sign in</button>
