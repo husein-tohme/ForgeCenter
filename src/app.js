@@ -15,6 +15,7 @@ import { oauthRouter, enabledOAuthProviders } from "./oauth.js";
 import { whatsappRouter, whatsappEnabled } from "./whatsapp.js";
 import { servicesRouter, adminServicesRouter } from "./services.js";
 import { gamesRouter, adminGamesRouter } from "./launchpad.js";
+import { creatorsRouter, adminCreatorsRouter } from "./creators.js";
 import { pagesRouter, notFound } from "./pages.js";
 import { donationsRouter, keepMonthlyDonors } from "./donations.js";
 
@@ -87,7 +88,7 @@ export function createApp() {
   app.delete("/api/me", keepMonthlyDonors);
   app.use("/api/me", meRouter);
   app.use("/api", ordersRouter);
-  app.use("/api/admin", adminOrdersRouter, adminShowcaseRouter, adminServicesRouter, adminWalletRouter, adminSupportRouter, adminGamesRouter);
+  app.use("/api/admin", adminOrdersRouter, adminShowcaseRouter, adminServicesRouter, adminWalletRouter, adminSupportRouter, adminGamesRouter, adminCreatorsRouter);
   app.use("/api/age", ageRouter);
   app.use("/api/wallet", walletRouter);
   app.use("/api/support", supportRouter);
@@ -97,6 +98,7 @@ export function createApp() {
   app.use("/api/games", gamesRouter);
   app.use("/api/donations", donationsRouter);
   app.use("/api/developer", developerRouter);
+  app.use("/api/creators", creatorsRouter);
 
   app.use("/api", toolsRouter);
 

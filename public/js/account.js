@@ -39,7 +39,7 @@ onUser(user => {
   // same account is refreshed (for example after a top-up).
   if (!user.ageGroup || loadedFor === user.id) return;
   loadedFor = user.id;
-  loadIdentities(); loadOrders(); loadWallet(); loadAge(); loadShowcase(); loadMods();
+  loadIdentities(); loadOrders(); loadWallet(); loadAge(); loadShowcase(); loadMods(); loadCreator();
 });
 let loadedFor = null;
 
@@ -184,6 +184,7 @@ const ENTRY_TEXT = {
   topup_refund: () => "Top-up refunded to your card",
   dispute: e => e.note || "Card dispute",
   api: e => e.note || "Developer API call",
+  reward: e => `Creator reward: ${e.note}`,
 };
 
 async function loadWallet(retry = toppedUp) {
@@ -312,4 +313,21 @@ async function loadMods() {
           <span class="small">${k.label}, ${date(m.createdAt)}</span>${m.modrinthUrl ? ` <a href="${esc(m.modrinthUrl)}" target="_blank" rel="noopener">View on Modrinth</a>` : ""}</li>`;
       }).join("")}</ul>`
     : `<p class="hint">Mods, plugins, texture packs and modpacks you make while signed in show up here.</p><a class="btn" href="/#tools">Open the free tools</a>`;
+}
+
+// ---------- Creator page (after saved creations) ----------
+async function loadCreator() {
+  const r = await api("/api/creators/mine");
+  if (!r.ok) return;
+  const { profile, referral } = r.data;
+  $("creator-section")?.remove();
+  $("mods").closest(".acct-section").insertAdjacentHTML("afterend", `
+    <section class="acct-section" id="creator-section">
+      <h2>Your creator page</h2>
+      ${profile ? `<p>Your page is at <a href="${esc(profile.url)}">${esc(location.host + profile.url)}</a>.
+          ${referral.referred ? `${referral.referred} ${referral.referred === 1 ? "person" : "people"} joined through your link.` : ""}</p>
+        <a class="btn" href="/creators#yours">Edit your page</a>`
+      : `<p>Show off what you make, earn badges, and let fans support you directly.</p>
+        <a class="btn" href="/creators#yours">Make your creator page</a>`}
+    </section>`);
 }

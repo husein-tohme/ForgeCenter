@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Creators · ForgeCenter</title>
+<meta name="description" content="Players making Minecraft mods, texture packs, modpacks and plugins. Support them directly, or make your own creator page.">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<meta name="theme-color" content="#2a2d33">
+<link rel="canonical" href="%PAGE_URL%">
+<meta property="og:site_name" content="ForgeCenter">
+<meta property="og:title" content="Creators · ForgeCenter">
+<meta property="og:description" content="Players making Minecraft mods, texture packs, modpacks and plugins. Support them directly, or make your own creator page.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="%PAGE_URL%">
+<meta property="og:image" content="%BASE_URL%/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=Pixelify+Sans:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/styles.css">
+<link rel="stylesheet" href="/css/creators.css">
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="top">
+  <div class="wrap top-inner">
+    <a class="logo" href="/" aria-label="ForgeCenter home"><span class="logo-icon" data-icon="anvil"></span>ForgeCenter</a>
+    <nav aria-label="Main"><a href="/#shop">Prices</a><a href="/#tools">Free tools</a><a href="/#mentor">Learn to code</a><a href="/support">Help</a></nav>
+    <div class="auth" id="auth-slot"></div>
+  </div>
+</header>
+
+<main id="main" class="page">
+  <div class="wrap">
+    <div class="creators-head">
+      <div>
+        <h1 class="page-title">Creators</h1>
+        <p class="section-lede">Players making Minecraft mods, texture packs, modpacks and plugins. Tips you send go straight to them through sites like PayPal and Ko-fi, never through ForgeCenter.</p>
+      </div>
+      <a class="btn btn-buy" href="#yours">Make your page</a>
+    </div>
+
+    <section aria-labelledby="directory-title">
+      <div class="directory-head">
+        <h2 id="directory-title">Find creators</h2>
+        <div class="toolbar" role="group" aria-label="Sort creators">
+          <button class="tool" type="button" data-sort="top" aria-pressed="true">Top creators</button>
+          <button class="tool" type="button" data-sort="new" aria-pressed="false">Newest</button>
+        </div>
+      </div>
+      <ul class="creator-cards" id="directory"><li class="hint">Loading creators…</li></ul>
+    </section>
+
+    <section class="acct-section" id="badges" aria-labelledby="badges-title">
+      <h2 id="badges-title">Badges</h2>
+      <p class="section-lede">Badges appear on creator pages by themselves as you make and share things.</p>
+      <div id="badge-guide"></div>
+    </section>
+
+    <section class="acct-section" id="yours" aria-labelledby="yours-title">
+      <h2 id="yours-title">Your creator page</h2>
+
+      <div class="panel signed-out" id="signed-out" hidden>
+        <p>Sign in to claim a handle, show off what you make and get your own referral link.</p>
+        <button class="btn btn-buy" type="button" id="signin-here">Sign in</button>
+      </div>
+
+      <div class="editor-grid" id="editor" hidden>
+        <form class="panel form creator-form" id="creator-form" novalidate>
+          <p class="note" id="hidden-note" hidden>ForgeCenter has hidden your page, so only you can see it. If you think that's a mistake, <a href="/support">open a help ticket</a>.</p>
+
+          <label for="handle">Handle</label>
+          <div class="handle-field">
+            <span class="handle-prefix" id="handle-prefix">/c/</span>
+            <input id="handle" name="handle" maxlength="24" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="your-name" aria-describedby="handle-msg">
+          </div>
+          <p class="field-msg" id="handle-msg" aria-live="polite">3 to 24 lowercase letters, numbers or hyphens. It's also your referral code.</p>
+
+          <label for="bio">About you</label>
+          <textarea id="bio" name="bio" rows="4" maxlength="300" placeholder="I build skyblock maps and make texture packs with a cosy, warm look." aria-describedby="bio-msg"></textarea>
+          <p class="field-msg" id="bio-msg" aria-live="polite">0 of 300 characters</p>
+
+          <fieldset class="creator-fields">
+            <legend>Links</legend>
+            <p class="small">Your YouTube channel, Discord server, Modrinth page or website. Up to 6.</p>
+            <div id="link-rows"></div>
+            <button class="btn btn-small" type="button" id="add-link">Add a link</button>
+          </fieldset>
+
+          <fieldset class="creator-fields" id="support-fields">
+            <legend>Where fans can support you</legend>
+            <p class="small">Fans pay you directly on these sites. ForgeCenter never handles this money, so payments and refunds are between you, your fans and that site.</p>
+            <div class="note" id="support-adult" hidden>
+              <p>Support links are for confirmed adults, because these payment sites need you to be 18 or older.</p>
+              <button class="btn btn-small" type="button" data-confirm-age>Confirm your age</button>
+            </div>
+            <div id="support-rows"></div>
+          </fieldset>
+
+          <p class="error" id="form-error" role="alert" hidden></p>
+          <div class="form-actions">
+            <button class="btn btn-buy" type="submit" id="save">Save your page</button>
+            <a class="btn" id="view-page" href="#" hidden>View your page</a>
+            <button class="link-btn" type="button" id="remove-page" hidden>Remove my page</button>
+          </div>
+        </form>
+
+        <aside class="side-stack">
+          <section class="panel">
+            <h3 class="panel-title">Your badges</h3>
+            <div id="my-badges"></div>
+          </section>
+          <section class="panel referral" id="referral" aria-labelledby="referral-title">
+            <h3 class="panel-title" id="referral-title">Your referral link</h3>
+            <div id="referral-body"></div>
+          </section>
+        </aside>
+      </div>
+    </section>
+  </div>
+</main>
+
+<footer class="foot">
+  <div class="wrap foot-inner">
+    <span><span class="logo-icon" data-icon="anvil"></span>ForgeCenter</span>
+    <nav aria-label="Legal"><a href="/privacy">Privacy</a> <a href="/terms">Terms</a> <a href="/support">Help</a></nav>
+  </div>
+</footer>
+<div class="toast" id="toast" role="status" hidden></div>
+<script type="module" src="/js/creators.js"></script>
+</body>
+</html>

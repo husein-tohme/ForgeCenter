@@ -498,3 +498,27 @@ document.addEventListener("click", e => {
     if (currentUser && !error && resume?.buy && Date.now() - resume.at < 10 * 60_000) checkout(resume.buy);
   });
 }
+
+// ---------- Creator referral links (?ref=handle) ----------
+// Remembered for 30 days, then sent once after sign-in. The server decides whether it
+// counts (new accounts without orders only).
+{
+  const REF = "fc-ref";
+  const params = new URLSearchParams(location.search);
+  const code = params.get("ref");
+  if (code !== null) {
+    if (/^[a-z0-9-]{3,24}$/i.test(code)) {
+      try { localStorage.setItem(REF, JSON.stringify({ code: code.toLowerCase(), at: Date.now() })); } catch {}
+    }
+    params.delete("ref");
+    history.replaceState(null, "", location.pathname + (params.size ? `?${params}` : "") + location.hash);
+  }
+  onUser(async user => {
+    if (!user?.ageGroup || user.ageGroup === "under13") return;
+    let saved = null;
+    try { saved = JSON.parse(localStorage.getItem(REF) || "null"); localStorage.removeItem(REF); } catch {}
+    if (!saved?.code || !(Date.now() - saved.at < 30 * 24 * 60 * 60 * 1000)) return;
+    const r = await api("/api/creators/referral/claim", { method: "POST", body: { code: saved.code } });
+    if (r.ok) toast(`Welcome! You joined through a link from @${r.data.creator.handle}.`);
+  });
+}

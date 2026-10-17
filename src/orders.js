@@ -8,6 +8,7 @@ import { notify } from "./email.js";
 import { getStripe, ensureCustomer, baseUrl, CHECKOUT_LABELS } from "./stripe.js";
 import { createServiceForOrder, serviceForOrder, publicService } from "./services.js";
 import { donationsBetween } from "./donations.js";
+import { rewardReferral } from "./creators.js";
 
 export const STATUSES = ["awaiting_payment", "paid", "in_progress", "delivered", "payment_failed", "expired", "canceled"];
 const PAID = "('paid', 'in_progress', 'delivered')";
@@ -46,6 +47,7 @@ export function fulfillCheckout(session) {
 export function afterPayment(order) {
   createServiceForOrder(order);
   notify.orderPaid(order);
+  rewardReferral(order); // creator referral credit; only card-paid first orders count
 }
 
 function setCheckoutStatus(session, status) {
