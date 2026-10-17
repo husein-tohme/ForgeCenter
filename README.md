@@ -7,18 +7,26 @@ Minecraft mods, websites, Discord bots, games, Minecraft server hosting and an A
 - **Sign in with Google (Gmail), Microsoft, GitHub, Discord or WhatsApp.** Every account is backed by a real, verified identity, and no passwords are stored. Accounts with the same verified email are joined automatically, and people can connect several sign-in methods to one account.
 - **Shop and Stripe Checkout** for every service. Hosting and website domains ($2/month) are monthly subscriptions.
 - **Order tracking** at `/account`: status, a project brief, a message thread with you, and the delivery link.
-- **Owner panel** at `/admin`: sales overview, support inbox, order status, delivery links, replies to customers, wallet refunds and credit, showcase approvals.
+- **Owner panel** at `/admin`: sales overview (with donations), support inbox, order status, delivery links, replies to customers, wallet refunds and credit, showcase approvals, the reports queue and suspended accounts.
 - **Age groups like Discord's**: a birthday question after the first sign-in turns away under-13s, and every account starts in the teen group. Adults confirm once with a Stripe credit card check or a Stripe Identity ID scan with a selfie. ForgeCenter keeps only the result. Big custom projects (configurable) and 18+ showcase listings are for confirmed adults, and the AI mentor and support assistant are told when someone is a teen.
 - **Wallet**: store credit customers top up by card ($5 to $500 at a time, up to $2,000) and spend on one-time items in one step. You can refund orders as credit or give goodwill credit. It's closed-loop: no withdrawals or transfers.
-- **Help desk** at `/support`: Forge Support (Claude) answers tickets straight away using built-in help notes and the customer's own orders, and hands anything involving money, broken services or a request for a person to you, with a note. You reply from the owner panel; customers get emails.
+- **Help desk** at `/support`: Forge Support (Claude) answers tickets straight away using built-in help notes and the customer's own orders, and hands anything involving money, broken services or a request for a person to you, with a note. Step-by-step help articles sit on the same page, and Forge Support links them when they answer the question. You reply from the owner panel; customers get emails.
 - **Self-service billing** through the Stripe Customer Portal (update card, cancel subscriptions, download invoices).
 - **Mod Forge**: generate a Fabric mod in your name, download it or create a Modrinth draft.
 - **Texture Forge** (`/textures`): a 16x16 pixel editor that exports a Minecraft resource pack.
 - **Modpack Forge** (`/modpacks`): search Modrinth, pick Fabric mods, download a `.mrpack` with required dependencies added automatically.
 - **Plugin Forge** (`/plugins`): makes a Paper/Purpur server plugin project with custom commands, a welcome message and timed announcements, all editable later in `config.yml`. The generated Java is compiled in the tests.
-- Creations from all four tools are saved to the account when signed in.
+- **Roblox Forge** (`/roblox`): makes a Roblox game project (obby, tycoon, simulator or minigame rounds) with DataStore saving and an optional daily reward, global leaderboard and VIP game pass, as a Rojo project for Roblox Studio. The generated Lua is parsed in the tests.
+- Creations from all five tools are saved to the account when signed in.
+- **AI Maker** (`/ai-maker`): build your own assistant (name, pixel avatar, greeting, instructions, knowledge), test it and share it with a link (`/assistant?t=...`). Up to 3 per account, 20 with the Dedicated AI purchase. Each message uses the chatter's daily AI allowance, and chats aren't stored.
+- **Site Maker** (`/site-maker`): describe a website and Claude builds a finished one-page site. Preview it in a sandbox, ask for changes and download one HTML file. A new site uses 5 messages of the daily AI allowance and a change uses 3, given back if nothing is built. The newest 20 sites per account are kept.
+- **Creator pages** (`/creators`, `/c/<handle>`): a public page with a bio, links, badges for what you've made, your published mods and showcase listings. Confirmed adults can add support links (PayPal, Ko-fi, Patreon and similar) that pay them directly; ForgeCenter never holds that money. Referral links (`?ref=<handle>`) earn wallet credit on a referred account's first card order: `REFERRAL_PERCENT` (default 10%) up to `REFERRAL_CAP_CENTS` (default $50) per person.
+- **Game Launchpad** (`/games`, `/game?id=`, `/my-games`): creators write a free draft page for their game and launch it on the public games page for $1 a month per game. They can cancel any time; the game stays up until the end of the paid month, which isn't refunded. A game is live only while its subscription is active. Only adults can mark a game 18+.
+- **Donations** (`/donate`): one-off or monthly gifts from $1 to $500, with an opt-in supporters wall. Monthly donors cancel in Manage billing, and must do that before deleting their account.
+- **Developer API** (`/developers`, `/v1`): confirmed adults make up to 5 API keys and call Claude chat, Mod/Texture/Plugin Forge zips and Modrinth search. Calls are paid from the wallet: chat at $8 per million input tokens and $40 per million output tokens (at least 1 cent), and 1 cent per zip or search. Refused and failed calls are free. Each key can make 60 requests a minute, 2 at a time.
+- **Rules, reports and suspensions** (`/rules`): anyone signed in can report showcase listings, creator pages, games and shared assistants. You review reports in the owner panel and can hide the item or suspend its owner. A suspended account can still sign in and open support tickets to appeal, but its creator page, live games and shared assistants are hidden, its API keys stop working and it can't delete itself.
 - **Email notifications**: you get an email for new paid orders, customer messages and tickets that need you; customers get one for payment, status changes, your replies, wallet credit and failed renewals.
-- **Forge AI mentor**: 30 free messages a day per account, 300 with the Dedicated AI purchase.
+- **Forge AI mentor**: 30 free messages a day per account, 300 with the Dedicated AI purchase. The allowance is shared with AI Maker and Site Maker.
 - **Showcase**: customers buy a slot, submit a listing, and it goes live after you approve it.
 - **Privacy policy and terms** pages (required by Google for sign-in). Have a lawyer review them before launch.
 - **Security**: CSRF protection, strict security headers, signed and replay-protected Stripe webhooks, rate limits, hashed session tokens.
@@ -127,8 +135,8 @@ Each provider turns on when its two values are in `.env`. Register this redirect
    `charge.dispute.created`, `charge.dispute.closed`,
    `identity.verification_session.verified`, `identity.verification_session.requires_input`,
    `identity.verification_session.canceled`.
-   Webhooks are required: they are how orders, subscriptions, wallet top-ups and age checks get their results.
-3. Turn on the **Customer Portal** in Settings > Billing > Customer portal.
+   Webhooks are required: they are how orders, subscriptions, game launches, donations, wallet top-ups and age checks get their results. Game launches and monthly donations rely on the `customer.subscription.*` and `invoice.paid` events.
+3. Turn on the **Customer Portal** in Settings > Billing > Customer portal. Let customers cancel subscriptions **at the end of the billing period**, without prorated refunds, so cancelled games and monthly donations keep the month that's paid for.
 4. For local testing: `stripe listen --forward-to localhost:3000/api/stripe/webhook`.
 5. **Taxes:** if you sell to customers in the US or EU, look at Stripe Tax before launch. It only collects tax once you have registrations set up.
 
@@ -143,6 +151,8 @@ Top-ups go through Stripe Checkout and are added by the webhook. To refund unuse
 
 ### Forge mentor and Forge Support
 Put an Anthropic API key in `ANTHROPIC_API_KEY`. The mentor uses `AI_MODEL` and Forge Support uses `SUPPORT_AI_MODEL` (default `claude-opus-5-5`, with Anthropic's automatic fallback model if it declines a request). Each customer gets up to 40 Forge Support replies a day and 5 open tickets. Without a key, tickets go straight to you.
+
+AI Maker and Site Maker use `AI_APPS_MODEL` (default `claude-opus-5-5`). The developer API's `/v1/chat` uses the same key but is pinned to `claude-opus-5-5`, because its prices depend on it; it ignores `AI_APPS_MODEL`. Without a key, these turn off and say so.
 
 ### Email (optional)
 Create a free [Resend](https://resend.com) account, verify your domain, and set `RESEND_API_KEY` and `EMAIL_FROM`. Without them the site works the same, just without emails.
