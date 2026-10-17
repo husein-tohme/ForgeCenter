@@ -10,6 +10,7 @@ import { supportRouter, adminSupportRouter } from "./support.js";
 import { showcaseRouter, adminShowcaseRouter } from "./showcase.js";
 import { tutorRouter } from "./tutor.js";
 import { assistantsRouter, adminAssistantsRouter } from "./aimaker.js";
+import { sitesRouter } from "./sitemaker.js";
 import { toolsRouter } from "./tools.js";
 import { developerRouter, developerApi, developerApiErrors } from "./developer.js";
 import { robloxRouter } from "./roblox.js";
@@ -103,6 +104,7 @@ export function createApp() {
   app.use("/api/creators", creatorsRouter);
   app.use("/api/roblox", robloxRouter);
   app.use("/api/assistants", assistantsRouter);
+  app.use("/api/sites", sitesRouter);
 
   app.use("/api", toolsRouter);
 
