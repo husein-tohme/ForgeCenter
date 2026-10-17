@@ -58,8 +58,8 @@ export function githubManifest(site) {
     hook_attributes: { url: site, active: false },
     public: true,
     request_oauth_on_install: false,
-    // Read-only access to the person's email addresses, so verified emails can be trusted.
-    default_permissions: { email_addresses: "read" },
+    // No extra permissions: GitHub rejected an email permission in the manifest, and
+    // sign-in only needs the profile. Accounts from GitHub sign-in may have no email.
     default_events: [],
   };
 }

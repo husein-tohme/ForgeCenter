@@ -22,12 +22,12 @@ after(() => { globalThis.fetch = realFetch; });
 
 const start = (body, cookie) => api("/api/setup/github/start", { method: "POST", body, cookie });
 
-test("the manifest asks only for sign-in: our callback, no webhook, read-only email", () => {
+test("the manifest asks only for sign-in: our callback, no webhook, no extra permissions", () => {
   const m = githubManifest("https://forgecenter.example");
   assert.deepEqual(m.callback_urls, ["https://forgecenter.example/api/auth/github/callback"]);
   assert.equal(m.redirect_url, "https://forgecenter.example/setup-signin/github/done");
   assert.equal(m.hook_attributes.active, false);
-  assert.deepEqual(m.default_permissions, { email_addresses: "read" });
+  assert.equal(m.default_permissions, undefined); // GitHub refuses unknown permission names
   assert.ok(m.name.length <= 34);
 });
 
