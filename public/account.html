@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>My account · ForgeCenter</title>
+<meta name="robots" content="noindex">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<meta name="theme-color" content="#2a2d33">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=Pixelify+Sans:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="top">
+  <div class="wrap top-inner">
+    <a class="logo" href="/" aria-label="ForgeCenter home"><span class="logo-icon" data-icon="anvil"></span>ForgeCenter</a>
+    <nav aria-label="Main"><a href="/#shop">Prices</a><a href="/#tools">Free tools</a><a href="/games">Games</a><a href="/creators">Creators</a><a href="/#mentor">Learn to code</a><a href="/support">Help</a></nav>
+    <div class="auth" id="auth-slot"></div>
+  </div>
+</header>
+
+<main id="main" class="page">
+  <div class="wrap">
+    <h1 class="page-title">My account</h1>
+
+    <section class="panel signed-out" id="signed-out" hidden>
+      <p>Sign in to see your orders, messages and saved creations.</p>
+      <button class="btn btn-buy" type="button" id="signin-here">Sign in</button>
+    </section>
+
+    <div id="account" hidden>
+      <section class="panel profile">
+        <img id="avatar" alt="" width="64" height="64" referrerpolicy="no-referrer" hidden>
+        <div class="profile-who">
+          <h2 id="p-name"></h2>
+          <p id="p-email"></p>
+          <button class="link-btn" type="button" id="rename-open">Change name</button>
+          <form id="rename-form" class="rename-form" hidden>
+            <label class="sr-only" for="rename-input">Display name</label>
+            <input id="rename-input" name="name" maxlength="50" required>
+            <button class="btn btn-small btn-buy" type="submit">Save</button>
+          </form>
+        </div>
+        <div class="profile-actions">
+          <button class="btn" type="button" id="billing" hidden>Manage billing</button>
+          <button class="btn" type="button" id="signout">Sign out</button>
+        </div>
+      </section>
+
+      <section class="acct-section">
+        <h2>Sign-in methods</h2>
+        <p class="section-lede">Connect more ways to sign in, so you can always get back into your account.</p>
+        <ul class="identity-list" id="identities"></ul>
+        <h3>Connect another</h3>
+        <div class="signin-options" id="connect-options"></div>
+      </section>
+
+      <section class="acct-section">
+        <h2>Orders</h2>
+        <div id="orders"><p class="hint">Loading your orders…</p></div>
+      </section>
+
+      <section class="acct-section" id="wallet">
+        <h2>Wallet</h2>
+        <p class="section-lede">Store credit for ForgeCenter. Pay for bots, AI assistants and showcase slots in one step. Credit can't be withdrawn or sent to someone else, and it doesn't expire.</p>
+        <div class="panel wallet" id="wallet-panel"><p class="hint">Loading your wallet…</p></div>
+        <h3>History</h3>
+        <ul class="ledger" id="ledger"></ul>
+      </section>
+
+      <section class="acct-section" id="age">
+        <h2>Age group</h2>
+        <div class="panel age-status" id="age-status"><p class="hint">Loading…</p></div>
+      </section>
+
+      <section class="acct-section">
+        <h2>Showcase listings</h2>
+        <div id="showcase"></div>
+      </section>
+
+      <section class="acct-section">
+        <h2>Saved creations</h2>
+        <div id="mods"></div>
+      </section>
+
+      <section class="acct-section">
+        <h2>Help</h2>
+        <p>Questions about an order, a server, a bot or your account? Forge Support, an AI assistant, answers straight away and passes anything it can't solve to a person.</p>
+        <a class="btn" href="/support">Get help</a>
+      </section>
+
+      <section class="acct-section danger">
+        <h2>Delete account</h2>
+        <p>This removes your profile, saved creations, showcase listings, messages and support tickets, and switches off your game server panel login. Receipts for past orders and wallet payments are kept for tax records without your name attached. Cancel subscriptions and use up or refund wallet credit first.</p>
+        <button class="btn btn-danger" type="button" id="delete">Delete my account</button>
+      </section>
+    </div>
+  </div>
+</main>
+
+<footer class="foot">
+  <div class="wrap foot-inner">
+    <span><span class="logo-icon" data-icon="anvil"></span>ForgeCenter</span>
+    <nav aria-label="Site"><a href="/games">Games</a> <a href="/creators">Creators</a> <a href="/developers">Developers</a> <a href="/donate">Donate</a> <a href="/rules">Rules</a> <a href="/privacy">Privacy</a> <a href="/terms">Terms</a> <a href="/support">Help</a></nav>
+  </div>
+</footer>
+<div class="toast" id="toast" role="status" hidden></div>
+<script type="module" src="/js/account.js"></script>
+</body>
+</html>

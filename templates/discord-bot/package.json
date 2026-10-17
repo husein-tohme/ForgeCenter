@@ -1,0 +1,20 @@
+{
+  "name": "forgecenter-discord-bot",
+  "version": "1.0.0",
+  "private": true,
+  "description": "ForgeCenter Discord bot: tickets, reaction roles, memes, moderation, welcome messages and mini-games.",
+  "type": "module",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node --disable-warning=ExperimentalWarning src/index.js",
+    "register": "node --disable-warning=ExperimentalWarning src/register.js",
+    "register:global": "node --disable-warning=ExperimentalWarning src/register.js --global",
+    "test": "node --disable-warning=ExperimentalWarning --test \"test/*.test.js\""
+  },
+  "engines": {
+    "node": ">=22.13"
+  },
+  "dependencies": {
+    "discord.js": "^14.27.0"
+  }
+}

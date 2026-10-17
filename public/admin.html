@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Owner panel · ForgeCenter</title>
+<meta name="robots" content="noindex">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<meta name="theme-color" content="#2a2d33">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=Pixelify+Sans:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/styles.css">
+<link rel="stylesheet" href="/css/reports.css">
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="top">
+  <div class="wrap top-inner">
+    <a class="logo" href="/" aria-label="ForgeCenter home"><span class="logo-icon" data-icon="anvil"></span>ForgeCenter</a>
+    <nav aria-label="Main"><a href="/#shop">Prices</a><a href="/#tools">Free tools</a><a href="/games">Games</a><a href="/creators">Creators</a><a href="/#mentor">Learn to code</a><a href="/support">Help</a></nav>
+    <div class="auth" id="auth-slot"></div>
+  </div>
+</header>
+
+<main id="main" class="page">
+  <div class="wrap">
+    <h1 class="page-title">Owner panel</h1>
+    <section class="panel signed-out" id="denied" hidden>
+      <p id="denied-text">Sign in with the site owner's Google account to manage orders.</p>
+      <button class="btn btn-buy" type="button" id="signin-here">Sign in</button>
+    </section>
+
+    <div id="panel" hidden>
+      <section class="overview" aria-labelledby="overview-title">
+        <h2 id="overview-title" class="sr-only">Overview</h2>
+        <div id="overview"><p class="hint">Loading the numbers…</p></div>
+      </section>
+
+      <section class="acct-section" id="tickets-section">
+        <div class="admin-head">
+          <h2>Support tickets</h2>
+          <label class="filter">Show
+            <select id="ticket-filter">
+              <option value="waiting">Waiting for you</option>
+              <option value="open">All open</option>
+              <option value="answered">You replied</option>
+              <option value="ai">Forge Support is answering</option>
+              <option value="closed">Closed</option>
+            </select>
+          </label>
+        </div>
+        <div id="tickets"></div>
+      </section>
+
+      <section class="acct-section" id="reports-section">
+        <div class="admin-head">
+          <h2>Reports</h2>
+          <label class="filter">Show
+            <select id="report-filter">
+              <option value="open">Open</option>
+              <option value="actioned">Resolved</option>
+              <option value="dismissed">Dismissed</option>
+              <option value="all">All</option>
+            </select>
+          </label>
+        </div>
+        <div id="reports"></div>
+        <h3>Suspended accounts</h3>
+        <div id="suspended"></div>
+      </section>
+
+      <section class="acct-section" id="orders-section">
+        <div class="admin-head">
+          <h2>Orders</h2>
+          <label class="filter">Show
+            <select id="filter">
+              <option value="">Paid and active</option>
+              <option value="paid">Paid, not started</option>
+              <option value="in_progress">In progress</option>
+              <option value="delivered">Delivered</option>
+              <option value="awaiting_reply">Waiting for your reply</option>
+              <option value="setup_failed">Setup failed</option>
+              <option value="past_due">Payment overdue</option>
+              <option value="awaiting_payment">Waiting for payment</option>
+              <option value="payment_failed">Payment failed</option>
+              <option value="expired">Checkout expired</option>
+              <option value="canceled">Canceled</option>
+            </select>
+          </label>
+        </div>
+        <div id="orders"></div>
+      </section>
+
+      <section class="acct-section" id="listings-section">
+        <h2>Showcase listings</h2>
+        <div id="listings"></div>
+      </section>
+    </div>
+  </div>
+</main>
+
+<div class="toast" id="toast" role="status" hidden></div>
+<script type="module" src="/js/admin.js"></script>
+</body>
+</html>

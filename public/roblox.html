@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Roblox Forge · ForgeCenter</title>
+<meta name="description" content="Make the start of your own Roblox game: an obby, tycoon, simulator or minigame, with saving built in. Download it as a Rojo project for Roblox Studio. Free.">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<meta name="theme-color" content="#2a2d33">
+<link rel="canonical" href="%PAGE_URL%">
+<meta property="og:site_name" content="ForgeCenter">
+<meta property="og:title" content="Roblox Forge · ForgeCenter">
+<meta property="og:description" content="Make the start of your own Roblox game: an obby, tycoon, simulator or minigame, with saving built in. Download it as a Rojo project for Roblox Studio. Free.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="%PAGE_URL%">
+<meta property="og:image" content="%BASE_URL%/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=Pixelify+Sans:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/styles.css">
+<link rel="stylesheet" href="/css/roblox.css">
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="top">
+  <div class="wrap top-inner">
+    <a class="logo" href="/" aria-label="ForgeCenter home"><span class="logo-icon" data-icon="anvil"></span>ForgeCenter</a>
+    <nav aria-label="Main"><a href="/#shop">Prices</a><a href="/#tools">Free tools</a><a href="/games">Games</a><a href="/creators">Creators</a><a href="/#mentor">Learn to code</a><a href="/support">Help</a></nav>
+    <div class="auth" id="auth-slot"></div>
+  </div>
+</header>
+
+<main id="main" class="page">
+  <div class="wrap">
+    <h1 class="page-title">Roblox Forge</h1>
+    <p class="section-lede">Make the start of your own Roblox game. Pick a template, give it a name and choose some extras. You'll download a project you open in Roblox Studio, with saving already built in. It's free and you don't need an account.</p>
+
+    <div class="forge-grid rbx-grid">
+      <form class="panel form rbx-form" id="rbx-form" novalidate>
+        <fieldset class="rbx-fieldset">
+          <legend>Game template</legend>
+          <div class="rbx-templates" id="rbx-templates"></div>
+        </fieldset>
+
+        <div class="rbx-names">
+          <label>Game name<input name="name" required maxlength="50" placeholder="Lava Run" autocomplete="off"></label>
+          <label>Currency name<input name="currency" required maxlength="20" placeholder="Coins" autocomplete="off" pattern="[A-Za-z0-9 ]{1,20}"></label>
+        </div>
+        <p class="small rbx-under">The currency shows on the leaderboard. Use letters, numbers and spaces.</p>
+
+        <fieldset class="rbx-fieldset">
+          <legend>Numbers</legend>
+          <p class="small">Leave a box empty to use the suggested number. You can change all of these later in <code>Config.lua</code>.</p>
+          <div class="rbx-numbers" id="rbx-numbers"></div>
+        </fieldset>
+
+        <fieldset class="rbx-fieldset">
+          <legend>Extras</legend>
+          <div id="rbx-extras"></div>
+        </fieldset>
+
+        <button type="submit" class="btn btn-buy" id="rbx-download">Download project</button>
+        <p class="small">You'll get a zip with Luau scripts and a Rojo project file. Signed in? It's also saved to your account.</p>
+      </form>
+
+      <section class="panel preview rbx-preview" aria-labelledby="rbx-preview-title">
+        <h2 class="panel-title" id="rbx-preview-title">Your project</h2>
+        <p class="small" id="rbx-summary">Building a preview…</p>
+        <p class="error" id="rbx-error" role="alert" hidden></p>
+        <nav class="rbx-tree" id="rbx-tree" aria-label="Project files"></nav>
+        <div class="rbx-viewer">
+          <div class="rbx-viewer-head"><code id="rbx-open-name"></code><span class="small" id="rbx-open-lines"></span></div>
+          <pre id="rbx-code" tabindex="0" aria-label="File contents"></pre>
+        </div>
+      </section>
+    </div>
+
+    <section class="panel rbx-steps" aria-labelledby="rbx-steps-title">
+      <h2 class="panel-title" id="rbx-steps-title">Open it in Roblox Studio</h2>
+      <ol class="setup-steps">
+        <li><strong>Install Rojo</strong> from <a href="https://rojo.space" target="_blank" rel="noopener">rojo.space</a>. With Rokit or Aftman, run <code>rokit install</code> or <code>aftman install</code> in the project folder. Then add the Rojo plugin to Studio with <code>rojo plugin install</code>.</li>
+        <li><strong>Unzip the project</strong> and run <code>rojo serve</code> in its folder.</li>
+        <li><strong>Connect from Studio.</strong> Open a Baseplate, open the Rojo plugin and press Connect. Your scripts appear straight away.</li>
+        <li><strong>Turn on saving.</strong> Publish the place once, then in Game Settings, Security, switch on "Enable Studio Access to API Services" so DataStores work while you test.</li>
+        <li><strong>Press Play</strong> to try it, and use File, Publish to Roblox when it's ready.</li>
+      </ol>
+      <p class="small">The README in the zip has the same steps and explains every file. Roblox Forge isn't made by or affiliated with Roblox Corporation.</p>
+    </section>
+  </div>
+</main>
+
+<footer class="foot">
+  <div class="wrap foot-inner">
+    <span><span class="logo-icon" data-icon="anvil"></span>ForgeCenter</span>
+    <nav aria-label="Site"><a href="/games">Games</a> <a href="/creators">Creators</a> <a href="/developers">Developers</a> <a href="/donate">Donate</a> <a href="/rules">Rules</a> <a href="/privacy">Privacy</a> <a href="/terms">Terms</a> <a href="/support">Help</a></nav>
+  </div>
+</footer>
+<div class="toast" id="toast" role="status" hidden></div>
+<script type="module" src="/js/roblox.js"></script>
+</body>
+</html>

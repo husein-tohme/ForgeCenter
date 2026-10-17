@@ -1,0 +1,14 @@
+{
+  "name": "forgecenter",
+  "description": "Claude plugins for working on and launching ForgeCenter",
+  "owner": {
+    "name": "ForgeCenter"
+  },
+  "plugins": [
+    {
+      "name": "forgecenter",
+      "source": "./claude-plugin/forgecenter",
+      "description": "Launch checklist pane, /forgecenter command, test status line, secret and test-before-commit guards, payment and privacy rule guards, and skills for adding features and deploying"
+    }
+  ]
+}

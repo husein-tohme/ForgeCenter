@@ -1,0 +1,204 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ForgeCenter</title>
+<meta name="description" content="Minecraft mods, websites, Discord bots, games and server hosting, built for you and published in your name.">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<meta name="theme-color" content="#2a2d33">
+<link rel="canonical" href="%PAGE_URL%">
+<meta property="og:site_name" content="ForgeCenter">
+<meta property="og:title" content="ForgeCenter">
+<meta property="og:description" content="Minecraft mods, websites, Discord bots, games and server hosting, built for you and published in your name.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="%PAGE_URL%">
+<meta property="og:image" content="%BASE_URL%/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=Pixelify+Sans:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="top">
+  <div class="wrap top-inner">
+    <a class="logo" href="/" aria-label="ForgeCenter home"><span class="logo-icon" data-icon="anvil"></span>ForgeCenter</a>
+    <nav aria-label="Main">
+      <a href="#shop">Prices</a>
+      <a href="#tools">Free tools</a>
+      <a href="/games">Games</a>
+      <a href="/creators">Creators</a>
+      <a href="#mentor">Learn to code</a>
+      <a href="/support">Help</a>
+    </nav>
+    <div class="auth" id="auth-slot"></div>
+  </div>
+</header>
+
+<main id="main">
+
+<section class="hero">
+  <div class="wrap hero-grid">
+    <div class="hero-copy">
+      <h1>Craft your mod, website, bot or server</h1>
+      <p class="lede">Pick what you want to make. ForgeCenter builds it, publishes it in your name and teaches you how it works.</p>
+      <div class="hero-actions">
+        <a class="btn btn-buy" href="#shop">See prices</a>
+        <a class="btn" href="#tools">Free creator tools</a>
+      </div>
+    </div>
+
+    <div class="panel crafting" aria-labelledby="craft-title">
+      <h2 id="craft-title" class="panel-title">Crafting</h2>
+      <div class="craft-row">
+        <div class="grid3" id="grid" aria-hidden="true"></div>
+        <span class="craft-arrow" aria-hidden="true"></span>
+        <div class="slot slot-out" id="out" aria-hidden="true"></div>
+      </div>
+      <div class="hotbar" role="group" aria-label="Choose what to craft" id="hotbar"></div>
+      <div class="craft-result" id="result" aria-live="polite">
+        <p class="hint">Pick an item above to see what it crafts.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="band" id="how">
+  <div class="wrap">
+    <h2>How it works</h2>
+    <ol class="steps">
+      <li><strong>Tell us what you want.</strong> Pick a service and describe it, or use the Mod Forge yourself.</li>
+      <li><strong>We build it.</strong> You see progress and approve before anything goes public.</li>
+      <li><strong>It launches in your name.</strong> Your Modrinth account, your Stripe, your domain. You own it.</li>
+    </ol>
+  </div>
+</section>
+
+<section class="band band-alt" id="shop">
+  <div class="wrap">
+    <h2>Prices</h2>
+    <p class="section-lede">One price per service. No hidden fees, except the $2 a month domain that comes with every website.</p>
+    <div class="panel trades" id="trades"></div>
+  </div>
+</section>
+
+<section class="band" id="tools">
+  <div class="wrap">
+    <h2>Free creator tools</h2>
+    <p class="section-lede">Make Minecraft content yourself, free. Sign in to keep a list of everything you've made.</p>
+    <div class="tool-links">
+      <a class="panel tool-link" href="#forge"><span class="slot"><span class="tool-icon" data-icon="pickaxe"></span></span><span><strong>Mod Forge</strong><span class="small">Start a Fabric mod with your own items.</span></span></a>
+      <a class="panel tool-link" href="/textures"><span class="slot"><span class="tool-icon" data-icon="painting"></span></span><span><strong>Texture Forge</strong><span class="small">Draw textures and download a resource pack.</span></span></a>
+      <a class="panel tool-link" href="/modpacks"><span class="slot"><span class="tool-icon" data-icon="chest"></span></span><span><strong>Modpack Forge</strong><span class="small">Pick mods from Modrinth, get a .mrpack.</span></span></a>
+      <a class="panel tool-link" href="/plugins"><span class="slot"><span class="tool-icon" data-icon="anvil"></span></span><span><strong>Plugin Forge</strong><span class="small">Make a server plugin with your own commands.</span></span></a>
+      <a class="panel tool-link" href="/roblox"><span class="slot"><span class="tool-icon" data-icon="gamepad"></span></span><span><strong>Roblox Forge</strong><span class="small">Start a Roblox game you can open in Studio.</span></span></a>
+      <a class="panel tool-link" href="/ai-maker"><span class="slot"><span class="tool-icon" data-icon="bot"></span></span><span><strong>AI Maker</strong><span class="small">Build your own AI helper and share it.</span></span></a>
+      <a class="panel tool-link" href="/site-maker"><span class="slot"><span class="tool-icon" data-icon="monitor"></span></span><span><strong>Site Maker</strong><span class="small">Describe a page and get a website for it.</span></span></a>
+      <a class="panel tool-link" href="/my-games"><span class="slot"><span class="tool-icon" data-icon="rocket"></span></span><span><strong>Launch a game</strong><span class="small">Put your game on the games page for $1 a month.</span></span></a>
+    </div>
+  </div>
+</section>
+
+<section class="band band-alt" id="forge">
+  <div class="wrap">
+    <h2>Mod Forge</h2>
+    <p class="section-lede">Make a Fabric mod for Minecraft 1.21 in your own name. Download the project, or send it to Modrinth as a draft you can check before publishing.</p>
+    <div class="forge-grid">
+      <form class="panel form" id="mod-form" novalidate>
+        <label>Mod name<input name="name" required maxlength="60" placeholder="Ruby Tools"></label>
+        <label>Your name<input name="author" required maxlength="40" placeholder="Steve"></label>
+        <label>What does it add?<textarea name="description" required rows="3" maxlength="500" placeholder="Rubies that drop from deepslate, plus a ruby sword."></textarea></label>
+        <label>Items, separated by commas<input name="items" placeholder="Ruby, Ruby Sword"></label>
+        <details class="publish">
+          <summary>Publish to Modrinth</summary>
+          <label>Your Modrinth token<input name="token" type="password" autocomplete="off" placeholder="mrp_…"></label>
+          <p class="small">Create one at modrinth.com under Settings, then PATs, with the "Create projects" scope. It's only used for this request and never stored.</p>
+          <button type="button" class="btn" id="mod-publish">Create Modrinth draft</button>
+        </details>
+        <button type="submit" class="btn btn-buy">Download mod project</button>
+      </form>
+      <div class="panel preview">
+        <h3 class="panel-title">fabric.mod.json</h3>
+        <pre id="mod-preview" tabindex="0" aria-label="fabric.mod.json preview"></pre>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="band" id="mentor">
+  <div class="wrap mentor-grid">
+    <div>
+      <h2>Learn to code with Forge</h2>
+      <p class="section-lede">Forge is an AI mentor that teaches you step by step, gives you small exercises and reviews your code honestly. The goal is that one day you won't need us.</p>
+      <div class="starters" id="starters">
+        <button class="chip" type="button">How do I start making Minecraft mods?</button>
+        <button class="chip" type="button">Explain what an API is like I'm 12</button>
+        <button class="chip" type="button">Give me my first JavaScript exercise</button>
+      </div>
+    </div>
+    <div class="panel chat">
+      <div class="chat-log" id="chat" aria-live="polite" tabindex="0" aria-label="Conversation with Forge">
+        <p class="hint">Ask anything about code. Forge answers like a patient teacher.</p>
+      </div>
+      <form class="chat-input" id="chat-form">
+        <label class="sr-only" for="q">Your question</label>
+        <input id="q" autocomplete="off" placeholder="Ask Forge a question">
+        <button class="btn btn-buy" type="submit">Send</button>
+      </form>
+      <p class="small" id="mentor-usage"></p>
+    </div>
+  </div>
+</section>
+
+<section class="band band-alt" id="showcase">
+  <div class="wrap">
+    <h2>Showcase</h2>
+    <p class="section-lede">Websites and servers made by ForgeCenter customers.</p>
+    <div class="listings" id="showcase-list">
+    <div class="panel empty">
+      <span class="empty-icon" data-icon="frame"></span>
+      <div>
+        <p><strong>Nothing here yet.</strong> Websites and servers that owners choose to share will appear here.</p>
+        <button class="btn" type="button" data-buy="showcase">List your project for $10</button>
+      </div>
+    </div>
+    </div>
+  </div>
+</section>
+
+<section class="band" id="faq">
+  <div class="wrap faq">
+    <h2>Questions</h2>
+    <details><summary>Who owns what ForgeCenter makes?</summary><p>You do. Mods are published from your Modrinth account, payments go to your Stripe account, and websites use your domain. We never publish anything without your approval.</p></details>
+    <details><summary>Do I need my own Stripe account?</summary><p>Only if your project takes payments. You connect it once and money from your customers goes straight to you.</p></details>
+    <details><summary>Why does a game cost $10,000 to $20,000?</summary><p>A finished game with art, sound, testing and a Steam launch is months of work. The $10,000 deposit starts the project, and the final price depends on its size.</p></details>
+    <details><summary>What do I get with Minecraft hosting?</summary><p>A server for 10 players with 2 GB of RAM, 100 GB of storage, a dedicated CPU and DDoS protection, billed monthly. Cancel any time.</p></details>
+    <details><summary>How do I sign in?</summary><p>With an account you already have: Google (including Gmail), Microsoft (Outlook, Hotmail or Xbox), GitHub, Discord, or your phone number through WhatsApp. That way every account belongs to a real person. ForgeCenter never sees your password, and you can connect more than one so you never get locked out.</p></details>
+    <details><summary>What is the wallet?</summary><p>Store credit you can add by card and spend on anything with a one-time price, like a Discord bot or a showcase slot, in one step. It holds up to $2,000, doesn't expire, and can't be withdrawn or sent to someone else. Find it on your account page.</p></details>
+    <details><summary>Why is my account in the teen group?</summary><p>Like on Discord, every account starts in the teen group. Adults confirm their age once, with a credit card check or an ID scan and selfie through Stripe, to unlock adult-only purchases (marked in the prices) and 18+ showcase listings. ForgeCenter keeps only the result. Accounts are for people 13 and older.</p></details>
+    <details><summary>How do I get help?</summary><p>Open a ticket on the <a href="/support">help page</a>. Forge Support, an AI assistant, answers straight away and passes anything it can't solve, such as refunds, to a person.</p></details>
+    <details><summary>Is the AI assistant really mine?</summary><p>It's branded and set up for you, with its own instructions and higher limits. It runs on a leading AI model behind the scenes, so it stays fast and up to date.</p></details>
+  </div>
+</section>
+
+</main>
+
+<footer class="foot">
+  <div class="wrap foot-inner">
+    <span><span class="logo-icon" data-icon="anvil"></span>ForgeCenter</span>
+    <nav aria-label="Site"><a href="/games">Games</a> <a href="/creators">Creators</a> <a href="/developers">Developers</a> <a href="/donate">Donate</a> <a href="/rules">Rules</a> <a href="/privacy">Privacy</a> <a href="/terms">Terms</a> <a href="/support">Help</a> <a href="/account">My account</a></nav>
+    <span>Not affiliated with Mojang or Microsoft. Minecraft is a trademark of Mojang AB.</span>
+  </div>
+</footer>
+
+<div class="toast" id="toast" role="status" hidden></div>
+
+<script type="module" src="/js/home.js"></script>
+</body>
+</html>

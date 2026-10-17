@@ -1,0 +1,30 @@
+{
+  "name": "forgecenter",
+  "version": "0.2.0",
+  "description": "ForgeCenter - Minecraft mods, websites, bots, servers and an AI dev tutor in one place",
+  "main": "src/server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node --disable-warning=ExperimentalWarning src/server.js",
+    "dev": "node --disable-warning=ExperimentalWarning --env-file-if-exists=.env --watch-path=src src/server.js",
+    "test": "node --disable-warning=ExperimentalWarning --test test/*.test.js",
+    "bots": "node --disable-warning=ExperimentalWarning src/bots.js",
+    "setup:bots": "npm ci --omit=dev --prefix templates/discord-bot",
+    "check": "node scripts/check.mjs"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.134.0",
+    "archiver": "^7.0.1",
+    "express": "^4.21.0",
+    "google-auth-library": "^10.9.1",
+    "helmet": "^8.3.0",
+    "stripe": "^22.6.2"
+  },
+  "engines": {
+    "node": ">=22.13"
+  },
+  "devDependencies": {
+    "luaparse": "^0.3.1",
+    "yaml": "^2.9.1"
+  }
+}

@@ -1,0 +1,105 @@
+/* ---------- Donate page ---------- */
+.donate-grid { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); gap: 24px; align-items: start; }
+.donate-main { display: grid; gap: 24px; min-width: 0; }
+.donate-box form { display: grid; gap: 18px; }
+.donate-box fieldset { border: 0; padding: 0; margin: 0; min-width: 0; }
+.donate-box .note, .donate-box .error, .fine-print { margin: 0; }
+.amount-chips legend { font-weight: 700; padding: 0; margin-bottom: 8px; }
+
+/* The radios are hidden behind the bevelled faces drawn by their labels. */
+.seg input, .chip-radio input {
+  position: absolute; opacity: 0; pointer-events: none;
+  width: 1px; height: 1px; margin: 0; padding: 0; border: 0;
+}
+.seg label, .chip-radio { position: relative; cursor: pointer; }
+.seg input:focus-visible + span, .chip-radio input:focus-visible + span { outline: 3px solid var(--gold); outline-offset: 2px; }
+
+/* One time or monthly: two halves of one switch, like a toggled button pair. */
+.seg { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 4px; background: #3a3a3a; }
+.seg span {
+  display: flex; align-items: center; justify-content: center; min-height: 44px;
+  font: 500 1.05rem var(--display); color: #f0f0f0; text-shadow: 2px 2px 0 #3a3a3a;
+  background: #6f6f6f; box-shadow: inset 3px 3px 0 #9a9a9a, inset -3px -3px 0 #4a4a4a;
+}
+.seg label:hover span { background: #7e86b8; }
+.seg input:checked + span {
+  background: var(--lapis); color: #fff; text-shadow: 2px 2px 0 #172f74;
+  box-shadow: inset 3px 3px 0 #5a78d0, inset -3px -3px 0 #172f74;
+}
+
+/* Amounts as inventory slots with a stack count; the chosen one lights up like the hotbar. */
+.chip-row { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; padding: 5px; background: #3a3a3a; }
+.chip-radio span {
+  display: flex; align-items: center; justify-content: center; min-height: 56px;
+  /* The hyperlegible face, because Pixelify's 5 reads as an S in money amounts. */
+  font: 700 1.2rem var(--body); color: #fff; text-shadow: 2px 2px 0 #2a2a2a;
+  background: var(--slot); box-shadow: inset 3px 3px 0 #373737, inset -3px -3px 0 #c9c9c9;
+}
+.chip-radio:hover span { background: #a0a0a0; }
+.chip-radio input:checked + span {
+  background: var(--emerald); text-shadow: 2px 2px 0 var(--emerald-dark);
+  box-shadow: inset 0 0 0 3px #fff, inset 5px 5px 0 #4fd47e, inset -5px -5px 0 var(--emerald-dark);
+}
+.other-amount { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-top: 12px; font-weight: 700; }
+.dollar-input { display: inline-flex; align-items: center; background: #000; color: #fff; border: 3px solid #a0a0a0; padding-left: 12px; font-weight: 700; }
+.dollar-input:focus-within { border-color: #fff; }
+.dollar-input input { border: 0; margin: 0; width: 130px; padding-left: 6px; font-weight: 700; }
+/* styles.css forces check rows to flex, which would beat [hidden]. */
+.check-row[hidden] { display: none !important; }
+.donate-box .check-row, .yours .check-row { font-weight: 400; }
+.donate-box .check-row strong { overflow-wrap: anywhere; }
+.donate-box .note { font-size: 1rem; }
+.donate-btn { min-height: 56px; font-size: 1.3rem; }
+.donate-btn .num { font-size: 1.15rem; }
+.donate-btn[disabled] { cursor: not-allowed; }
+
+/* After Stripe: a heart that pops in, then what happened. */
+.thanks-icon { display: block; width: 64px; height: 64px; margin-bottom: 12px; }
+.thanks:not([hidden]) .thanks-icon .px { animation: heart-pop .4s steps(4) both; }
+@keyframes heart-pop { 0% { transform: scale(.5); } 70% { transform: scale(1.15); } 100% { transform: scale(1); } }
+@media (prefers-reduced-motion: reduce) { .thanks:not([hidden]) .thanks-icon .px { animation: none; } }
+.thanks h2 { font-size: 1.8rem; }
+
+/* What the money does, and the small print, beside the form. */
+.donate-side { display: grid; gap: 24px; min-width: 0; }
+.good-to-know details { border-color: #a9a9a9; padding: 12px 0; }
+.good-to-know details:last-child { border-bottom: 0; padding-bottom: 0; }
+.good-to-know summary { font-size: 1rem; }
+.good-to-know details p { font-size: .95rem; }
+.why-list { list-style: none; padding: 0; margin: 0; display: grid; gap: 18px; }
+.why-list li { display: grid; grid-template-columns: 56px minmax(0, 1fr); gap: 14px; align-items: center; }
+.why-list strong { display: block; font: 700 1.1rem var(--display); }
+.why-list .small { display: block; }
+
+/* The signed-in donor's own donations. */
+.your-list { list-style: none; padding: 0; margin: 0 0 12px; display: grid; gap: 6px; }
+.your-list li { display: grid; grid-template-columns: 44px minmax(0, 1fr) auto; gap: 12px; align-items: center; background: #d4d4d4; padding: 8px 10px; }
+.your-list .slot { width: 44px; height: 44px; padding: 7px; }
+.your-main { display: flex; flex-direction: column; min-width: 0; }
+#your-billing:not(:empty) { margin-bottom: 12px; }
+#your-billing p { margin: 0 0 8px; }
+
+/* Supporters wall: each name drawn as a Minecraft item tooltip. */
+.wall { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 14px; }
+.wall > .hint { grid-column: 1 / -1; }
+.tag {
+  display: flex; flex-direction: column; justify-content: center; gap: 2px; min-height: 60px; padding: 8px 14px;
+  background: linear-gradient(#100010, #100010) padding-box, linear-gradient(#5000ff, #28007f) border-box;
+  border: 3px solid transparent; box-shadow: 0 0 0 3px #100010;
+}
+/* People's names in the hyperlegible face: the pixel font's 2 and 8 look alike. */
+.tag-name { font: 700 1.05rem/1.3 var(--body); color: #fff; text-shadow: 2px 2px 0 #3f3f3f; overflow-wrap: anywhere; }
+.tag-monthly .tag-name { color: #ffaa00; text-shadow: 2px 2px 0 #3f2a00; }
+.tag-sub { font-size: .9rem; color: #ff55ff; text-shadow: 2px 2px 0 #3f153f; }
+
+@media (max-width: 900px) { .donate-grid { grid-template-columns: 1fr; } }
+@media (max-width: 480px) {
+  .chip-row { gap: 4px; padding: 4px; }
+  .chip-radio span { min-height: 52px; font-size: 1.05rem; }
+  .your-list li { grid-template-columns: 44px minmax(0, 1fr); }
+  .your-list .pill { grid-column: 2; justify-self: start; }
+  .wall { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+  .tag { padding: 8px 10px; }
+  .tag-name { font-size: .95rem; }
+  .tag-sub { font-size: .8rem; }
+}

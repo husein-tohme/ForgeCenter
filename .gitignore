@@ -147,3 +147,11 @@ vite.config.ts.timestamp-*
 
 # Turbo Repo
 .turbo
+
+# ForgeCenter database
+data/
+*.db
+*.db-*
+
+# Claude Code workflow worktrees
+.claude/worktrees/

@@ -1,0 +1,72 @@
+/* Roblox Forge. Builds on the inventory panels, slots and buttons in /styles.css. */
+
+.rbx-fieldset { border: 2px solid #9a9a9a; padding: 12px 14px 4px; margin: 0 0 18px; min-width: 0; }
+.rbx-fieldset legend { font-weight: 700; padding: 0 6px; }
+.rbx-fieldset > .small { margin: 0 0 12px; }
+
+/* Template cards: radio buttons drawn as inventory tiles. */
+.rbx-templates { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-bottom: 12px; }
+.form .rbx-template {
+  position: relative; display: grid; grid-template-columns: 48px minmax(0, 1fr); gap: 12px; align-items: start;
+  margin: 0; padding: 12px; font-weight: 400; cursor: pointer;
+  background: #d4d4d4; border: 3px solid var(--outline);
+  box-shadow: inset 3px 3px 0 #fff, inset -3px -3px 0 #8b8b8b;
+}
+.rbx-template input { position: absolute; opacity: 0; width: 1px; height: 1px; margin: 0; pointer-events: none; }
+.rbx-template .slot { width: 48px; height: 48px; padding: 7px; }
+.rbx-template strong { display: block; font: 700 1.1rem/1.2 var(--display); margin-bottom: 2px; }
+.rbx-template .small { display: block; line-height: 1.4; }
+.rbx-template:hover { background: #e0e3f0; }
+.rbx-template:has(input:checked) { background: #e9edf9; border-color: var(--lapis); box-shadow: inset 3px 3px 0 #fff, inset -3px -3px 0 #8b8b8b, 0 0 0 3px var(--gold); }
+.rbx-template:has(input:checked) strong { color: var(--lapis); }
+.rbx-template:has(input:focus-visible) { outline: 3px solid var(--gold); outline-offset: 4px; }
+
+/* Name and currency side by side when there's room. */
+.rbx-names { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 0 14px; }
+.rbx-names label { margin-bottom: 4px; }
+.rbx-under { margin: 0 0 18px; }
+
+.rbx-numbers { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 0 14px; }
+.rbx-numbers label, .rbx-extra-settings label { font-size: .95rem; margin-bottom: 12px; }
+
+.rbx-extra { padding: 10px 0 12px; border-top: 2px dashed #a9a9a9; }
+.rbx-extra:first-child { border-top: 0; padding-top: 2px; }
+.rbx-extra .check-row { margin: 0; }
+.rbx-extra > .small { margin: 2px 0 0 32px; }
+.rbx-extra-settings { margin: 12px 0 0 32px; padding: 12px 14px 0; background: #b8b8b8; }
+.rbx-extra-settings > .small { margin: -6px 0 12px; }
+
+/* Preview: the file tree, then the open file. */
+.rbx-preview > .small { margin-bottom: 10px; }
+.rbx-tree { background: #d4d4d4; border: 2px solid #9a9a9a; padding: 8px 10px; margin-bottom: 12px; font-size: .95rem; }
+.rbx-tree ul { list-style: none; margin: 0; padding: 0 0 0 18px; border-left: 2px dotted #9a9a9a; margin-left: 9px; }
+.rbx-tree > ul { margin-left: 9px; }
+.rbx-row { display: flex; align-items: center; gap: 8px; min-height: 30px; padding: 2px 6px; overflow-wrap: break-word; min-width: 0; }
+/* While the options have a problem, the last good preview stays but looks out of date. */
+.rbx-preview.is-stale .rbx-tree, .rbx-preview.is-stale .rbx-viewer { opacity: .5; }
+.rbx-ico { width: 18px; height: 18px; flex: none; }
+.rbx-dir { font-weight: 700; }
+.rbx-file {
+  width: 100%; text-align: left; font: inherit; color: var(--ink); cursor: pointer;
+  background: none; border: 2px solid transparent;
+}
+.rbx-file:hover { border-color: var(--lapis); color: var(--lapis); }
+.rbx-file[aria-current="true"] { background: #1e1e1e; color: #d7f5d7; border-color: var(--outline); }
+
+.rbx-viewer-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; margin-bottom: 6px; }
+.rbx-viewer-head code { background: none; padding: 0; font-weight: 700; overflow-wrap: anywhere; }
+.preview .rbx-viewer pre { min-height: 240px; max-height: 460px; white-space: pre; tab-size: 4; font-size: 13px; }
+.rbx-preview .error { margin: 0 0 12px; }
+
+.rbx-steps { margin-top: 24px; }
+.rbx-steps .setup-steps { margin: 0 0 12px; }
+
+@media (max-width: 560px) {
+  .rbx-templates, .rbx-names { grid-template-columns: 1fr; }
+  .rbx-extra > .small, .rbx-extra-settings { margin-left: 0; }
+  .rbx-tree { padding: 6px 4px; }
+  .rbx-tree ul { padding-left: 8px; margin-left: 6px; }
+  .rbx-tree > ul { margin-left: 6px; }
+  .rbx-row { gap: 6px; padding: 2px 4px; }
+  .preview .rbx-viewer pre { max-height: 380px; }
+}

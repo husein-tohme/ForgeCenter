@@ -1,0 +1,9 @@
+{
+  "name": "forgecenter",
+  "version": "0.3.0",
+  "description": "ForgeCenter launch checklist pane, /forgecenter command, test status line, guards that keep secrets out of git, require passing tests before code commits and keep edits inside the payment and privacy rules, plus skills for adding features and deploying",
+  "types": "./types/index.d.ts",
+  "author": {
+    "name": "ForgeCenter"
+  }
+}

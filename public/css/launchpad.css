@@ -1,0 +1,161 @@
+/* Game Launchpad: the games page, one game's page and My games. Builds on styles.css. */
+
+/* Accent colours creators pick for their game (keys from src/launchpad.js). */
+.accent-emerald  { --accent: #17a34a; --accent-hi: #4fd47e; }
+.accent-lapis    { --accent: #2546a8; --accent-hi: #5a78d0; }
+.accent-redstone { --accent: #c0281c; --accent-hi: #e8645a; }
+.accent-gold     { --accent: #e5b31f; --accent-hi: #ffe27a; }
+.accent-amethyst { --accent: #8a4fd1; --accent-hi: #b98af0; }
+.accent-copper   { --accent: #c8693c; --accent-hi: #eb9a70; }
+.accent-diamond  { --accent: #26b3bf; --accent-hi: #7ae6ee; }
+.accent-slate    { --accent: #4a4f58; --accent-hi: #7d838e; }
+
+/* A banner strip in the game's colour, with a pixel stripe like a Minecraft banner. */
+.lp-card::before, .lp-detail-head::before, .lp-row::before {
+  content: ""; display: block; background-color: var(--accent, var(--slot));
+  background-image: linear-gradient(90deg, rgba(255, 255, 255, .18) 50%, transparent 0);
+  background-size: 8px 100%;
+}
+
+/* ---------- Games page ---------- */
+.lp-hero { display: flex; justify-content: space-between; align-items: flex-end; gap: 8px 24px; flex-wrap: wrap; }
+.lp-hero .section-lede { margin-bottom: 24px; }
+.lp-cta { display: flex; gap: 14px; align-items: center; color: var(--ink); text-decoration: none; padding: 12px 18px; margin-bottom: 24px; }
+.lp-cta .slot { width: 52px; height: 52px; flex: none; }
+.lp-cta strong { display: block; font: 700 1.15rem var(--display); }
+.lp-cta .small { display: block; }
+.lp-cta:hover strong { color: var(--lapis); text-decoration: underline; }
+
+.lp-filters { display: grid; gap: 14px; margin-bottom: 16px; padding: 16px; }
+.lp-search { display: flex; gap: 8px; }
+.lp-search input { margin: 0; min-width: 0; }
+.lp-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.lp-count { min-height: 1.5em; margin: 0 0 8px; }
+
+.lp-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 290px), 1fr)); gap: 16px; align-items: stretch; }
+.lp-grid > .lp-empty { grid-column: 1 / -1; }
+.lp-empty p { margin-bottom: 12px; }
+
+.lp-card { display: flex; flex-direction: column; gap: 10px; padding: 0 18px 18px; overflow: hidden; min-width: 0; }
+.lp-card::before { height: 14px; margin: 0 -18px 4px; border-bottom: 3px solid var(--outline); }
+.lp-card-head { display: grid; grid-template-columns: 56px minmax(0, 1fr) auto; gap: 12px; align-items: center; }
+.lp-card .lp-icon { width: 56px; height: 56px; }
+.lp-card h3 { margin: 0; font-size: 1.25rem; overflow-wrap: anywhere; }
+.lp-card h3 a { color: var(--ink); text-decoration: none; }
+.lp-card h3 a:hover { color: var(--lapis); text-decoration: underline; }
+.lp-card-name .small { display: block; line-height: 1.35; }
+.lp-tagline { margin: 0; font-size: 1rem; overflow-wrap: anywhere; }
+.lp-tags { list-style: none; padding: 0; margin: 0; display: flex; flex-wrap: wrap; gap: 6px; }
+.lp-tags li { font: 500 .85rem var(--display); background: #d9d9d9; border: 2px solid #9a9a9a; padding: 0 8px; }
+.lp-actions { margin-top: auto; padding-top: 4px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+code.lp-address { font-size: .95rem; padding: 4px 8px; overflow-wrap: anywhere; }
+.lp-card code.lp-address { flex-basis: 100%; }
+
+/* An 18+ game, as teens and visitors see it. */
+.lp-card.restricted { align-items: flex-start; gap: 4px; padding-top: 18px; background: #b9b9b9; }
+.lp-card.restricted::before { display: none; }
+.lp-card.restricted p { font-size: 1rem; margin: 0 0 8px; }
+
+/* ---------- One game ---------- */
+.lp-back { margin: 0 0 16px; }
+.lp-back a::before { content: ""; display: inline-block; width: 8px; height: 12px; margin-right: 8px; background: currentColor;
+  clip-path: polygon(100% 0, 0 50%, 100% 100%, 100% 70%, 50% 50%, 100% 30%); }
+.lp-detail-head { display: grid; grid-template-columns: 112px minmax(0, 1fr); gap: 0 24px; align-items: start; padding: 0 24px 22px; overflow: hidden; }
+.lp-detail-head::before { grid-column: 1 / -1; height: 56px; margin: 0 -24px; border-bottom: 3px solid var(--outline); }
+.lp-icon-big { width: 112px; height: 112px; padding: 16px; margin-top: -40px; position: relative; border: 3px solid var(--outline); }
+.lp-detail-name { padding-top: 16px; min-width: 0; }
+.lp-detail-name .page-title { margin: 0 0 6px; overflow-wrap: anywhere; }
+.lp-detail-tagline { font-size: 1.15rem; margin: 0 0 6px; overflow-wrap: anywhere; }
+.lp-detail-name .small { margin: 0 0 10px; }
+.lp-detail-name .pill { vertical-align: middle; }
+
+.lp-detail-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.6fr); gap: 20px; margin-top: 20px; align-items: start; }
+.lp-play h2, .lp-about h2, .lp-moderate h2 { font-size: 1.5rem; }
+.lp-play-actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 12px; }
+.lp-play-actions code.lp-address { font-size: 1.1rem; padding: 6px 10px; }
+.lp-trailer { display: inline-flex; align-items: center; gap: 10px; font-weight: 700; }
+.lp-trailer .px { width: 24px; height: 24px; }
+.lp-description { white-space: pre-wrap; overflow-wrap: anywhere; max-width: 70ch; }
+
+.lp-owner-note { display: flex; justify-content: space-between; align-items: center; gap: 12px 20px; flex-wrap: wrap; margin-top: 20px; background: #d4d4d4; }
+.lp-owner-note p { margin: 0; }
+.lp-owner-note p + p { margin-top: 4px; }
+.lp-moderate { margin-top: 20px; border-style: dashed; }
+
+.lp-message-title { font-size: clamp(1.6rem, 4vw, 2.2rem); }
+.lp-restricted-page { max-width: 620px; padding-top: 22px; }
+
+/* ---------- My games ---------- */
+.lp-toolbar { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; margin-bottom: 16px; }
+.lp-list { display: grid; gap: 12px; }
+.lp-row {
+  display: grid; grid-template-columns: 56px minmax(0, 1fr) auto; gap: 16px; align-items: center;
+  position: relative; overflow: hidden; padding: 16px 18px 16px 34px;
+}
+.lp-row::before { position: absolute; left: 0; top: 0; bottom: 0; width: 12px; border-right: 3px solid var(--outline);
+  background-image: linear-gradient(rgba(255, 255, 255, .18) 50%, transparent 0); background-size: 100% 8px; }
+.lp-row .lp-icon { width: 56px; height: 56px; }
+.lp-row h3 { margin: 0; font-size: 1.25rem; overflow-wrap: anywhere; }
+.lp-row-pills { margin: 4px 0 6px; display: flex; flex-wrap: wrap; gap: 6px; }
+.lp-row-main .small { margin: 0; }
+.lp-row-actions { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; max-width: 380px; }
+
+.lp-editor { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 24px; align-items: start; }
+.lp-preview { position: sticky; top: 16px; }
+.lp-preview .lp-card { margin-bottom: 10px; }
+.lp-form .optional { font-weight: 400; color: var(--ink-soft); font-size: .9rem; }
+.lp-form label > .small { display: block; font-weight: 400; margin-top: 4px; }
+.lp-form .note { margin-bottom: 16px; }
+.lp-field-error { display: block; margin-top: 6px; font-size: .95rem; }
+.lp-form [aria-invalid="true"] { border-color: #e0574d; }
+.lp-fieldset { border: 2px solid #9a9a9a; padding: 10px 14px 14px; margin: 0 0 16px; min-width: 0; }
+.lp-fieldset legend { font-weight: 700; padding: 0 6px; }
+.lp-form-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+
+/* Pickers: real radios and checkboxes, drawn as slots, swatches and chips. */
+.lp-form .lp-pick, .lp-form .lp-swatch, .lp-form .lp-tag-pick { display: block; position: relative; margin: 0; font-weight: 400; cursor: pointer; }
+.lp-pick input, .lp-swatch input, .lp-tag-pick input { position: absolute; opacity: 0; width: 1px; height: 1px; margin: 0; padding: 0; }
+.lp-icons { display: grid; grid-template-columns: repeat(auto-fill, minmax(48px, 1fr)); gap: 6px; }
+.lp-pick .slot { width: 100%; height: auto; aspect-ratio: 1; padding: 22%; }
+.lp-pick:hover .slot { background: #a0a0a0; }
+.lp-pick input:checked + .slot { background: #a8a8a8; outline: 3px solid #fff; outline-offset: -3px; }
+.lp-pick input:focus-visible + .slot, .lp-swatch input:focus-visible + .lp-swatch-color,
+.lp-tag-pick input:focus-visible + span { outline: 3px solid var(--gold); outline-offset: 2px; }
+
+.lp-accents { display: flex; flex-wrap: wrap; gap: 10px; }
+.lp-swatch-color {
+  display: block; width: 44px; height: 44px; background: var(--accent); border: 3px solid var(--outline);
+  box-shadow: inset 3px 3px 0 var(--accent-hi), inset -3px -3px 0 rgba(0, 0, 0, .35);
+}
+.lp-swatch input:checked + .lp-swatch-color { outline: 3px solid #fff; outline-offset: 2px; box-shadow: inset 3px 3px 0 var(--accent-hi), inset -3px -3px 0 rgba(0, 0, 0, .35), 0 0 0 5px var(--outline); }
+
+.lp-tag-picks { display: flex; flex-wrap: wrap; gap: 6px; }
+.lp-tag-pick span {
+  display: inline-block; font: 500 .95rem var(--display); padding: 5px 12px; color: var(--ink);
+  background: #dcdcdc; border: 2px solid var(--outline); box-shadow: inset 2px 2px 0 #fff, inset -2px -2px 0 #8b8b8b;
+}
+.lp-tag-pick input:checked + span { background: var(--lapis); color: #fff; box-shadow: inset 2px 2px 0 #5a78d0, inset -2px -2px 0 #172f74; }
+.lp-tag-pick input:disabled + span { opacity: .45; cursor: not-allowed; }
+
+dialog.lp-confirm ul { padding-left: 1.2em; margin: 0 0 8px; }
+dialog.lp-confirm li { margin-bottom: 6px; }
+.lp-confirm-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 16px; }
+
+/* ---------- Narrow screens ---------- */
+@media (max-width: 900px) {
+  .lp-detail-grid, .lp-editor { grid-template-columns: 1fr; }
+  .lp-preview { position: static; }
+  .lp-row { grid-template-columns: 56px minmax(0, 1fr); }
+  .lp-row-actions { grid-column: 1 / -1; justify-content: flex-start; max-width: none; }
+}
+@media (max-width: 640px) {
+  .lp-cta { width: 100%; }
+  .lp-detail-head { grid-template-columns: 80px minmax(0, 1fr); gap: 0 16px; padding: 0 16px 18px; }
+  .lp-detail-head::before { height: 40px; margin: 0 -16px; }
+  .lp-icon-big { width: 80px; height: 80px; padding: 12px; margin-top: -28px; }
+  .lp-detail-name { padding-top: 10px; }
+  .lp-detail-name .page-title { font-size: 1.9rem; }
+  .lp-row { grid-template-columns: 44px minmax(0, 1fr); gap: 12px; padding: 14px 14px 14px 28px; }
+  .lp-row::before { width: 10px; }
+  .lp-row .lp-icon { width: 44px; height: 44px; padding: 6px; }
+}

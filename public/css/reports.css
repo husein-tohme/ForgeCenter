@@ -1,0 +1,47 @@
+/* Rules page, the Report button and dialog, and the owner panel's reports section. */
+
+/* ---------- Rules page ---------- */
+.rules-short { margin: 8px 0 12px; }
+.rules-short h2 { margin-top: 0; font-size: 1.4rem; }
+.rules-points { list-style: none; padding: 0 !important; margin: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); gap: 12px; }
+.rules-points li { display: flex; align-items: center; gap: 12px; margin: 0; max-width: none; }
+.rules-points .slot { width: 48px; height: 48px; flex: none; }
+.rules h3 { font-size: 1.2rem; margin-top: 24px; }
+
+/* ---------- Showcase cards with a Report button ---------- */
+/* The title link stretches over the whole card, so the card still opens with one click. */
+.listing-card { position: relative; display: flex; flex-direction: column; }
+.listing-card h3 { overflow-wrap: anywhere; }
+.listing-link { color: var(--ink); text-decoration: none; }
+.listing-link::after { content: ""; position: absolute; inset: 0; }
+.listing-card:hover .listing-link, .listing-link:focus-visible { color: var(--lapis); text-decoration: underline; }
+.listing-foot { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: auto; }
+.report-btn { position: relative; z-index: 1; margin-left: auto; font-size: .85rem; color: var(--ink-soft); }
+.report-btn:hover { color: #9b1c14; }
+
+/* ---------- Report dialog ---------- */
+.report-dialog form { display: grid; gap: 12px; }
+.report-reasons { border: 0; padding: 0; margin: 0; display: grid; gap: 6px; }
+.report-reasons legend { font-weight: 700; margin-bottom: 6px; padding: 0; }
+.report-reason {
+  display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: 12px; align-items: start; cursor: pointer;
+  padding: 8px 12px; background: #d4d4d4; border: 2px solid transparent;
+}
+.report-reason:hover { border-color: var(--lapis); }
+.report-reason:has(input:checked) { border-color: var(--outline); background: #e9e9e9; }
+.report-reason input { width: 20px; height: 20px; margin: 3px 0 0; padding: 0; accent-color: var(--emerald); }
+.report-reason strong { display: block; }
+.report-reason .small { display: block; }
+.report-details { font-weight: 700; }
+.report-details textarea { font-weight: 400; }
+.report-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+.report-dialog .error { margin: 0; }
+
+/* ---------- Owner panel ---------- */
+.report-row { margin-bottom: 12px; display: grid; gap: 6px; }
+.report-row p { margin: 0; overflow-wrap: anywhere; }
+.report-top { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.report-top strong { font-family: var(--display); font-size: 1.1rem; overflow-wrap: anywhere; }
+.report-details-text { white-space: pre-wrap; background: #e9e9e9; border: 2px solid #9a9a9a; padding: 8px 12px; }
+.report-row .row-actions { flex-wrap: wrap; margin-top: 4px; }
+.suspended-list { display: grid; gap: 8px; margin-top: 8px; }

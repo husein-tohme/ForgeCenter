@@ -1,0 +1,30 @@
+# Runs the website and the customer bot runner side by side, sharing one database.
+#   cp .env.example .env   (fill it in, with NODE_ENV=production and your real BASE_URL)
+#   docker compose up -d --build
+# Put a reverse proxy with HTTPS (Caddy, Nginx, or your host's) in front of port 3000.
+services:
+  web:
+    build: .
+    env_file: .env
+    environment:
+      DATABASE_PATH: /app/data/forgecenter.db
+      BOT_DATA_DIR: /app/data/bots
+    ports:
+      - "3000:3000"
+    volumes:
+      - forgecenter-data:/app/data
+    restart: unless-stopped
+
+  bots:
+    build: .
+    command: ["node", "--disable-warning=ExperimentalWarning", "src/bots.js"]
+    env_file: .env
+    environment:
+      DATABASE_PATH: /app/data/forgecenter.db
+      BOT_DATA_DIR: /app/data/bots
+    volumes:
+      - forgecenter-data:/app/data
+    restart: unless-stopped
+
+volumes:
+  forgecenter-data:

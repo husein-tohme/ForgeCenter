@@ -1,0 +1,232 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Developer API · ForgeCenter</title>
+<meta name="description" content="Use Claude, Mod Forge, Texture Forge, Plugin Forge and Modrinth search from your own code. Make an API key and pay per call from your ForgeCenter wallet.">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<meta name="theme-color" content="#2a2d33">
+<link rel="canonical" href="%PAGE_URL%">
+<meta property="og:site_name" content="ForgeCenter">
+<meta property="og:title" content="Developer API · ForgeCenter">
+<meta property="og:description" content="Use Claude, Mod Forge, Texture Forge, Plugin Forge and Modrinth search from your own code. Make an API key and pay per call from your ForgeCenter wallet.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="%PAGE_URL%">
+<meta property="og:image" content="%BASE_URL%/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=Pixelify+Sans:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/styles.css">
+<link rel="stylesheet" href="/css/developers.css">
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="top">
+  <div class="wrap top-inner">
+    <a class="logo" href="/" aria-label="ForgeCenter home"><span class="logo-icon" data-icon="anvil"></span>ForgeCenter</a>
+    <nav aria-label="Main"><a href="/#shop">Prices</a><a href="/#tools">Free tools</a><a href="/games">Games</a><a href="/creators">Creators</a><a href="/#mentor">Learn to code</a><a href="/support">Help</a></nav>
+    <div class="auth" id="auth-slot"></div>
+  </div>
+</header>
+
+<main id="main" class="page">
+  <div class="wrap">
+    <div class="dev-title">
+      <span class="slot" id="dev-icon"></span>
+      <h1 class="page-title">Developer API</h1>
+    </div>
+    <p class="section-lede">Use ForgeCenter from your own code: chat with Claude in your Discord bot or game, make mods, texture packs and plugins, and search Modrinth. There's nothing to buy up front. Each call is paid from your ForgeCenter wallet, and you only pay for calls that work.</p>
+
+    <ol class="steps dev-steps">
+      <li><strong>Make a key</strong>It takes a second, and you can have up to 5. Keys are for confirmed adults (18+).</li>
+      <li><strong>Add funds</strong>Top up your wallet by card. The money is there straight away.</li>
+      <li><strong>Call the API</strong>Send your key with each request. The cost comes out of your wallet as you go.</li>
+    </ol>
+
+    <div class="dev-grid" id="dev-grid">
+      <section class="panel" id="keys-panel" aria-labelledby="keys-title">
+        <h2 class="dev-panel-title" id="keys-title">Your API keys</h2>
+        <div class="key-reveal" id="key-reveal" role="status" hidden></div>
+        <div id="keys-body"><p class="hint">Loading…</p></div>
+      </section>
+
+      <section class="panel" id="usage-panel" aria-labelledby="usage-title" hidden>
+        <h2 class="dev-panel-title" id="usage-title">Wallet and spending</h2>
+        <div id="usage-body"><p class="hint">Loading…</p></div>
+      </section>
+    </div>
+
+    <section class="acct-section" id="prices">
+      <h2>Prices</h2>
+      <p class="section-lede">No monthly fee. Calls that fail, are refused or that Claude declines cost nothing.</p>
+      <div class="panel trades" id="price-list"><p class="hint">Loading prices…</p></div>
+    </section>
+
+    <section class="acct-section" id="calls-section" hidden>
+      <h2>Recent calls</h2>
+      <ul class="ledger dev-calls" id="calls"></ul>
+    </section>
+
+    <section class="acct-section" id="endpoints">
+      <h2>Endpoints</h2>
+      <p class="section-lede">Every request goes to <code>https://YOUR-DOMAIN/v1</code> with your key in the <code>Authorization</code> header. Send bodies as JSON. Keep your key in an environment variable, not in your code:</p>
+      <div class="code-block"><pre class="code">export FORGECENTER_KEY="paste your key here"</pre></div>
+
+      <details class="panel endpoint" open>
+        <summary><span class="pill pill-post">POST</span><code>/v1/chat</code><span class="endpoint-what">Chat with Claude</span></summary>
+        <div class="endpoint-body">
+          <p>Send the conversation so far and get Claude's reply. The model is Claude Opus 5.5. Costs <span data-price="chat">per token</span>.</p>
+          <ul class="params">
+            <li><code>messages</code> (required): a list of <code>{ "role": "user" | "assistant", "content": "text" }</code> turns, starting and ending with the user. Up to 100.</li>
+            <li><code>system</code>: your instructions for Claude, up to 8,000 characters. ForgeCenter adds a short note of its own before them.</li>
+            <li><code>max_tokens</code>: the longest reply you'll pay for, from 1 to 4,096. Default 1,024.</li>
+            <li><code>effort</code>: <code>"low"</code> (default), <code>"medium"</code> or <code>"high"</code>. Higher effort thinks more first, which uses more of <code>max_tokens</code>.</li>
+          </ul>
+          <div class="code-block"><pre class="code">curl https://YOUR-DOMAIN/v1/chat \
+  -H "Authorization: Bearer $FORGECENTER_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "system": "You help players plan Minecraft builds.",
+    "messages": [{ "role": "user", "content": "Ideas for a desert base?" }],
+    "max_tokens": 800
+  }'</pre></div>
+          <p class="small">The answer, with what the call cost and what's left in your wallet (both in cents):</p>
+          <div class="code-block"><pre class="code">{
+  "reply": "Here are a few ideas…",
+  "stop_reason": "end_turn",
+  "usage": { "input_tokens": 61, "output_tokens": 412 },
+  "cost_cents": 2,
+  "balance": 1498
+}</pre></div>
+          <p class="small">From JavaScript, for example in a Discord bot (Node 18 or newer):</p>
+          <div class="code-block"><pre class="code">const r = await fetch("https://YOUR-DOMAIN/v1/chat", {
+  method: "POST",
+  headers: {
+    Authorization: `Bearer ${process.env.FORGECENTER_KEY}`,
+    "Content-Type": "application/json",
+  },
+  body: JSON.stringify({ messages: [{ role: "user", content: "Name ideas for a pet dragon?" }] }),
+});
+const data = await r.json();
+if (!r.ok) throw new Error(data.error);
+console.log(data.reply);</pre></div>
+          <p class="small">Before the call, your wallet needs enough for the longest possible answer. You're charged only for what was used. If <code>stop_reason</code> is <code>"max_tokens"</code>, the answer was cut short, so ask again with a higher <code>max_tokens</code>.</p>
+        </div>
+      </details>
+
+      <details class="panel endpoint">
+        <summary><span class="pill pill-post">POST</span><code>/v1/mods</code><span class="endpoint-what">Make a Fabric mod</span></summary>
+        <div class="endpoint-body">
+          <p>Returns a zip with a ready-to-build Fabric mod project, the same as <a href="/#tools">Mod Forge</a>. Costs <span data-price="generator">a cent</span>.</p>
+          <ul class="params">
+            <li><code>name</code>, <code>author</code> and <code>description</code> (required).</li>
+            <li><code>items</code>: names of items to add. <code>mcVersion</code>: the Minecraft version, default 1.21.1. <code>license</code>: default MIT.</li>
+          </ul>
+          <div class="code-block"><pre class="code">curl https://YOUR-DOMAIN/v1/mods \
+  -H "Authorization: Bearer $FORGECENTER_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{ "name": "Ruby Mod", "author": "Steve", "description": "Adds rubies", "items": ["Ruby", "Ruby Block"] }' \
+  -o ruby-mod.zip</pre></div>
+        </div>
+      </details>
+
+      <details class="panel endpoint">
+        <summary><span class="pill pill-post">POST</span><code>/v1/plugins</code><span class="endpoint-what">Make a server plugin</span></summary>
+        <div class="endpoint-body">
+          <p>Returns a zip with a Paper plugin project, the same as <a href="/plugins">Plugin Forge</a>. Costs <span data-price="generator">a cent</span>.</p>
+          <ul class="params">
+            <li><code>name</code>, <code>author</code> and <code>gameVersion</code> (required): 1.21.8, 1.21.4, 1.21.1, 1.20.6 or 1.20.4.</li>
+            <li><code>commands</code>: up to 10 <code>{ "name", "reply" }</code> pairs. <code>welcome</code>, <code>announcements</code> (one per line) and <code>announceEvery</code> (minutes). <code>{player}</code> becomes the player's name.</li>
+          </ul>
+          <div class="code-block"><pre class="code">curl https://YOUR-DOMAIN/v1/plugins \
+  -H "Authorization: Bearer $FORGECENTER_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{ "name": "Hello World", "author": "Steve", "gameVersion": "1.21.8",
+        "commands": [{ "name": "rules", "reply": "&lt;gold&gt;Be kind and have fun!" }],
+        "welcome": "&lt;green&gt;Welcome, {player}!" }' \
+  -o hello-world.zip</pre></div>
+        </div>
+      </details>
+
+      <details class="panel endpoint">
+        <summary><span class="pill pill-post">POST</span><code>/v1/texturepacks</code><span class="endpoint-what">Make a resource pack</span></summary>
+        <div class="endpoint-body">
+          <p>Returns a resource pack zip, the same as <a href="/textures">Texture Forge</a>. Costs <span data-price="generator">a cent</span>.</p>
+          <ul class="params">
+            <li><code>gameVersion</code> (required), <code>name</code> and <code>description</code>.</li>
+            <li><code>textures</code> (required): up to 40 <code>{ "target", "png" }</code>, where <code>png</code> is a 16 by 16 PNG as a data URL. The targets you can replace are listed at <a href="/api/texturepack/options"><code>/api/texturepack/options</code></a>.</li>
+          </ul>
+          <div class="code-block"><pre class="code">curl https://YOUR-DOMAIN/v1/texturepacks \
+  -H "Authorization: Bearer $FORGECENTER_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{ "name": "Ruby Pack", "gameVersion": "1.21.8",
+        "textures": [{ "target": "item/diamond", "png": "data:image/png;base64,iVBORw0KGgo…" }] }' \
+  -o ruby-pack.zip</pre></div>
+        </div>
+      </details>
+
+      <details class="panel endpoint">
+        <summary><span class="pill pill-get">GET</span><code>/v1/modrinth/search</code><span class="endpoint-what">Search Modrinth</span></summary>
+        <div class="endpoint-body">
+          <p>Finds Fabric mods or server plugins on Modrinth. Costs <span data-price="search">a cent</span>.</p>
+          <ul class="params">
+            <li><code>q</code>: what to search for. <code>kind</code>: <code>mod</code> (default) or <code>plugin</code>. <code>version</code>: a Minecraft version, default the newest.</li>
+          </ul>
+          <div class="code-block"><pre class="code">curl "https://YOUR-DOMAIN/v1/modrinth/search?q=sodium&amp;kind=mod&amp;version=1.21.8" \
+  -H "Authorization: Bearer $FORGECENTER_KEY"</pre></div>
+        </div>
+      </details>
+
+      <details class="panel endpoint">
+        <summary><span class="pill pill-get">GET</span><code>/v1/me</code><span class="endpoint-what">Check your key</span></summary>
+        <div class="endpoint-body">
+          <p>Shows the key's name, your account name and your wallet balance in cents. Free.</p>
+          <div class="code-block"><pre class="code">curl https://YOUR-DOMAIN/v1/me -H "Authorization: Bearer $FORGECENTER_KEY"</pre></div>
+        </div>
+      </details>
+    </section>
+
+    <section class="acct-section" id="errors">
+      <h2>Limits and errors</h2>
+      <p class="section-lede">Each key can make 60 requests a minute, with up to 2 running at once. Errors come back as JSON, like <code>{ "error": "What went wrong and what to do" }</code>.</p>
+      <div class="panel">
+        <dl class="status-list">
+          <div><dt>400</dt><dd>Something in the request is missing or wrong. The error says what.</dd></div>
+          <div><dt>401</dt><dd>The key is missing, mistyped or revoked.</dd></div>
+          <div><dt>402</dt><dd>Your wallet can't cover the call. Add funds, or ask for a shorter answer.</dd></div>
+          <div><dt>403</dt><dd>The key's account isn't confirmed as an adult.</dd></div>
+          <div><dt>415</dt><dd>The body wasn't sent as JSON.</dd></div>
+          <div><dt>422</dt><dd>Claude declined the request. You weren't charged.</dd></div>
+          <div><dt>429</dt><dd>Too many requests. Wait for the seconds in the <code>Retry-After</code> header, or for a running request to finish.</dd></div>
+          <div><dt>502</dt><dd>Claude or Modrinth didn't answer. You weren't charged, so try again.</dd></div>
+          <div><dt>503</dt><dd>AI chat isn't switched on for this site right now.</dd></div>
+        </dl>
+      </div>
+    </section>
+
+    <section class="acct-section" id="rules">
+      <h2>Rules for API keys</h2>
+      <ul class="dev-rules">
+        <li><strong>Keep your key secret.</strong> Use it from your server or bot, never in a web page or an app you give to other people. If it leaks, revoke it here and make a new one.</li>
+        <li><strong>You're responsible for what your key does.</strong> Follow the ForgeCenter <a href="/terms">terms</a> and <a href="https://www.anthropic.com/legal/aup" rel="noopener" target="_blank">Anthropic's usage policy</a>. Don't use the API to harm, trick or spam people.</li>
+        <li><strong>If your app has users</strong>, tell them it uses AI, and don't send their personal details unless you need to.</li>
+        <li><strong>Charges come from your wallet</strong>, which can't be withdrawn. If a charge looks wrong, <a href="/support">open a ticket</a>.</li>
+      </ul>
+    </section>
+  </div>
+</main>
+
+<footer class="foot">
+  <div class="wrap foot-inner">
+    <span><span class="logo-icon" data-icon="anvil"></span>ForgeCenter</span>
+    <nav aria-label="Site"><a href="/games">Games</a> <a href="/creators">Creators</a> <a href="/developers" aria-current="page">Developers</a> <a href="/donate">Donate</a> <a href="/rules">Rules</a> <a href="/privacy">Privacy</a> <a href="/terms">Terms</a> <a href="/support">Help</a></nav>
+  </div>
+</footer>
+<div class="toast" id="toast" role="status" hidden></div>
+<script type="module" src="/js/developers.js"></script>
+</body>
+</html>

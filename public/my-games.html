@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>My games · ForgeCenter</title>
+<meta name="robots" content="noindex">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<meta name="theme-color" content="#2a2d33">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=Pixelify+Sans:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/styles.css">
+<link rel="stylesheet" href="/css/launchpad.css">
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="top">
+  <div class="wrap top-inner">
+    <a class="logo" href="/" aria-label="ForgeCenter home"><span class="logo-icon" data-icon="anvil"></span>ForgeCenter</a>
+    <nav aria-label="Main"><a href="/#shop">Prices</a><a href="/#tools">Free tools</a><a href="/games">Games</a><a href="/creators">Creators</a><a href="/#mentor">Learn to code</a><a href="/support">Help</a></nav>
+    <div class="auth" id="auth-slot"></div>
+  </div>
+</header>
+
+<main id="main" class="page">
+  <div class="wrap">
+    <h1 class="page-title">My games</h1>
+    <p class="section-lede">Make a page for your game for free, then launch it on the <a href="/games">games page</a> for $1 a month per game. Cancel any time.</p>
+
+    <section class="panel signed-out" id="signed-out" hidden>
+      <p>Sign in to make a page for your game. Browsing the <a href="/games">games page</a> doesn't need an account.</p>
+      <button class="btn btn-buy" type="button" id="signin-here">Sign in</button>
+    </section>
+
+    <div id="games-app" hidden>
+      <div class="lp-toolbar">
+        <button class="btn btn-buy" type="button" id="new-game">New game</button>
+        <span class="small" id="game-count"></span>
+      </div>
+      <div class="lp-list" id="my-list" aria-live="polite"><p class="hint">Loading your games…</p></div>
+
+      <section class="acct-section" id="editor" hidden aria-labelledby="editor-title">
+        <h2 id="editor-title">New game</h2>
+        <div class="lp-editor">
+          <form class="panel form lp-form" id="game-form" novalidate>
+            <p class="note" id="live-note" hidden>This game is on the games page. Changes you save show there straight away.</p>
+            <label data-field="title">Title
+              <input name="title" maxlength="60" required autocomplete="off" placeholder="Sky Wars"></label>
+            <label data-field="tagline">Tagline <span class="optional">(optional, one line)</span>
+              <input name="tagline" maxlength="120" autocomplete="off" placeholder="Fight on floating islands"></label>
+            <label data-field="platform">Where do people play it?
+              <select name="platform" required></select></label>
+            <label data-field="serverAddress" id="address-field">Server address
+              <input name="serverAddress" maxlength="260" autocomplete="off" spellcheck="false" placeholder="play.example.com">
+              <span class="small">What players type in Minecraft under Multiplayer, Add Server. Add :port if it isn't 25565.</span></label>
+            <label data-field="playUrl">Play link <span class="optional" id="url-optional">(optional)</span>
+              <input name="playUrl" type="url" maxlength="300" autocomplete="off" spellcheck="false" placeholder="https://">
+              <span class="small" id="url-hint">Where people play or download your game.</span></label>
+            <label data-field="trailerUrl">Trailer <span class="optional">(optional, a YouTube link)</span>
+              <input name="trailerUrl" type="url" maxlength="300" autocomplete="off" spellcheck="false" placeholder="https://www.youtube.com/watch?v=…"></label>
+            <label data-field="description">Description <span class="optional">(optional)</span>
+              <textarea name="description" rows="6" maxlength="2000" placeholder="What's it about? How do you play? What makes it fun?"></textarea>
+              <span class="small" id="desc-count"></span></label>
+            <fieldset class="lp-fieldset" data-field="icon"><legend>Icon</legend><div class="lp-icons" id="icon-picks"></div></fieldset>
+            <fieldset class="lp-fieldset" data-field="accent"><legend>Colour</legend><div class="lp-accents" id="accent-picks"></div></fieldset>
+            <fieldset class="lp-fieldset" data-field="tags"><legend>Tags <span class="optional">(up to 5)</span></legend><div class="lp-tag-picks" id="tag-picks"></div></fieldset>
+            <label class="check-row" data-field="adultOnly" id="adult-row" hidden><input type="checkbox" name="adultOnly"> 18+ only: show it to confirmed adults</label>
+            <p class="error" id="form-error" role="alert" hidden></p>
+            <div class="lp-form-actions">
+              <button class="btn btn-buy" type="submit" id="save">Save draft</button>
+              <button class="btn" type="button" id="close-editor">Close</button>
+            </div>
+          </form>
+          <aside class="lp-preview" aria-label="Preview">
+            <p class="panel-title">Preview</p>
+            <div id="preview"></div>
+            <p class="small">This is how your game looks on the games page.</p>
+          </aside>
+        </div>
+      </section>
+    </div>
+  </div>
+</main>
+
+<footer class="foot">
+  <div class="wrap foot-inner">
+    <span><span class="logo-icon" data-icon="anvil"></span>ForgeCenter</span>
+    <nav aria-label="Site"><a href="/games">Games</a> <a href="/creators">Creators</a> <a href="/developers">Developers</a> <a href="/donate">Donate</a> <a href="/rules">Rules</a> <a href="/privacy">Privacy</a> <a href="/terms">Terms</a> <a href="/support">Help</a></nav>
+  </div>
+</footer>
+<div class="toast" id="toast" role="status" hidden></div>
+<script type="module" src="/js/my-games.js"></script>
+</body>
+</html>
