@@ -343,11 +343,11 @@ a.listing:hover h3 { color: var(--lapis); text-decoration: underline; }
 .legal h2 { font-size: 1.5rem; margin-top: 36px; }
 .legal ul { padding-left: 1.2em; }
 .legal li { margin-bottom: 8px; max-width: 70ch; }
-.foot nav { display: flex; gap: 16px; }
+.foot nav { display: flex; flex-wrap: wrap; gap: 8px 16px; }
 .foot nav a { color: #d9dbe0; }
 
 @media (max-width: 640px) {
-  .top nav { order: 3; flex-basis: 100%; justify-content: flex-start; gap: 16px; }
+  .top nav { order: 3; flex-basis: 100%; justify-content: flex-start; gap: 0 16px; }
   .order > summary { grid-template-columns: 44px 1fr; }
   .order > summary .slot { width: 44px; height: 44px; }
   .order > summary .pill { grid-column: 2; justify-self: start; }
