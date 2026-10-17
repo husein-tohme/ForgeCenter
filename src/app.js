@@ -17,6 +17,7 @@ import { developerRouter, developerApi, developerApiErrors } from "./developer.j
 import { robloxRouter } from "./roblox.js";
 import { oauthRouter, enabledOAuthProviders } from "./oauth.js";
 import { whatsappRouter, whatsappEnabled } from "./whatsapp.js";
+import { setupRouter, githubDone } from "./setup.js";
 import { servicesRouter, adminServicesRouter } from "./services.js";
 import { gamesRouter, adminGamesRouter } from "./launchpad.js";
 import { creatorsRouter, adminCreatorsRouter } from "./creators.js";
@@ -39,7 +40,8 @@ export function createApp() {
         styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com", "https://accounts.google.com/gsi/style"],
         fontSrc: ["'self'", "https://fonts.gstatic.com"],
         imgSrc: ["'self'", "data:", "blob:", "https://*.googleusercontent.com", "https://avatars.githubusercontent.com", "https://cdn.discordapp.com", "https://cdn.modrinth.com"],
-        formAction: ["'self'"],
+        // GitHub: one-click sign-in setup posts the app manifest there (src/setup.js).
+        formAction: ["'self'", "https://github.com/settings/apps/new"],
         upgradeInsecureRequests: isProd ? [] : null,
       },
     },
@@ -88,6 +90,8 @@ export function createApp() {
   app.use("/api/auth", authRouter);
   app.use("/api/auth/whatsapp", whatsappRouter);
   app.use("/api/auth", oauthRouter);
+  app.use("/api/setup", setupRouter);
+  app.get("/setup-signin/github/done", githubDone);
   // A monthly donor cancels before deleting their account, or they couldn't stop it later.
   app.delete("/api/me", keepMonthlyDonors);
   app.use("/api/me", meRouter);

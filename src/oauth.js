@@ -5,6 +5,7 @@ import { createHash, randomBytes } from "node:crypto";
 import { db } from "./db.js";
 import { hash, parseCookies, signInWith, startSession, LinkError } from "./auth.js";
 import { rateLimit } from "./limit.js";
+import { getSetting } from "./setup.js";
 
 const NONCE_COOKIE = "fc_oauth";
 const STATE_TTL_MS = 10 * 60_000;
@@ -74,7 +75,11 @@ export const PROVIDERS = {
   },
 };
 
-const credentials = p => ({ id: process.env[`${p.env}_CLIENT_ID`], secret: process.env[`${p.env}_CLIENT_SECRET`] });
+// Environment settings first, then keys saved by one-click setup (src/setup.js).
+const credentials = p => ({
+  id: process.env[`${p.env}_CLIENT_ID`] || getSetting(`${p.env}_CLIENT_ID`),
+  secret: process.env[`${p.env}_CLIENT_SECRET`] || getSetting(`${p.env}_CLIENT_SECRET`),
+});
 export const enabledOAuthProviders = () => Object.keys(PROVIDERS).filter(k => {
   const c = credentials(PROVIDERS[k]);
   return c.id && c.secret;
