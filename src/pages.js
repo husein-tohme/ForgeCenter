@@ -6,7 +6,7 @@ import { join, resolve } from "node:path";
 
 const PUBLIC = resolve("public");
 // Pages search engines may list. Account and owner pages stay out.
-const LISTED = ["/", "/textures", "/modpacks", "/plugins", "/privacy", "/terms"];
+const LISTED = ["/", "/textures", "/modpacks", "/plugins", "/games", "/privacy", "/terms"];
 
 const cache = new Map();
 const baseUrl = req => (process.env.BASE_URL || `${req.protocol}://${req.get("host")}`).replace(/\/+$/, "");

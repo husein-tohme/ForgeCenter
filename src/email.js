@@ -35,6 +35,14 @@ const orderLink = order => `${site()}/account?order=${order.id}`;
 export const notify = {
   orderPaid(order) {
     const c = customerOf(order);
+    // A game launch has no brief: the game goes on the games page as soon as it's paid.
+    if (order.product === "launch") {
+      send(owners(), `Game launched (order ${order.id})`,
+        `${c?.name ?? "A creator"} (${c?.email ?? "unknown email"}) launched a game on the games page for $1 a month.\n\nSee it on the games page: ${site()}/games\nYou can take a game down from its page if it breaks the rules.`);
+      if (c) send(c.email, "Your game is live",
+        `Hi ${c.name},\n\nYour game is live on the ForgeCenter games page:\n${site()}/games\n\nIt's $1 a month. You can edit it or cancel any time from My games:\n${site()}/my-games\n\nIf you cancel, it stays up until the end of the month you've paid for, and that month isn't refunded.\n\nForgeCenter`);
+      return;
+    }
     send(owners(), `New order: ${productName(order)} (order ${order.id})`,
       `${c?.name ?? "A customer"} (${c?.email ?? "unknown email"}) paid for ${productName(order)}.\n\nOpen the owner panel: ${site()}/admin`);
     if (c) send(c.email, `Thanks for your order: ${productName(order)}`,

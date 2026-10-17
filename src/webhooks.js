@@ -5,6 +5,13 @@ import { getStripe, checkoutKind } from "./stripe.js";
 import { handleOrderEvent } from "./orders.js";
 import { handleWalletEvent } from "./wallet.js";
 import { handleAgeEvent } from "./age.js";
+import { handleLaunchEvent } from "./launchpad.js";
+
+// Orders first, then game launches, which are orders too and read what the order now says.
+async function handleOrderAndLaunch(event) {
+  await handleOrderEvent(event);
+  return handleLaunchEvent(event);
+}
 
 export async function handleStripeEvent(event) {
   const obj = event.data.object;
@@ -13,11 +20,11 @@ export async function handleStripeEvent(event) {
     const kind = checkoutKind(obj);
     if (kind === "age_check") return handleAgeEvent(event);
     if (kind === "wallet_topup") return handleWalletEvent(event);
-    if (kind === "order") return handleOrderEvent(event);
+    if (kind === "order") return handleOrderAndLaunch(event);
     return;
   }
   if (event.type === "charge.refunded" || event.type.startsWith("charge.dispute.")) return handleWalletEvent(event);
-  return handleOrderEvent(event);
+  return handleOrderAndLaunch(event);
 }
 
 // Mounted with express.raw() so the signature can be checked against the exact bytes.

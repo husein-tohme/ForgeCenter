@@ -36,6 +36,8 @@ const ICONS = {
     "...ww...", "..wbbw..", "..wbbw..", "..wwww..", ".rwwwwr.", "rr.ww.rr", "...oo...", "..o..o.."] },
   barrier: { c: { r: "#d9372b" }, m: [
     "..rrrr..", ".rr...r.", "r.rr...r", "r..rr..r", "r...rr.r", "r....rrr", ".r....r.", "..rrrr.."] },
+  arcade: { c: { c: "#5b3a91", k: "#2a1846", s: "#3bd16f", S: "#c8ffd8", r: "#d9372b", b: "#3b7bd6" }, m: [
+    ".cccccc.", ".kkkkkk.", ".kSsssk.", ".kssssk.", ".kkkkkk.", "ccrccbcc", ".cccccc.", ".c....c."] },
 };
 
 // Pages add their own pixel icons, in the same { c: colours, m: 8 rows } format.
@@ -51,7 +53,7 @@ export function icon(name, label = "") {
   return `<svg class="px" viewBox="0 0 8 8" shape-rendering="crispEdges" ${a11y}>${rects}</svg>`;
 }
 
-export const PRODUCT_ICON = { website: "monitor", mcserver: "grass", discord: "bot", game: "diamond", roblox: "gamepad", launcher: "rocket", ai: "eye", showcase: "frame" };
+export const PRODUCT_ICON = { website: "monitor", mcserver: "grass", discord: "bot", game: "diamond", roblox: "gamepad", launcher: "rocket", ai: "eye", showcase: "frame", launch: "arcade" };
 
 // Order status: label shown on the pill, and what it means for the customer.
 export const STATUS = {

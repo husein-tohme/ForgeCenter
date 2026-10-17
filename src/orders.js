@@ -106,6 +106,8 @@ ordersRouter.post("/checkout", requireUser, rateLimit({ windowMs: 60_000, max: 1
   const key = req.body?.product;
   const item = catalog[key];
   if (!item) return res.status(400).json({ error: "That product doesn't exist." });
+  // Bought through its own page, which ties the order to what it's for (a game launch to its game).
+  if (item.ownFlow) return res.status(400).json({ error: "Launch a game from My games at /my-games: each game has its own Launch button." });
   if (isAdultOnly(key) && !isAdult(req.user)) return res.status(403).json({ error: `Confirm you're an adult to buy a ${item.name.toLowerCase()}.`, needs: "adult" });
   const stripe = getStripe();
   if (!stripe) return res.status(503).json({ error: "Payments aren't set up yet." });

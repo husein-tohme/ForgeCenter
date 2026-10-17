@@ -20,6 +20,7 @@ export const CHECKOUT_LABELS = {
   shop: "forgecenter-shop-qzvkmrtw",
   wallet: "forgecenter-wallet-hbtqzmfa",
   ageCheck: "forgecenter-agecheck-wkdnrpyx",
+  launch: "forgecenter-launch-jfqwtnhd",
 };
 
 export async function ensureCustomer(stripe, user) {

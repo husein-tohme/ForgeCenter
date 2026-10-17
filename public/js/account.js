@@ -81,6 +81,16 @@ const SERVICE_HELP = {
   minecraft: { paid: "Payment received. Your server is being set up below.", in_progress: "Your server is being set up below.", delivered: "Your server is ready." },
   discord_bot: { paid: "Payment received. Switch on your bot below. Use the brief and messages for custom features you'd like.", in_progress: "Your bot is being customised. Updates will appear in the messages below.", delivered: "Your bot is set up." },
 };
+// Game launches are managed on My games, so their orders point there instead of asking for a brief.
+const LAUNCH_HELP = {
+  awaiting_payment: "Checkout isn't finished. Press Launch on your game in My games to try again.",
+  payment_failed: "The payment didn't go through. Press Launch on your game in My games to try again.",
+  expired: "Checkout closed before payment. Launch your game from My games whenever you're ready.",
+};
+const launchHelp = o => LAUNCH_HELP[o.status]
+  ?? (o.subscriptionStatus === "active" ? "Your game is on the ForgeCenter games page. Edit it, cancel or switch it back on in My games."
+    : o.subscriptionStatus === "past_due" ? "Your last payment failed, so your game is off the games page. Update your card in Manage billing to bring it back."
+    : "This launch has ended. You can launch your game again from My games.");
 const amountText = o => [o.amount ? money(o.amount) : "", o.monthly ? `${money(o.monthly)} a month` : ""].filter(Boolean).join(" + ");
 
 async function loadOrders() {
@@ -122,11 +132,13 @@ async function loadOrder(d) {
   const locked = ["delivered", "canceled"].includes(o.status);
   const canWrite = !["awaiting_payment", "expired", "payment_failed"].includes(o.status);
   const kind = o.service?.kind;
-  const help = SERVICE_HELP[kind]?.[o.status] ?? STATUS[o.status]?.help ?? "";
-  const showBrief = canWrite && kind !== "minecraft";
+  const launch = o.product === "launch";
+  const help = launch ? launchHelp(o) : SERVICE_HELP[kind]?.[o.status] ?? STATUS[o.status]?.help ?? "";
+  const showBrief = canWrite && kind !== "minecraft" && !launch;
   body.innerHTML = `
     <p>${esc(help)}</p>
-    ${o.monthly && o.subscriptionStatus ? `<p class="small">${esc(SUB_STATUS[o.subscriptionStatus] ?? "")}</p>` : ""}
+    ${launch ? `<p><a class="btn btn-buy" href="/my-games">Open My games</a></p>` : ""}
+    ${o.monthly && o.subscriptionStatus && !launch ? `<p class="small">${esc(SUB_STATUS[o.subscriptionStatus] ?? "")}</p>` : ""}
     ${o.deliverableUrl ? `<p><a class="btn btn-buy" href="${esc(o.deliverableUrl)}" target="_blank" rel="noopener">Open your project</a></p>` : ""}
     <div class="service-box"></div>
     ${showBrief ? `

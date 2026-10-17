@@ -13,6 +13,7 @@ import { toolsRouter } from "./tools.js";
 import { oauthRouter, enabledOAuthProviders } from "./oauth.js";
 import { whatsappRouter, whatsappEnabled } from "./whatsapp.js";
 import { servicesRouter, adminServicesRouter } from "./services.js";
+import { gamesRouter, adminGamesRouter } from "./launchpad.js";
 import { pagesRouter, notFound } from "./pages.js";
 
 export function createApp() {
@@ -79,13 +80,14 @@ export function createApp() {
   app.use("/api/auth", oauthRouter);
   app.use("/api/me", meRouter);
   app.use("/api", ordersRouter);
-  app.use("/api/admin", adminOrdersRouter, adminShowcaseRouter, adminServicesRouter, adminWalletRouter, adminSupportRouter);
+  app.use("/api/admin", adminOrdersRouter, adminShowcaseRouter, adminServicesRouter, adminWalletRouter, adminSupportRouter, adminGamesRouter);
   app.use("/api/age", ageRouter);
   app.use("/api/wallet", walletRouter);
   app.use("/api/support", supportRouter);
   app.use("/api/services", servicesRouter);
   app.use("/api/showcase", showcaseRouter);
   app.use("/api/tutor", tutorRouter);
+  app.use("/api/games", gamesRouter);
 
   app.use("/api", toolsRouter);
 

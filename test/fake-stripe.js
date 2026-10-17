@@ -23,6 +23,8 @@ export function installFakeStripe() {
   const state = {
     requests: [],
     sessions: new Map(),        // Checkout Sessions by id
+    subscriptions: new Map(),   // Subscriptions by id; tests add the ones Checkout would create
+    expired: [],                // Checkout Sessions closed early
     setupIntents: new Map(),
     verifications: new Map(),   // Identity VerificationSessions
     detached: [],
@@ -47,9 +49,27 @@ export function installFakeStripe() {
       state.sessions.set(id, { ...session, params: body });
       return json(session);
     }
+    if ((m = u.pathname.match(/^\/v1\/checkout\/sessions\/([^/]+)\/expire$/))) {
+      const s = state.sessions.get(m[1]);
+      if (!s) return json({ error: { message: "No such session" } }, 404);
+      if (s.status !== "open") return json({ error: { message: "Only open sessions can be expired" } }, 400);
+      state.expired.push(m[1]);
+      s.status = "expired";
+      return json(s);
+    }
     if ((m = u.pathname.match(/^\/v1\/checkout\/sessions\/([^/]+)$/))) {
       const s = state.sessions.get(m[1]);
       return s ? json(s) : json({ error: { message: "No such session" } }, 404);
+    }
+    if ((m = u.pathname.match(/^\/v1\/subscriptions\/([^/]+)$/))) {
+      const sub = state.subscriptions.get(m[1]);
+      if (!sub) return json({ error: { message: "No such subscription" } }, 404);
+      if (method === "POST") {
+        // Form values arrive as strings; an empty cancel_at clears it, as in Stripe.
+        if (body.cancel_at_period_end !== undefined) sub.cancel_at_period_end = body.cancel_at_period_end === "true";
+        if (body.cancel_at !== undefined) sub.cancel_at = body.cancel_at ? Number(body.cancel_at) : null;
+      }
+      return json(sub);
     }
     if ((m = u.pathname.match(/^\/v1\/setup_intents\/([^/]+)$/))) {
       const si = state.setupIntents.get(m[1]);
@@ -86,6 +106,13 @@ export function installFakeStripe() {
   return {
     state,
     lastCheckout: () => [...state.sessions.values()].at(-1),
+    // A subscription as Checkout would create it, with the period on its item (current API versions).
+    addSubscription: (id, { metadata = {}, periodEnd = Math.floor(Date.now() / 1000) + 30 * 24 * 3600 } = {}) => {
+      const sub = { id, object: "subscription", status: "active", cancel_at_period_end: false, cancel_at: null, metadata,
+        items: { object: "list", data: [{ id: `si_${++counter}`, object: "subscription_item", current_period_end: periodEnd }] } };
+      state.subscriptions.set(id, sub);
+      return sub;
+    },
     lastVerification: () => [...state.verifications.values()].at(-1),
     restore: () => { globalThis.fetch = realFetch; },
   };

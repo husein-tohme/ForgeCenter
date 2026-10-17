@@ -35,6 +35,12 @@ export const catalog = {
     name: "Showcase slot", price: 1000,
     desc: "List one website or server in the ForgeCenter showcase.",
   },
+  // Bought per game from My games (src/launchpad.js), not from the shop.
+  launch: {
+    name: "Game launch", monthly: 100, monthlyName: "Game launch",
+    desc: "Launch your game on the ForgeCenter games page for $1 a month. Cancel any time; it stays up until the end of the month you've paid for.",
+    ownFlow: true,
+  },
 };
 
 export const modeOf = item => (item.monthly ? "subscription" : "payment");
