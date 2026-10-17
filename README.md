@@ -159,6 +159,8 @@ Create a free [Resend](https://resend.com) account, verify your domain, and set 
 
 ## Deploy
 
+**Free ($0):** [docs/FREE-HOSTING.md](docs/FREE-HOSTING.md) puts the site on an Oracle Cloud Always Free server at a free DuckDNS address with HTTPS, using one setup command (`scripts/free-host.sh`).
+
 **Render (one click):** open [dashboard.render.com/blueprint/new?repo=https://github.com/husein-tohme/ForgeCenter](https://dashboard.render.com/blueprint/new?repo=https://github.com/husein-tohme/ForgeCenter). It reads `render.yaml` from the `main` branch and creates one web service with a 1 GB disk for the database. It uses the Starter plan, because free Render services have no disk and would lose every account on restart. Fill in the values it asks for (at least `ADMIN_EMAILS`; the rest turn features on as you add them), then **Apply**. The website and the bot runner both run from `npm run start:all`, and `SECRET_KEY` is generated for you. The site's address comes from Render automatically; set `BASE_URL` once you add your own domain.
 
 With Docker on a VPS: fill in `.env` (with `NODE_ENV=production`), run `docker compose up -d --build`, and put an HTTPS reverse proxy such as Caddy in front of port 3000. Accounts, orders and bot data live in the `forgecenter-data` volume.
