@@ -5,13 +5,16 @@
 // Payment goes through the normal order path: fulfillCheckout() in the webhook marks the
 // launch order paid, and a game is live while that order's subscription is active.
 import express from "express";
-import { db, now } from "./db.js";
+import { addColumn, db, now } from "./db.js";
 import { catalog, isAdultOnly } from "./catalog.js";
 import { isAdmin, isAdult, requireAdmin, requireUser } from "./auth.js";
 import { rateLimit } from "./limit.js";
 import { getStripe, ensureCustomer, baseUrl, CHECKOUT_LABELS } from "./stripe.js";
 import { fulfillCheckout } from "./orders.js";
 import { registerReportTarget } from "./reports.js";
+import { LIVE } from "./games-live.js";
+
+export { LIVE };
 
 // AUTOINCREMENT because Stripe metadata remembers games by id, so an id is never reused.
 db.exec(`
@@ -43,6 +46,8 @@ CREATE TABLE IF NOT EXISTS games (
 CREATE INDEX IF NOT EXISTS games_user ON games(user_id);
 CREATE INDEX IF NOT EXISTS games_order ON games(order_id);
 `);
+// Set when the site owner marks a game 18+, so its creator can't switch that back off.
+addColumn("games", "adult_forced", "INTEGER NOT NULL DEFAULT 0");
 
 // ---------- Choices (the pages read these from /api/games/options) ----------
 export const PLATFORMS = {
@@ -69,14 +74,10 @@ export const LAUNCH_TERMS = "$1 a month keeps this game on the ForgeCenter games
   + "it stays up until the end of the month you've paid for, and that month isn't refunded.";
 
 // ---------- The live rule ----------
-// The one test for "on the games page", used everywhere: a paid launch order whose
-// subscription is active, on a game that isn't taken down. Stripe keeps a canceled
-// subscription active until the paid month ends, so a canceled game stays up until then.
-// A failed renewal (past_due) or the end of the subscription (canceled) takes it off.
+// LIVE (games-live.js) is the one test for "on the games page", used everywhere. Stripe
+// keeps a canceled subscription active until the paid month ends, so a canceled game
+// stays up until then; a failed renewal (past_due) or the end of the subscription takes it off.
 const PAID = ["paid", "in_progress", "delivered"];
-export const LIVE = `(g.hidden = 0
-  AND NOT EXISTS (SELECT 1 FROM users su WHERE su.id = g.user_id AND su.suspended_at IS NOT NULL) AND EXISTS (SELECT 1 FROM orders lo WHERE lo.id = g.order_id
-  AND lo.status IN ('paid', 'in_progress', 'delivered') AND lo.subscription_status = 'active'))`;
 
 const SELECT = `SELECT g.*, ${LIVE} AS live, u.name AS creator_name,
     o.status AS o_status, o.subscription_status AS o_sub_status, o.stripe_subscription_id AS o_sub_id,
@@ -201,6 +202,7 @@ function readGame(body = {}, existing, user) {
   if (has("adultOnly")) {
     if (typeof body.adultOnly !== "boolean") throw new Invalid("adultOnly must be true or false.", "adultOnly");
     if (body.adultOnly && !adultOnly && !isAdult(user)) throw new Invalid("Only confirmed adults can mark a game 18+.", "adultOnly", 403, "adult");
+    if (!body.adultOnly && existing?.adult_forced) throw new Invalid("ForgeCenter marked this game 18+, so it stays that way. Open a support ticket if you think that's a mistake.", "adultOnly", 403);
     adultOnly = body.adultOnly;
   }
   return { title, tagline, description, platform, play_url: playUrl, server_address: address, trailer_url: trailerUrl,
@@ -514,8 +516,10 @@ adminGamesRouter.patch("/games/:id(\\d+)", requireUser, requireAdmin, (req, res)
   const { hidden, adultOnly } = req.body ?? {};
   if (hidden !== undefined && typeof hidden !== "boolean") return res.status(400).json({ error: "hidden must be true or false." });
   if (adultOnly !== undefined && typeof adultOnly !== "boolean") return res.status(400).json({ error: "adultOnly must be true or false." });
-  const r = db.prepare("UPDATE games SET hidden = COALESCE(?, hidden), adult_only = COALESCE(?, adult_only) WHERE id = ?")
-    .run(hidden === undefined ? null : hidden ? 1 : 0, adultOnly === undefined ? null : adultOnly ? 1 : 0, Number(req.params.id));
+  const flag = adultOnly === undefined ? null : adultOnly ? 1 : 0;
+  const r = db.prepare(`UPDATE games SET hidden = COALESCE(?, hidden), adult_only = COALESCE(?, adult_only),
+    adult_forced = COALESCE(?, adult_forced) WHERE id = ?`)
+    .run(hidden === undefined ? null : hidden ? 1 : 0, flag, flag, Number(req.params.id));
   if (!r.changes) return res.status(404).json({ error: "Game not found." });
   res.json({ game: adminGame(getGame(req.params.id)) });
 });

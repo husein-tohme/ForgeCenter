@@ -212,6 +212,12 @@ test("subscription events go to donations or orders by their kind, never both", 
   assert.deepEqual(payments(id), { n: 2, cents: 1000 });
   assert.equal(orderSub(), "past_due");
 
+  // A failed renewal marks it overdue until a payment goes through again.
+  await event("customer.subscription.updated", { id: "sub_don_route", object: "subscription", status: "past_due", metadata: donationMeta(id) });
+  assert.equal(donation(id).overdue, 1);
+  await event("customer.subscription.updated", { id: "sub_don_route", object: "subscription", status: "active", metadata: donationMeta(id) });
+  assert.equal(donation(id).overdue, 0);
+
   // Cancelled in Manage billing: it runs to the end of the month already given, then ends.
   const periodEnd = Math.floor(Date.now() / 1000) + 20 * 86400;
   await event("customer.subscription.updated", { id: "sub_don_route", object: "subscription", status: "active", cancel_at: periodEnd, metadata: donationMeta(id) });

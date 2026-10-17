@@ -156,12 +156,13 @@ loadWall();
 function describe(d) {
   if (!d.monthly) return `One time, ${date(d.paidAt)}`;
   if (d.status === "canceled") return `Monthly, ended ${date(d.endsAt ?? d.paidAt)}`;
+  if (d.overdue) return `Monthly since ${date(d.paidAt)}. The last payment didn't go through: update your card in Manage billing`;
   if (d.endsAt) return `Monthly since ${date(d.paidAt)}, ends ${date(d.endsAt)}`;
   return `Monthly since ${date(d.paidAt)}`;
 }
 function statePill(d) {
   const [label, tone] = !d.monthly ? ["Received", "done"]
-    : d.status === "canceled" ? ["Ended", "muted"] : d.endsAt ? ["Ending", "wait"] : ["Active", "done"];
+    : d.status === "canceled" ? ["Ended", "muted"] : d.overdue ? ["Payment failed", "wait"] : d.endsAt ? ["Ending", "wait"] : ["Active", "done"];
   return `<span class="pill pill-${tone}">${label}</span>`;
 }
 

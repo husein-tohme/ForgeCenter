@@ -16,7 +16,7 @@ registerIcons({
 
 export const BADGE_ICON = {
   maker: "table", pixel_artist: "painting", pack_builder: "chest", plugin_smith: "anvil",
-  publisher: "upload", showcased: "frame", supporter: "heart", recruiter: "bell",
+  publisher: "upload", showcased: "frame", supporter: "heart", recruiter: "bell", donor: "emerald", game_launcher: "rocket",
 };
 export const badgeIcon = (key, label = "") => icon(BADGE_ICON[key] ?? "emerald", label);
 

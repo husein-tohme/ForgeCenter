@@ -321,6 +321,9 @@ test("a launch paid after its game was deleted stops renewing", async () => {
   const res = await event("checkout.session.completed", { ...session, status: "complete", payment_status: "paid", subscription: sub.id });
   assert.equal(res.status, 200);
   assert.equal(stripe.state.subscriptions.get(sub.id).cancel_at_period_end, true);
+  await settle();
+  assert.ok(!emails.some(m => m.to.includes("orphan@example.com") && m.subject === "Your game is live"));
+  assert.ok(emails.some(m => m.subject.startsWith("Launch paid with no game")));
 });
 
 test("a second paid launch for a game that's already live stops renewing", async () => {
@@ -338,6 +341,8 @@ test("a second paid launch for a game that's already live stops renewing", async
   assert.equal(stripe.state.subscriptions.get("sub_double").cancel_at_period_end, true);
   assert.equal((await mine(cookie, g.id)).orderId, orderId);
   assert.equal((await mine(cookie, g.id)).status, "live");
+  await settle();
+  assert.equal(emails.filter(m => m.to.includes("double-pay@example.com") && m.subject === "Your game is live").length, 1);
 });
 
 test("18+ games are hidden from teens and visitors", async () => {
@@ -391,4 +396,19 @@ test("the games pages are served, and only the public ones are listed for search
   const sitemap = await page("/sitemap.xml");
   assert.match(sitemap, /\/games<\/loc>/);
   assert.doesNotMatch(sitemap, /my-games/);
+});
+
+test("a game the site owner marks 18+ stays 18+", async () => {
+  const maker = signIn("forced-maker@example.com", undefined, { age: "adult" });
+  const boss = signIn("owner@example.com");
+  const g = await create(maker.cookie, { title: "Spooky Hollow" });
+  const marked = await api(`/api/admin/games/${g.id}`, { method: "PATCH", cookie: boss.cookie, body: { adultOnly: true } });
+  assert.equal(marked.status, 200);
+  const undo = await api(`/api/games/${g.id}`, { method: "PATCH", cookie: maker.cookie, body: { adultOnly: false } });
+  assert.equal(undo.status, 403);
+  assert.match(undo.body.error, /marked this game 18\+/);
+  // Other edits still work, and the owner can lift it.
+  assert.equal((await api(`/api/games/${g.id}`, { method: "PATCH", cookie: maker.cookie, body: { title: "Spooky Hollow 2" } })).status, 200);
+  await api(`/api/admin/games/${g.id}`, { method: "PATCH", cookie: boss.cookie, body: { adultOnly: false } });
+  assert.equal((await api(`/api/games/${g.id}`, { method: "PATCH", cookie: maker.cookie, body: { adultOnly: false } })).status, 200);
 });

@@ -226,7 +226,7 @@ test("the directory ranks creators by badges, then creations, and shows at most 
   const two_ = list.creators.find(c => c.handle === "rank-two");
   assert.deepEqual(two_.badges, ["maker", "pixel_artist"]);
   assert.deepEqual(Object.keys(two_).sort(), ["badges", "bio", "creations", "handle", "name", "picture"]);
-  assert.equal(list.badges.length, 8);
+  assert.equal(list.badges.length, 10);
   const newest = (await api("/api/creators?sort=new")).body.creators.map(c => c.handle).filter(h => h.startsWith("rank-"));
   assert.deepEqual(newest, ["rank-three", "rank-two", "rank-one"]);
 
@@ -379,4 +379,18 @@ test("removing a page frees its handle, and deleting the account removes it", as
   await save(d.cookie, { handle: "short-lived" });
   assert.equal((await api("/api/me", { method: "DELETE", cookie: d.cookie, body: {} })).status, 200);
   assert.equal(db.prepare("SELECT COUNT(*) AS n FROM creator_profiles WHERE handle = 'short-lived'").get().n, 0);
+});
+
+test("donors and creators with a live game get badges for it", async () => {
+  const c = person();
+  assert.equal((await save(c.cookie, { handle: "giving-gwen" })).status, 200);
+  const t = new Date().toISOString();
+  db.prepare(`INSERT INTO donations (user_id, amount, monthly, status, created_at, updated_at, paid_at)
+    VALUES (?, 500, 0, 'paid', ?, ?, ?)`).run(c.user.id, t, t, t);
+  const orderId = Number(db.prepare(`INSERT INTO orders (user_id, product, amount, status, subscription_status, created_at, updated_at)
+    VALUES (?, 'launch', 100, 'delivered', 'active', ?, ?)`).run(c.user.id, t, t).lastInsertRowid);
+  db.prepare(`INSERT INTO games (user_id, title, platform, icon, accent, order_id, created_at, updated_at)
+    VALUES (?, 'Gwen Quest', 'minecraft', 'gamepad', 'emerald', ?, ?, ?)`).run(c.user.id, orderId, t, t);
+  const keys = (await profile("giving-gwen")).body.creator.badges.map(b => b.key);
+  assert.ok(keys.includes("donor") && keys.includes("game_launcher"), keys.join());
 });

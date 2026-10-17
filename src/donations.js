@@ -5,7 +5,7 @@
 // when something went wrong. Like orders, a donation only counts once Stripe's
 // webhook says the money arrived.
 import express from "express";
-import { db, now } from "./db.js";
+import { addColumn, db, now } from "./db.js";
 import { requireUser } from "./auth.js";
 import { rateLimit } from "./limit.js";
 import { notify } from "./email.js";
@@ -49,6 +49,9 @@ CREATE TABLE IF NOT EXISTS donation_payments (
 );
 CREATE INDEX IF NOT EXISTS donation_payments_paid ON donation_payments(paid_at);
 `);
+// A monthly donation whose latest payment failed (past_due or unpaid at Stripe) stays
+// on the books but isn't shown as a monthly supporter until a payment goes through.
+addColumn("donations", "overdue", "INTEGER NOT NULL DEFAULT 0");
 
 // Shown on Stripe Checkout, next to the Donate button.
 const SMALL_PRINT = "Donations are a gift to ForgeCenter, a small business, not a charity, so they aren't tax-deductible. They aren't refunded unless something went wrong, like being charged twice.";
@@ -122,7 +125,8 @@ function subscriptionChanged(sub, deleted) {
     return;
   }
   const endsAt = sub.cancel_at ?? (sub.cancel_at_period_end ? sub.items?.data?.[0]?.current_period_end ?? sub.current_period_end : null);
-  db.prepare("UPDATE donations SET ends_at = ?, updated_at = ? WHERE id = ? AND status = 'paid'").run(isoOf(endsAt), now(), donation.id);
+  const overdue = ["past_due", "unpaid"].includes(sub.status) ? 1 : 0;
+  db.prepare("UPDATE donations SET ends_at = ?, overdue = ?, updated_at = ? WHERE id = ? AND status = 'paid'").run(isoOf(endsAt), overdue, now(), donation.id);
 }
 
 function renewalPaid(invoice) {
@@ -180,7 +184,7 @@ export function keepMonthlyDonors(req, res, next) {
 export const donationsRouter = express.Router();
 
 const publicDonation = d => ({
-  id: d.id, amount: d.amount, monthly: !!d.monthly, status: d.status, showName: !!d.public_name,
+  id: d.id, amount: d.amount, monthly: !!d.monthly, status: d.status, overdue: !!d.overdue, showName: !!d.public_name,
   endsAt: d.ends_at, createdAt: d.created_at, paidAt: d.paid_at,
 });
 const onWall = userId => !!db.prepare(`SELECT 1 FROM donations WHERE user_id = ? AND public_name = 1
@@ -196,7 +200,7 @@ donationsRouter.get("/options", (_req, res) => {
 // appear, because there's no account to show or to change the choice from.
 donationsRouter.get("/wall", (_req, res) => {
   const rows = db.prepare(`SELECT u.name, MAX(d.paid_at) AS last,
-      EXISTS (SELECT 1 FROM donations m WHERE m.user_id = u.id AND m.monthly = 1 AND m.status = 'paid') AS monthly
+      EXISTS (SELECT 1 FROM donations m WHERE m.user_id = u.id AND m.monthly = 1 AND m.status = 'paid' AND m.overdue = 0) AS monthly
     FROM donations d JOIN users u ON u.id = d.user_id
     WHERE d.public_name = 1 AND d.paid_at IS NOT NULL AND d.status IN ('paid', 'canceled')
       AND u.age_group IN ('teen', 'adult')

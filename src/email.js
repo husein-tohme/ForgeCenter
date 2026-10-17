@@ -37,6 +37,13 @@ export const notify = {
     const c = customerOf(order);
     // A game launch has no brief: the game goes on the games page as soon as it's paid.
     if (order.product === "launch") {
+      // The game was deleted before payment, or a newer launch replaced this one: this
+      // payment won't renew (launchpad.js), so don't tell anyone it's live.
+      if (!db.prepare("SELECT 1 FROM games WHERE order_id = ?").get(order.id)) {
+        send(owners(), `Launch paid with no game (order ${order.id})`,
+          `${c?.name ?? "A creator"} (${c?.email ?? "unknown email"}) paid for a game launch, but the game was deleted or is already live on another launch. It won't renew. Refund it in Stripe if they ask.`);
+        return;
+      }
       send(owners(), `Game launched (order ${order.id})`,
         `${c?.name ?? "A creator"} (${c?.email ?? "unknown email"}) launched a game on the games page for $1 a month.\n\nSee it on the games page: ${site()}/games\nYou can take a game down from its page if it breaks the rules.`);
       if (c) send(c.email, "Your game is live",
