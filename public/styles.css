@@ -9,7 +9,8 @@
   --outline: #1c1c1c;
   --ink: #262626;
   --ink-soft: #4a4a4a;
-  --emerald: #17a34a;
+  --emerald: #15803d;       /* white text on it passes WCAG AA (5:1) */
+  --emerald-text: #0a5526;  /* green for text on grey panels */
   --emerald-dark: #0d6b30;
   --lapis: #2546a8;
   --gold: #f2c230;
@@ -38,7 +39,9 @@ h2 { font-size: clamp(1.8rem, 4vw, 2.4rem); }
 h3 { font-size: 1.2rem; }
 p { margin: 0 0 1em; max-width: 62ch; }
 a { color: var(--lapis); }
-:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
+/* Dark focus ring on the light pages, gold on the dark header, footer, hero and chat. */
+:focus-visible { outline: 3px solid var(--outline); outline-offset: 2px; }
+.top :focus-visible, .foot :focus-visible, .hero :focus-visible, .chat-log:focus-visible, .chat-log :focus-visible { outline-color: var(--gold); }
 
 .wrap { max-width: 1120px; margin: 0 auto; padding: 0 16px; }
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
@@ -89,10 +92,10 @@ a { color: var(--lapis); }
   box-shadow: inset 3px 3px 0 #a5a5a5, inset -3px -3px 0 #3d3d3d;
   text-shadow: 2px 2px 0 #3a3a3a;
 }
-.btn:hover { background: #7e86b8; }
+.btn:hover { background: #5a63a0; }
 .btn:active { box-shadow: inset -3px -3px 0 #a5a5a5, inset 3px 3px 0 #3d3d3d; }
 .btn-buy { background: var(--emerald); box-shadow: inset 3px 3px 0 #4fd47e, inset -3px -3px 0 var(--emerald-dark); text-shadow: 2px 2px 0 var(--emerald-dark); }
-.btn-buy:hover { background: #1fb956; }
+.btn-buy:hover { background: #14733a; }
 .btn[disabled] { opacity: .6; cursor: progress; }
 
 /* Hero */
@@ -294,7 +297,7 @@ dialog.signin h2 { font-size: 1.6rem; }
 .panel-inset .btn { justify-self: start; }
 
 .pill { font: 500 .9rem var(--display); padding: 4px 10px; border: 2px solid var(--outline); white-space: nowrap; color: #fff; }
-.pill-wait { background: #b8860b; }
+.pill-wait { background: #8c6200; }
 .pill-info { background: var(--lapis); }
 .pill-done { background: var(--emerald-dark); }
 .pill-bad { background: #9b1c14; }
@@ -359,7 +362,7 @@ a.listing:hover h3 { color: var(--lapis); text-decoration: underline; }
 .tool-icon { width: 100%; height: 100%; }
 .tool-link strong { display: block; font: 700 1.2rem var(--display); }
 .tool-link:hover strong { color: var(--lapis); text-decoration: underline; }
-code { font: .9em ui-monospace, SFMono-Regular, Menlo, monospace; background: rgba(0,0,0,.08); padding: 1px 5px; }
+code { font: .9em ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--ink); background: rgba(0,0,0,.08); padding: 1px 5px; }
 
 /* Texture Forge */
 .tex-grid { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 24px; align-items: start; }
@@ -510,7 +513,7 @@ fieldset.commands legend { font-weight: 700; padding: 0 6px; }
 .hero-figure { font: 700 3.4rem/1.05 var(--body); color: var(--ink); }
 .stat-value { font: 700 1.9rem/1.1 var(--body); color: var(--ink); }
 .stat-delta { font-size: .95rem; color: var(--ink-soft); }
-.stat-delta .up { color: var(--emerald-dark); font-weight: 700; }
+.stat-delta .up { color: var(--emerald-text); font-weight: 700; }
 .stat-delta .down { color: #9b1c14; font-weight: 700; }
 .stat-tiles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
 .stat { padding: 16px 18px; }
@@ -548,7 +551,7 @@ fieldset.commands legend { font-weight: 700; padding: 0 6px; }
 .ledger { list-style: none; padding: 0; margin: 12px 0 0; display: grid; gap: 4px; max-width: 720px; }
 .ledger li { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 16px; padding: 8px 12px; background: #d4d4d4; }
 .ledger .amount { font-weight: 700; font-variant-numeric: tabular-nums; }
-.ledger .plus { color: var(--emerald-dark); }
+.ledger .plus { color: var(--emerald-text); }
 .ledger .small { grid-column: 1 / -1; }
 @media (max-width: 640px) { .wallet { grid-template-columns: 1fr; } }
 
