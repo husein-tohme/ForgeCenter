@@ -4,6 +4,7 @@ import { $, api, esc, icon, money, cash, date, toast, onUser, openSignIn, pill, 
 $("signin-here").addEventListener("click", () => openSignIn());
 $("filter").addEventListener("change", loadOrders);
 $("ticket-filter").addEventListener("change", loadTickets);
+$("report-filter").addEventListener("change", loadReports);
 
 onUser(user => {
   const ok = !!user?.isAdmin;
@@ -13,7 +14,7 @@ onUser(user => {
     $("denied-text").textContent = `${user.email} isn't the site owner's account. Add it to ADMIN_EMAILS on the server to give it access.`;
     $("signin-here").hidden = true;
   }
-  if (ok && user.ageGroup && !loaded) { loaded = true; loadOverview(); loadTickets(); loadOrders(); loadListings(); }
+  if (ok && user.ageGroup && !loaded) { loaded = true; loadOverview(); loadTickets(); loadReports(); loadSuspended(); loadOrders(); loadListings(); }
 });
 
 let loaded = false;
@@ -48,6 +49,7 @@ async function loadOverview() {
     [a.setupFailed, "setup_failed", "bad", plural(a.setupFailed, "server setup failed", "server setups failed")],
     [a.pastDue, "past_due", "bad", plural(a.pastDue, "subscription has an overdue payment", "subscriptions have overdue payments")],
     [a.pendingListings, "listings", "wait", plural(a.pendingListings, "showcase listing needs approval", "showcase listings need approval")],
+    [a.reportsOpen ?? 0, "reports", "wait", plural(a.reportsOpen ?? 0, "report needs a look", "reports need a look")],
   ].filter(([n]) => n > 0);
 
   $("overview").innerHTML = `
@@ -77,6 +79,12 @@ async function loadOverview() {
     </div>`;
   $("overview").querySelectorAll("[data-show]").forEach(b => b.addEventListener("click", () => {
     if (b.dataset.show === "listings") { $("listings-section").scrollIntoView({ behavior: "smooth" }); return; }
+    if (b.dataset.show === "reports") {
+      $("report-filter").value = "open";
+      loadReports();
+      $("reports-section").scrollIntoView({ behavior: "smooth" });
+      return;
+    }
     if (b.dataset.show === "tickets") {
       $("ticket-filter").value = "waiting";
       loadTickets();
@@ -284,4 +292,89 @@ async function loadTicket(d) {
     toast(`Credit added. ${c.name} now has ${cash(res.data.balance)}.`);
     d.dataset.loaded = ""; loadTicket(d); loadOverview();
   });
+}
+
+// ---------- Reports and suspensions (src/reports.js) ----------
+const REPORT_STATE = { open: ["Open", "wait"], actioned: ["Resolved", "done"], dismissed: ["Dismissed", "muted"] };
+const reportPill = s => { const [label, tone] = REPORT_STATE[s] ?? [s, "muted"]; return `<span class="pill pill-${tone}">${esc(label)}</span>`; };
+const TYPE_NAME = { listing: "Showcase listing" };
+const who = u => u ? `${esc(u.name)}${u.contact ? ` (${esc(u.contact)})` : ""}` : "a deleted account";
+
+async function loadReports() {
+  const r = await api(`/api/admin/reports?status=${$("report-filter").value}`);
+  if (!r.ok) { $("reports").innerHTML = `<p class="error">${esc(r.data.error)}</p>`; return; }
+  const reports = r.data.reports ?? [];
+  if (!reports.length) { $("reports").innerHTML = `<p class="hint">No reports here right now.</p>`; return; }
+  $("reports").innerHTML = reports.map(rep => {
+    const t = rep.target;
+    const owner = t?.owner;
+    const title = t ? (t.url ? `<a href="${esc(t.url)}" target="_blank" rel="noopener nofollow">${esc(t.title)}</a>` : esc(t.title)) : "Removed";
+    return `
+    <div class="panel report-row" data-report="${rep.id}">
+      <div class="report-top">${reportPill(rep.status)} <span class="pill pill-info">${esc(rep.reasonName)}</span>
+        <strong>${title}</strong>${t?.state === "hidden" ? ` <span class="pill pill-muted">Hidden</span>` : ""}</div>
+      <p class="small">${esc(TYPE_NAME[rep.type] ?? rep.type)} ${esc(rep.targetId)}${owner ? `, posted by ${who(owner)}${owner.suspended ? " (suspended)" : ""}` : ""}.
+        Reported by ${who(rep.reporter)} on ${date(rep.createdAt)}.</p>
+      ${rep.details ? `<p class="report-details-text">${esc(rep.details)}</p>` : ""}
+      ${rep.status !== "open" ? `<p class="small">Closed ${date(rep.resolvedAt)}${rep.resolvedNote ? `: ${esc(rep.resolvedNote)}` : "."}</p>` : ""}
+      <div class="row-actions">
+        ${rep.status === "open" ? `
+          <button class="btn btn-small" type="button" data-act="dismiss">Dismiss</button>
+          ${rep.canHide ? `<button class="btn btn-small" type="button" data-act="hide">Hide ${rep.type === "listing" ? "listing" : "it"}</button>` : ""}
+          ${owner && !owner.suspended && !owner.admin ? `<button class="btn btn-small" type="button" data-act="suspend" data-user="${owner.id}">Suspend owner</button>` : ""}
+          <button class="btn btn-buy btn-small" type="button" data-act="resolve">Mark resolved</button>`
+        : `<button class="btn btn-small" type="button" data-act="reopen">Reopen</button>`}
+      </div>
+    </div>`;
+  }).join("");
+  $("reports").querySelectorAll("[data-act]").forEach(b => b.addEventListener("click", () => reportAction(b)));
+}
+
+async function reportAction(b) {
+  const id = b.closest("[data-report]").dataset.report;
+  const act = b.dataset.act;
+  const close = body => api(`/api/admin/reports/${id}`, { method: "PATCH", body });
+  let res;
+  if (act === "suspend") {
+    const reason = prompt("Why is this account suspended? They'll see this, so name the rule that was broken.");
+    if (!reason?.trim()) return;
+    res = await api(`/api/admin/users/${b.dataset.user}/suspend`, { method: "POST", body: { reason: reason.trim() } });
+    if (!res.ok) return toast(res.data.error);
+    res = await close({ status: "actioned", note: `Suspended the owner: ${reason.trim()}` });
+    toast("Account suspended. Their listings are hidden until you lift it.");
+    loadSuspended();
+  } else if (act === "hide") {
+    res = await close({ status: "actioned", hide: true, note: "Hid the listing." });
+    if (res.ok) toast("Listing hidden and report resolved.");
+    loadListings();
+  } else if (act === "dismiss") {
+    res = await close({ status: "dismissed", note: "No rule broken." });
+    if (res.ok) toast("Report dismissed.");
+  } else if (act === "resolve") {
+    const note = prompt("What did you do? (optional, only you see this)") ?? null;
+    if (note === null) return;
+    res = await close({ status: "actioned", note });
+    if (res.ok) toast("Report marked resolved.");
+  } else {
+    res = await close({ status: "open" });
+  }
+  if (!res.ok) return toast(res.data.error);
+  loadReports(); loadOverview();
+}
+
+async function loadSuspended() {
+  const r = await api("/api/admin/users/suspended");
+  const users = r.data.users ?? [];
+  $("suspended").innerHTML = users.length ? `<div class="suspended-list">${users.map(u => `
+    <div class="panel listing-row">
+      <div><strong>${esc(u.name)}</strong>${u.contact ? ` <span class="small">${esc(u.contact)}</span>` : ""}
+        <p class="small">Since ${date(u.at)}: ${esc(u.reason)}</p></div>
+      <div class="row-actions"><button class="btn btn-small" type="button" data-unsuspend="${u.id}">Lift suspension</button></div>
+    </div>`).join("")}</div>` : `<p class="hint">No accounts are suspended.</p>`;
+  $("suspended").querySelectorAll("[data-unsuspend]").forEach(b => b.addEventListener("click", async () => {
+    const res = await api(`/api/admin/users/${b.dataset.unsuspend}/unsuspend`, { method: "POST" });
+    if (!res.ok) return toast(res.data.error);
+    toast("Suspension lifted.");
+    loadSuspended(); loadReports();
+  }));
 }

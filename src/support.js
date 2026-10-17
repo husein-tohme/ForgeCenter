@@ -7,7 +7,7 @@ import { ARTICLES } from "../public/js/help-articles.js";
 import Anthropic from "@anthropic-ai/sdk";
 import { db, now, walletBalance } from "./db.js";
 import { catalog, isAdultOnly } from "./catalog.js";
-import { PROVIDER_NAMES, isAdmin, requireAdmin, requireUser } from "./auth.js";
+import { PROVIDER_NAMES, isAdmin, requireAdmin, requireUser, requireUserOrSuspended } from "./auth.js";
 import { rateLimit } from "./limit.js";
 import { notify } from "./email.js";
 import { WALLET_LIMITS } from "./wallet.js";
@@ -240,9 +240,10 @@ function publicTicket(t, { owner = false } = {}) {
 }
 
 // ---------- Customer routes ----------
+// Suspended accounts can still use these, so they can appeal (auth.js).
 export const supportRouter = express.Router();
 
-supportRouter.get("/", requireUser, (req, res) => {
+supportRouter.get("/", requireUserOrSuspended, (req, res) => {
   const tickets = db.prepare(`SELECT id, subject, category, status, updated_at AS updatedAt FROM tickets
     WHERE user_id = ? ORDER BY status = 'closed', updated_at DESC LIMIT 50`).all(req.user.id);
   res.json({ tickets: tickets.map(t => ({ ...t, categoryName: CATEGORIES[t.category] ?? t.category })), categories: CATEGORIES, ai: aiEnabled() });
@@ -250,7 +251,7 @@ supportRouter.get("/", requireUser, (req, res) => {
 
 const readBody = req => String(req.body?.body ?? "").trim().slice(0, 4000);
 
-supportRouter.post("/", requireUser, rateLimit({ windowMs: 60 * 60_000, max: 10 }), async (req, res) => {
+supportRouter.post("/", requireUserOrSuspended, rateLimit({ windowMs: 60 * 60_000, max: 10 }), async (req, res) => {
   const subject = String(req.body?.subject ?? "").trim().slice(0, 120);
   const category = String(req.body?.category ?? "");
   const body = readBody(req);
@@ -283,11 +284,11 @@ function loadOwnTicket(req, res, next) {
 const customerOnly = (req, res, next) => req.ticket.user_id === req.user.id ? next()
   : res.status(403).json({ error: "Only the customer can do this. Reply from the owner panel instead." });
 
-supportRouter.get("/:id", requireUser, loadOwnTicket, (req, res) => {
+supportRouter.get("/:id", requireUserOrSuspended, loadOwnTicket, (req, res) => {
   res.json({ ticket: publicTicket(req.ticket, { owner: isAdmin(req.user) }) });
 });
 
-supportRouter.post("/:id/messages", requireUser, loadOwnTicket, customerOnly, rateLimit({ windowMs: 60_000, max: 10 }), async (req, res) => {
+supportRouter.post("/:id/messages", requireUserOrSuspended, loadOwnTicket, customerOnly, rateLimit({ windowMs: 60_000, max: 10 }), async (req, res) => {
   const t = req.ticket;
   const body = readBody(req);
   if (!body) return res.status(400).json({ error: "Write a message first." });
@@ -301,14 +302,14 @@ supportRouter.post("/:id/messages", requireUser, loadOwnTicket, customerOnly, ra
 });
 
 // "Talk to a person"
-supportRouter.post("/:id/handoff", requireUser, loadOwnTicket, customerOnly, (req, res) => {
+supportRouter.post("/:id/handoff", requireUserOrSuspended, loadOwnTicket, customerOnly, (req, res) => {
   if (req.ticket.status !== "ai") return res.status(409).json({ error: "This ticket is already with the team." });
   addMessage(req.ticket.id, "ai", handedOver(req.user));
   handOver(req.ticket, "The customer asked for a person.");
   res.json({ ticket: publicTicket(getTicket(req.ticket.id)) });
 });
 
-supportRouter.post("/:id/close", requireUser, loadOwnTicket, customerOnly, (req, res) => {
+supportRouter.post("/:id/close", requireUserOrSuspended, loadOwnTicket, customerOnly, (req, res) => {
   setStatus(req.ticket.id, "closed");
   res.json({ ticket: publicTicket(getTicket(req.ticket.id)) });
 });

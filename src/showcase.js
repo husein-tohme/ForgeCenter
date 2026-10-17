@@ -12,9 +12,11 @@ const unusedCredit = userId => db.prepare(`SELECT o.id FROM orders o
     AND NOT EXISTS (SELECT 1 FROM showcase s WHERE s.order_id = o.id)
   ORDER BY o.id LIMIT 1`).get(userId);
 
+// Listings from suspended accounts (reports.js) stay hidden until the suspension ends.
 showcaseRouter.get("/", (req, res) => {
   const rows = db.prepare(`SELECT s.id, s.title, s.url, s.description, s.adult_only, u.name AS owner
-    FROM showcase s JOIN users u ON u.id = s.user_id WHERE s.status = 'approved' ORDER BY s.id DESC LIMIT 60`).all();
+    FROM showcase s JOIN users u ON u.id = s.user_id
+    WHERE s.status = 'approved' AND u.suspended_at IS NULL ORDER BY s.id DESC LIMIT 60`).all();
   const adult = isAdult(req.user);
   res.json({ listings: rows.map(({ adult_only, ...l }) =>
     !adult_only ? l : adult ? { ...l, adultOnly: true } : { id: l.id, adultOnly: true, restricted: true }) });

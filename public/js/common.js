@@ -100,6 +100,8 @@ export async function api(path, { method = "GET", body } = {}) {
     });
     const data = r.headers.get("content-type")?.includes("json") ? await r.json() : null;
     if (data?.needs === "birthday") openBirthday();
+    // Suspended since the page loaded: re-read the account so the dialog shows the reason.
+    if (data?.needs === "suspended") { if (currentUser?.suspended) openSuspended(currentUser.suspended.reason); else refreshUser(); }
     return { ok: r.ok, status: r.status, data: data ?? {} };
   } catch {
     return { ok: false, status: 0, data: { error: "You seem to be offline. Check your connection and try again." } };
@@ -118,6 +120,7 @@ function setUser(user) {
   renderAuthSlot();
   if (user && !user.ageGroup) openBirthday();
   if (user?.ageGroup === "under13") openClosed();
+  if (user?.suspended) openSuspended(user.suspended.reason);
   listeners.forEach(fn => fn(user));
 }
 // Re-reads the account, for example after a wallet or age change.
@@ -423,6 +426,36 @@ function openClosed(message = "This account is closed because ForgeCenter accoun
   });
   $("closed-dialog").addEventListener("cancel", e => e.preventDefault());
   $("closed-dialog").showModal();
+}
+
+// ---------- Suspended accounts (src/reports.js) ----------
+// Blocks the page, except where the person reads the rules or appeals.
+const APPEAL_PAGES = ["/support", "/rules", "/terms", "/privacy"];
+function openSuspended(reason) {
+  if (APPEAL_PAGES.includes(location.pathname.replace(/\.html$/, ""))) {
+    if (location.pathname.startsWith("/support")) toast("Your account is suspended. Open a ticket here to appeal.");
+    return;
+  }
+  if ($("suspended-dialog")) { if (!$("suspended-dialog").open) $("suspended-dialog").showModal(); return; }
+  document.body.insertAdjacentHTML("beforeend", `
+    <dialog class="panel gate" id="suspended-dialog" aria-labelledby="suspended-title">
+      <span class="gate-icon">${icon("barrier")}</span>
+      <h2 id="suspended-title">Your account is suspended</h2>
+      <p>The ForgeCenter team suspended this account because it broke the <a href="/rules">ForgeCenter rules</a>. While it's suspended you can't buy, post or use the signed-in tools.</p>
+      ${reason ? `<p class="note"><strong>Reason:</strong> ${esc(reason)}</p>` : ""}
+      <p>Think it's a mistake? Open a support ticket to appeal, and a person will look at it again.</p>
+      <div class="ticket-actions">
+        <a class="btn btn-buy" href="/support" autofocus>Appeal on the Help page</a>
+        <button class="btn" type="button" id="suspended-signout">Sign out</button>
+      </div>
+    </dialog>`);
+  const d = $("suspended-dialog");
+  // Nothing else works until it's resolved. Browsers let a second Escape close a dialog
+  // even when cancel is prevented, so it opens again; only signing out removes it.
+  d.addEventListener("cancel", e => e.preventDefault());
+  d.addEventListener("close", () => { if (d.isConnected) d.showModal(); });
+  $("suspended-signout").addEventListener("click", async () => { await signOut(); d.remove(); });
+  d.showModal();
 }
 
 // What confirming unlocks, from the catalog's adult-only products.

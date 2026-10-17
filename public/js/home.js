@@ -1,4 +1,5 @@
 import { $, api, esc, icon, money, toast, requireSignIn, onUser, getUser, getCatalog, ready, PRODUCT_ICON } from "./common.js";
+import { reportButton } from "./report.js";
 
 // ---------- Crafting table ----------
 // key matches src/catalog.js; pattern is the 3x3 recipe shape.
@@ -183,11 +184,14 @@ const restricted = () => `
 Promise.all([api("/api/showcase"), ready]).then(([r]) => {
   const list = r.data.listings ?? [];
   if (!list.length) return;
+  // The title link covers the whole card (see css/reports.css); Report sits above it.
   $("showcase-list").innerHTML = list.map(l => l.restricted ? restricted() : `
-    <a class="panel listing" href="${esc(l.url)}" rel="noopener nofollow ugc" target="_blank">
-      <h3>${esc(l.title)}</h3><p>${esc(l.description)}</p>
-      <span class="small">By ${esc(l.owner)}</span>${l.adultOnly ? ` <span class="pill pill-adult">18+</span>` : ""}
-    </a>`).join("");
+    <article class="panel listing listing-card">
+      <h3><a class="listing-link" href="${esc(l.url)}" rel="noopener nofollow ugc" target="_blank">${esc(l.title)}</a></h3>
+      <p>${esc(l.description)}</p>
+      <div class="listing-foot"><span class="small">By ${esc(l.owner)}</span>${l.adultOnly ? ` <span class="pill pill-adult">18+</span>` : ""}
+        ${reportButton("listing", l.id)}</div>
+    </article>`).join("");
 });
 
 if (new URLSearchParams(location.search).get("signin") === "1") requireSignIn(() => {});

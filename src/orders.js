@@ -261,6 +261,7 @@ adminOrdersRouter.get("/overview", (_req, res) => {
       pastDue: one("SELECT COUNT(*) AS n FROM orders WHERE subscription_status = 'past_due'").n,
       pendingListings: one("SELECT COUNT(*) AS n FROM showcase WHERE status = 'pending'").n,
       ticketsWaiting: one("SELECT COUNT(*) AS n FROM tickets WHERE status = 'waiting'").n,
+      reportsOpen: one("SELECT COUNT(*) AS n FROM reports WHERE status = 'open'").n,
     },
     walletCents: one("SELECT COALESCE(SUM(amount), 0) AS c FROM wallet_entries WHERE user_id IS NOT NULL").c,
     // One-time donations and monthly renewals received this month. They're gifts, not sales.

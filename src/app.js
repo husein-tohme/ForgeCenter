@@ -11,6 +11,7 @@ import { showcaseRouter, adminShowcaseRouter } from "./showcase.js";
 import { tutorRouter } from "./tutor.js";
 import { assistantsRouter, adminAssistantsRouter } from "./aimaker.js";
 import { sitesRouter } from "./sitemaker.js";
+import { reportsRouter, adminReportsRouter } from "./reports.js";
 import { toolsRouter } from "./tools.js";
 import { developerRouter, developerApi, developerApiErrors } from "./developer.js";
 import { robloxRouter } from "./roblox.js";
@@ -91,7 +92,7 @@ export function createApp() {
   app.delete("/api/me", keepMonthlyDonors);
   app.use("/api/me", meRouter);
   app.use("/api", ordersRouter);
-  app.use("/api/admin", adminOrdersRouter, adminShowcaseRouter, adminServicesRouter, adminWalletRouter, adminSupportRouter, adminGamesRouter, adminCreatorsRouter, adminAssistantsRouter);
+  app.use("/api/admin", adminOrdersRouter, adminShowcaseRouter, adminServicesRouter, adminWalletRouter, adminSupportRouter, adminGamesRouter, adminCreatorsRouter, adminAssistantsRouter, adminReportsRouter);
   app.use("/api/age", ageRouter);
   app.use("/api/wallet", walletRouter);
   app.use("/api/support", supportRouter);
@@ -105,6 +106,7 @@ export function createApp() {
   app.use("/api/roblox", robloxRouter);
   app.use("/api/assistants", assistantsRouter);
   app.use("/api/sites", sitesRouter);
+  app.use("/api/reports", reportsRouter);
 
   app.use("/api", toolsRouter);
 

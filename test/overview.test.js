@@ -31,7 +31,7 @@ test("the owner overview adds up sales, recurring revenue and what needs attenti
   assert.deepEqual(o.sales, { cents: 100200 + 10000 + 10000 + 1000000, orders: 4, lastMonthCents: 10000 });
   assert.equal(o.recurringCents, 200 + 10000);
   assert.equal(o.activeServers, 1);
-  assert.deepEqual(o.attention, { notStarted: 1, awaitingReply: 1, setupFailed: 1, pastDue: 1, pendingListings: 0, ticketsWaiting: 0 });
+  assert.deepEqual(o.attention, { notStarted: 1, awaitingReply: 1, setupFailed: 1, pastDue: 1, pendingListings: 0, ticketsWaiting: 0, reportsOpen: 0 });
   assert.equal(o.walletCents, 0);
   assert.equal(o.donationsCents, 0); // donations are counted separately from sales
 

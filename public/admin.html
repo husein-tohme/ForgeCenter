@@ -11,6 +11,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=Pixelify+Sans:wght@500;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/styles.css">
+<link rel="stylesheet" href="/css/reports.css">
 </head>
 <body>
 <a class="skip" href="#main">Skip to content</a>
@@ -50,6 +51,23 @@
           </label>
         </div>
         <div id="tickets"></div>
+      </section>
+
+      <section class="acct-section" id="reports-section">
+        <div class="admin-head">
+          <h2>Reports</h2>
+          <label class="filter">Show
+            <select id="report-filter">
+              <option value="open">Open</option>
+              <option value="actioned">Resolved</option>
+              <option value="dismissed">Dismissed</option>
+              <option value="all">All</option>
+            </select>
+          </label>
+        </div>
+        <div id="reports"></div>
+        <h3>Suspended accounts</h3>
+        <div id="suspended"></div>
       </section>
 
       <section class="acct-section" id="orders-section">

@@ -25,6 +25,7 @@ export const publicUser = u => u && ({
   isAdmin: isAdmin(u), hasBilling: !!u.stripe_customer_id,
   ageGroup: u.age_group, ageMethod: u.age_method, ageConfirmedAt: u.age_confirmed_at,
   wallet: walletBalance(u.id),
+  suspended: u.suspended_at ? { at: u.suspended_at, reason: u.suspended_reason } : null,
 });
 
 export function parseCookies(header = "") {
@@ -103,10 +104,25 @@ export const requireSignedIn = (req, res, next) =>
 
 // Signed in and past the birthday question every new account answers first, like
 // Discord's sign-up. Accounts of people under 13 can't be used.
+function accountBlock(user) {
+  if (!user) return [401, { error: "Sign in to continue." }];
+  if (user.age_group === "under13") return [403, { error: "This account is closed because ForgeCenter is for people 13 and older.", needs: "closed" }];
+  if (!user.age_group) return [403, { error: "Tell us your birthday first.", needs: "birthday" }];
+  return null;
+}
 export function requireUser(req, res, next) {
-  if (!req.user) return res.status(401).json({ error: "Sign in to continue." });
-  if (req.user.age_group === "under13") return res.status(403).json({ error: "This account is closed because ForgeCenter is for people 13 and older.", needs: "closed" });
-  if (!req.user.age_group) return res.status(403).json({ error: "Tell us your birthday first.", needs: "birthday" });
+  const block = accountBlock(req.user);
+  if (block) return res.status(block[0]).json(block[1]);
+  // Suspended by the site owner (reports.js). The reason is the one they wrote.
+  if (req.user.suspended_at) return res.status(403).json({ needs: "suspended",
+    error: `Your account is suspended: ${req.user.suspended_reason || "it broke the ForgeCenter rules"}. To appeal, open a support ticket on the Help page.` });
+  next();
+}
+// Like requireUser, but lets suspended accounts through. Only the support ticket routes
+// use it, so a suspended person can still appeal.
+export function requireUserOrSuspended(req, res, next) {
+  const block = accountBlock(req.user);
+  if (block) return res.status(block[0]).json(block[1]);
   next();
 }
 
