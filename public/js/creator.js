@@ -78,6 +78,14 @@ function render(c) {
       </div>
 
       <aside class="side-stack">
+        ${c.payLinks?.length ? `<section class="panel support-panel">
+          <h2 class="panel-title">Buy from ${name}</h2>
+          <ul class="support-list">${c.payLinks.map(p => `
+            <li><a class="btn btn-buy support-btn" href="/pay?l=${p.id}"><span class="btn-icon">${icon("emerald")}</span>${esc(p.title)}: $${(p.amount / 100).toFixed(2)}</a>
+              ${p.description ? `<span class="small">${esc(p.description)}</span>` : ""}</li>`).join("")}</ul>
+          <p class="small">Paid securely through Stripe, straight to ${name}.</p>
+        </section>` : ""}
+
         ${c.support.length ? `<section class="panel support-panel">
           <h2 class="panel-title">Support ${name}</h2>
           <ul class="support-list">${c.support.map(s => `

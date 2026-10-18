@@ -10,6 +10,7 @@ import { rateLimit } from "./limit.js";
 import { addEntry } from "./wallet.js";
 import { baseUrl } from "./stripe.js";
 import { registerReportTarget } from "./reports.js";
+import { payLinksFor } from "./payouts.js";
 import { LIVE } from "./games-live.js";
 
 db.exec(`
@@ -207,7 +208,7 @@ function publicProfile(row, viewer) {
   return {
     handle: row.handle, name: displayName(row), picture: safePicture(row.picture), bio: row.bio,
     links: safeLinks(row.links), support: row.owner_adult ? supportList(row.support_links) : [],
-    badges: earnedBadges(row), memberSince: row.member_since, creations, listings,
+    badges: earnedBadges(row), memberSince: row.member_since, creations, listings, payLinks: payLinksFor(row.user_id),
     isOwner: owner, canModerate: moderator,
     ...(owner || moderator ? { hidden: !!row.hidden } : {}),
   };

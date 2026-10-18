@@ -650,3 +650,7 @@ dialog.gate h2 { font-size: 1.6rem; }
 .type-pick .check-row, .acct-section > .check-row { font-weight: 400; }
 /* Long links and addresses wrap instead of widening the page on phones. */
 code { overflow-wrap: anywhere; }
+.narrow { max-width: 620px; }
+.pay-price { font-size: 2.2rem; font-weight: 700; margin: 12px 0; }
+.pay-links { list-style: none; padding: 0; margin: 12px 0; display: grid; gap: 8px; }
+.pay-links li { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }

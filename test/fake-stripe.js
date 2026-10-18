@@ -29,6 +29,7 @@ export function installFakeStripe() {
     verifications: new Map(),   // Identity VerificationSessions
     detached: [],
     redacted: [],
+    accounts: new Map(),        // Connect accounts by id; tests flip charges_enabled
   };
   const json = (data, status = 200) => new Response(JSON.stringify(data), { status, headers: { "content-type": "application/json" } });
 
@@ -37,11 +38,23 @@ export function installFakeStripe() {
     if (u.hostname !== "api.stripe.com") return realFetch(input, init);
     const method = init.method || "GET";
     const body = parseForm(init.body);
-    state.requests.push({ method, path: u.pathname, body });
+    const headers = new Headers(init.headers ?? {});
+    state.requests.push({ method, path: u.pathname, body, account: headers.get("stripe-account") });
     // Dynamic payment methods: ForgeCenter never restricts payment method types.
     assert.equal(body.payment_method_types, undefined);
     let m;
     if (method === "POST" && u.pathname === "/v1/customers") return json({ id: `cus_${++counter}`, object: "customer" });
+    if (method === "POST" && u.pathname === "/v1/accounts") {
+      const acct = { id: `acct_${++counter}`, object: "account", charges_enabled: false, params: body };
+      state.accounts.set(acct.id, acct);
+      return json(acct);
+    }
+    if ((m = u.pathname.match(/^\/v1\/accounts\/([^/]+)\/login_links$/))) return json({ object: "login_link", url: `https://connect.stripe.com/express/${m[1]}` });
+    if ((m = u.pathname.match(/^\/v1\/accounts\/([^/]+)$/))) {
+      const acct = state.accounts.get(m[1]);
+      return acct ? json(acct) : json({ error: { message: "No such account" } }, 404);
+    }
+    if (method === "POST" && u.pathname === "/v1/account_links") return json({ object: "account_link", url: `https://connect.stripe.com/setup/e/${body.account}` });
     if (method === "POST" && u.pathname === "/v1/checkout/sessions") {
       const id = `cs_test_${++counter}`;
       const session = { id, object: "checkout.session", url: `https://checkout.stripe.com/c/pay/${id}`, status: "open",

@@ -1,5 +1,5 @@
 import { renderService } from "./service.js";
-import { $, api, esc, icon, registerIcons, money, cash, orbs, date, toast, getUser, onUser, adultPerks, openSignIn, signOut, pill, renderSignInOptions, refreshUser, stack, STATUS, SUB_STATUS, PRODUCT_ICON, PROVIDER_NAMES } from "./common.js";
+import { $, api, esc, icon, registerIcons, openAgeConfirm, money, cash, orbs, date, toast, getUser, onUser, adultPerks, openSignIn, signOut, pill, renderSignInOptions, refreshUser, stack, STATUS, SUB_STATUS, PRODUCT_ICON, PROVIDER_NAMES } from "./common.js";
 
 const params = new URLSearchParams(location.search);
 const focusOrder = Number(params.get("order")) || null;
@@ -395,4 +395,63 @@ async function loadCreator() {
     await refreshUser();
     toast(`Account type set to ${type}.`);
   });
+}
+
+// ---------- Get paid (Stripe Connect, src/payouts.js) ----------
+{
+  const box = $("payout-box");
+  const usd = c => `$${(c / 100).toFixed(2)}`;
+  async function loadPayouts() {
+    if (!getUser()) return;
+    const r = await api("/api/payouts/mine");
+    if (!r.ok) { box.innerHTML = `<p class="error">${esc(r.data.error)}</p>`; return; }
+    const p = r.data;
+    if (!p.canConnect) {
+      box.innerHTML = `<p class="small">Stripe needs account holders to be 18 or over. Confirm your age to get paid.</p><button class="btn" type="button" data-pay="age">Confirm my age</button>`;
+      return;
+    }
+    if (!p.ready) {
+      box.innerHTML = `<p class="small">${p.connected ? "Stripe still needs a few details before you can take payments." : `ForgeCenter keeps ${p.feePercent}% of each sale; Stripe's own card fee comes out of the rest.`}</p>
+        <button class="btn btn-buy" type="button" data-pay="connect">${p.connected ? "Finish connecting Stripe" : "Connect Stripe"}</button>`;
+      return;
+    }
+    box.innerHTML = `
+      <p class="note">Stripe is connected. ForgeCenter keeps ${p.feePercent}% of each sale.</p>
+      <ul class="pay-links">${p.links.map(l => `<li><span><strong>${esc(l.title)}</strong> ${usd(l.amount)}${l.hidden ? " (hidden by ForgeCenter)" : ""}</span>
+        <span class="ticket-actions"><button class="btn btn-small" type="button" data-copy="${l.id}">Copy link</button><button class="btn btn-small btn-danger" type="button" data-del="${l.id}">Delete</button></span></li>`).join("") || `<li class="hint">No pay links yet.</li>`}</ul>
+      <form id="paylink-form" class="form">
+        <label>What are you selling?<input name="title" maxlength="80" required placeholder="Custom Minecraft skin"></label>
+        <label>Details (optional)<input name="description" maxlength="300" placeholder="Delivered as a PNG within 3 days"></label>
+        <label>Price in US dollars<input name="amount" type="number" min="1" max="1000" step="0.01" required placeholder="5.00"></label>
+        <button class="btn btn-buy" type="submit">Make pay link</button>
+      </form>
+      <p class="small">Pay links also show on your creator page. <button class="link-btn" type="button" data-pay="dashboard">Open my Stripe dashboard</button> for payouts and refunds.</p>`;
+    $("paylink-form").addEventListener("submit", async e => {
+      e.preventDefault();
+      const f = new FormData(e.target);
+      const c = await api("/api/payouts/links", { method: "POST", body: { title: f.get("title"), description: f.get("description"), amount: Number(f.get("amount")) } });
+      if (!c.ok) return toast(c.data.error);
+      toast("Pay link made. Copy it and share it anywhere.");
+      loadPayouts();
+    });
+  }
+  box?.addEventListener("click", async e => {
+    const b = e.target.closest("button"); if (!b) return;
+    if (b.dataset.pay === "age") return openAgeConfirm("Stripe needs account holders to be 18 or over.");
+    if (b.dataset.pay === "connect" || b.dataset.pay === "dashboard") {
+      b.disabled = true;
+      const r = await api(`/api/payouts/${b.dataset.pay}`, { method: "POST" });
+      if (r.ok) location.href = r.data.url; else { b.disabled = false; toast(r.data.error); }
+    }
+    if (b.dataset.copy) {
+      const url = `${location.origin}/pay?l=${b.dataset.copy}`;
+      try { await navigator.clipboard.writeText(url); toast("Link copied."); } catch { prompt("Copy this link:", url); }
+    }
+    if (b.dataset.del && confirm("Delete this pay link? People with the link won't be able to pay it.")) {
+      const r = await api(`/api/payouts/links/${b.dataset.del}`, { method: "DELETE" });
+      if (!r.ok) return toast(r.data.error);
+      loadPayouts();
+    }
+  });
+  onUser(user => { if (user) loadPayouts(); });
 }

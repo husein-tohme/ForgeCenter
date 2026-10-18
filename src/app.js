@@ -24,6 +24,7 @@ import { gamesRouter, adminGamesRouter } from "./launchpad.js";
 import { creatorsRouter, adminCreatorsRouter } from "./creators.js";
 import { pagesRouter, notFound } from "./pages.js";
 import { donationsRouter, keepMonthlyDonors } from "./donations.js";
+import { payoutsRouter } from "./payouts.js";
 
 export function createApp() {
   const app = express();
@@ -109,6 +110,7 @@ export function createApp() {
   app.use("/api/tutor", tutorRouter);
   app.use("/api/games", gamesRouter);
   app.use("/api/donations", donationsRouter);
+  app.use("/api/payouts", payoutsRouter);
   app.use("/api/developer", developerRouter);
   app.use("/api/creators", creatorsRouter);
   app.use("/api/roblox", robloxRouter);
