@@ -193,14 +193,32 @@ meRouter.delete("/identities/:provider", requireSignedIn, (req, res) => {
   res.json({ ok: true });
 });
 
+// Download everything stored about you (GDPR access and portability). Every table
+// with a user_id column is included, so new features are covered automatically;
+// secrets (encrypted tokens, key hashes) and file contents are left out.
+const SECRET_COLUMN = /token|secret|hash|_enc$|^data$|^blob$/i;
+meRouter.get("/export", requireSignedIn, rateLimit({ windowMs: 60 * 60_000, max: 5 }), (req, res) => {
+  const out = { exportedAt: now(), account: publicUser(req.user) };
+  const tables = db.prepare("SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%'").all();
+  for (const { name } of tables) {
+    const cols = db.prepare(`PRAGMA table_info("${name}")`).all().map(c => c.name);
+    if (!cols.includes("user_id")) continue;
+    const keep = cols.filter(c => !SECRET_COLUMN.test(c));
+    const rows = db.prepare(`SELECT ${keep.map(c => `"${c}"`).join(", ")} FROM "${name}" WHERE user_id = ?`).all(req.user.id);
+    if (rows.length) out[name] = rows;
+  }
+  res.set("Content-Disposition", `attachment; filename="forgecenter-data-${req.user.id}.json"`);
+  res.json(out);
+});
+
 // Why an account can't be deleted right now, or null if it can.
 function deleteBlocker(userId) {
   const activeSubs = db.prepare(`SELECT COUNT(*) AS n FROM orders WHERE user_id = ?
     AND subscription_status IN ('active', 'past_due')`).get(userId).n;
   if (activeSubs) return "Cancel your subscriptions in Manage billing before deleting your account.";
   const balance = walletBalance(userId);
-  if (balance > 0) return `You have $${(balance / 100).toFixed(2)} in your wallet. Spend it, or open a support ticket to have it refunded, before deleting your account.`;
-  if (balance < 0) return `Your wallet is $${(-balance / 100).toFixed(2)} below zero because a top-up was refunded or disputed after it was spent. Add funds or open a support ticket before deleting your account.`;
+  if (balance > 0) return `You have ${balance.toLocaleString("en-US")} orbs. Spend them, or open a support ticket to have unused orb packs refunded, before deleting your account.`;
+  if (balance < 0) return `Your orb balance is ${(-balance).toLocaleString("en-US")} below zero because a top-up was refunded or disputed after it was spent. Buy orbs or open a support ticket before deleting your account.`;
   return null;
 }
 

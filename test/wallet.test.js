@@ -176,5 +176,5 @@ test("an account with wallet credit can't be deleted until it's spent or refunde
   give(user.id, 700);
   const r = await api("/api/me", { method: "DELETE", cookie, body: {} });
   assert.equal(r.status, 409);
-  assert.match(r.body.error, /\$7\.00 in your wallet/);
+  assert.match(r.body.error, /700 orbs/);
 });
