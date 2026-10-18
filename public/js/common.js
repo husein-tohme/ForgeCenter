@@ -557,7 +557,7 @@ document.addEventListener("click", e => {
   const params = new URLSearchParams(location.search);
   const code = params.get("ref");
   if (code !== null) {
-    if (/^[a-z0-9-]{3,24}$/i.test(code)) {
+    if (/^[a-z0-9-]{3,24}$/i.test(code) && cookieChoice() !== "reject") {
       try { localStorage.setItem(REF, JSON.stringify({ code: code.toLowerCase(), at: Date.now() })); } catch {}
     }
     params.delete("ref");
@@ -572,3 +572,27 @@ document.addEventListener("click", e => {
     if (r.ok) toast(`Welcome! You joined through a link from @${r.data.creator.handle}.`);
   });
 }
+
+// ---------- Cookie choice ----------
+// The sign-in cookie is needed for the site to work. The only optional storage is
+// remembering a creator's referral link, so Reject turns that off. Both buttons are
+// the same size and equally easy to press.
+const CONSENT = "fc-cookies";
+export function cookieChoice() { try { return localStorage.getItem("fc-cookies"); } catch { return null; } }
+function cookieBanner() {
+  if (cookieChoice()) return;
+  const bar = document.createElement("div");
+  bar.className = "cookie-bar panel";
+  bar.setAttribute("role", "region");
+  bar.setAttribute("aria-label", "Cookie choice");
+  bar.innerHTML = `<p>ForgeCenter uses one cookie to keep you signed in. With your OK it also remembers which creator's link brought you here, so they get credit. No ads or tracking. <a href="/privacy#cookies">Details</a></p>
+    <div class="cookie-actions"><button class="btn" type="button" data-c="reject">Reject optional</button><button class="btn" type="button" data-c="accept">Accept</button></div>`;
+  bar.addEventListener("click", e => {
+    const c = e.target.closest("[data-c]")?.dataset.c;
+    if (!c) return;
+    try { localStorage.setItem(CONSENT, c); if (c === "reject") localStorage.removeItem("fc-ref"); } catch {}
+    bar.remove();
+  });
+  document.body.append(bar);
+}
+cookieBanner();
