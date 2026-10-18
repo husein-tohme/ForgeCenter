@@ -618,3 +618,28 @@ cookieNotice();
     slot.before(btn);
   }
 }
+
+// ---------- Tools menu in the header: every tool one click away ----------
+{
+  const link = document.querySelector('.top nav a[href$="#tools"]');
+  if (link) {
+    const TOOLS = [
+      ["⛏", "Mod Forge", "Start a Fabric mod", "/#forge"],
+      ["🎨", "Texture Forge", "Draw or import textures", "/textures"],
+      ["📦", "Modpack Forge", "Fabric, NeoForge, Forge, Quilt", "/modpacks"],
+      ["🔌", "Plugin Forge", "Paper server plugins", "/plugins"],
+      ["🎮", "Roblox Forge", "Scripts for Roblox Studio", "/roblox"],
+      ["🤖", "AI Maker", "Your own AI helper", "/ai-maker"],
+      ["🌐", "Site Maker", "One-page websites", "/site-maker"],
+    ];
+    const menu = document.createElement("details");
+    menu.className = "nav-tools";
+    menu.innerHTML = `<summary>Free tools</summary><div class="nav-menu">${TOOLS.map(([i, n, d, h]) =>
+      `<a href="${h}"><span class="ni" aria-hidden="true">${i}</span><b>${n}</b><small>${d}</small></a>`).join("")}</div>`;
+    link.replaceWith(menu);
+    document.addEventListener("click", e => { if (!menu.contains(e.target)) menu.open = false; });
+    document.addEventListener("keydown", e => { if (e.key === "Escape") menu.open = false; });
+  }
+  // Mark the current page in the menu.
+  document.querySelectorAll(".top nav a").forEach(a => { if (a.pathname === location.pathname && a.pathname !== "/") a.setAttribute("aria-current", "page"); });
+}

@@ -54,4 +54,4 @@ A Minecraft-themed storefront: Minecraft server hosting, Discord bots, websites,
 
 ## Style
 
-Match the surrounding code: small modules, short comments that explain why, plain-language UI copy in sentence case, errors that say what to do next. The look is Minecraft inventory panels (bevelled grey), Pixelify Sans headings, Atkinson Hyperlegible body text; reuse the classes in `public/styles.css`.
+Match the surrounding code: small modules, short comments that explain why, plain-language UI copy in sentence case, errors that say what to do next. The look is clean and modern (like Modrinth): dark slate or light, one green accent, rounded cards, Inter text, the Jersey 10 pixel font only for the logo. Colours come from tokens in `public/css/theme.css` (light mode swaps the tokens); reuse the classes in `public/styles.css`.
