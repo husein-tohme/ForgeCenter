@@ -54,7 +54,7 @@ test("Forge Support answers from the help notes and only this customer's orders"
   assert.deepEqual(req.betas, ["server-side-fallback-2026-07-01"]);
   assert.equal(req.tools[0].name, "hand_to_person");
   assert.deepEqual(req.system[0].cache_control, { type: "ephemeral" });
-  assert.match(req.system[0].text, /Minecraft server hosting: \$100 a month/);
+  assert.match(req.system[0].text, /Minecraft server hosting: \$8 a month/);
   assert.match(req.system[0].text, /How to buy and spend orbs: \/support#wallet/);
   const context = req.system[1].text;
   assert.match(context, new RegExp(`Order ${mine}: Discord bot.*bot crashed.*exit code 1`));

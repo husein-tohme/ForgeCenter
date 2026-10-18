@@ -6,7 +6,7 @@
 <title>ForgeCenter</title>
 <meta name="description" content="Minecraft mods, websites, Discord bots, games and server hosting, built for you and published in your name.">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
-<meta name="theme-color" content="#2a2d33">
+<meta name="theme-color" content="#100e0c">
 <link rel="canonical" href="%PAGE_URL%">
 <meta property="og:site_name" content="ForgeCenter">
 <meta property="og:title" content="ForgeCenter">
@@ -19,8 +19,10 @@
 <meta name="twitter:card" content="summary_large_image">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=Pixelify+Sans:wght@500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Mono:wght@400;700&amp;family=Atkinson+Hyperlegible+Next:ital,wght@0,400;0,700;1,400&amp;family=Jersey+10&amp;display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/styles.css">
+<link rel="stylesheet" href="/css/theme.css">
+<link rel="stylesheet" href="/css/home.css">
 </head>
 <body>
 
@@ -43,40 +45,21 @@
 
 <main id="main">
 
-<section class="hero">
-  <div class="wrap hero-grid">
-    <div class="hero-copy">
-      <h1>Craft your mod, website, bot or server</h1>
-      <p class="lede">Pick what you want to make. ForgeCenter builds it, publishes it in your name and teaches you how it works.</p>
-      <div class="hero-actions">
-        <a class="btn btn-buy" href="#shop">See prices</a>
-        <a class="btn" href="#tools">Free creator tools</a>
+<section class="v2 opening">
+  <div class="wrap opening-grid">
+    <div class="op-text">
+      <h1>Make Minecraft stuff. Get it built. Get paid for yours.</h1>
+      <p class="lede">Free tools for mods, texture packs, modpacks and plugins. Servers from $8 a month. Bots, sites and games built for you at real prices. Sell what you make with your own pay links.</p>
+      <div class="b-row">
+        <a class="btn btn-buy" href="#tools">Open the free tools</a>
+        <a class="btn" href="#shop">See prices</a>
       </div>
     </div>
-
-    <div class="panel crafting" aria-labelledby="craft-title">
-      <h2 id="craft-title" class="panel-title">Crafting</h2>
-      <div class="craft-row">
-        <div class="grid3" id="grid" aria-hidden="true"></div>
-        <span class="craft-arrow" aria-hidden="true"></span>
-        <div class="slot slot-out" id="out" aria-hidden="true"></div>
-      </div>
-      <div class="hotbar" role="group" aria-label="Choose what to craft" id="hotbar"></div>
-      <div class="craft-result" id="result" aria-live="polite">
-        <p class="hint">Pick an item above to see what it crafts.</p>
-      </div>
-    </div>
-  </div>
-</section>
-
-<section class="band" id="how">
-  <div class="wrap">
-    <h2>How it works</h2>
-    <ol class="steps">
-      <li><strong>Tell us what you want.</strong> Pick a service and describe it, or use the Mod Forge yourself.</li>
-      <li><strong>We build it.</strong> You see progress and approve before anything goes public.</li>
-      <li><strong>It launches in your name.</strong> Your Modrinth account, your Stripe, your domain. You own it.</li>
-    </ol>
+    <section class="op-list" aria-labelledby="live-h">
+      <div class="list-head"><h2 id="live-h">Live now</h2><p class="meta" id="live-count">Games from ForgeCenter creators</p></div>
+      <div class="list" id="live-games"><p class="hint" style="padding:16px">Loading games…</p></div>
+      <div class="list-actions"><a class="btn" href="/games">Browse all games</a><a class="btn btn-buy" href="/my-games">Launch your game</a></div>
+    </section>
   </div>
 </section>
 
@@ -88,19 +71,120 @@
   </div>
 </section>
 
-<section class="band" id="tools">
+<section class="v2 ground" id="tools" aria-labelledby="tools-h">
   <div class="wrap">
-    <h2>Free creator tools</h2>
-    <p class="section-lede">Make Minecraft content yourself, free. Sign in to keep a list of everything you've made.</p>
-    <div class="tool-links">
-      <a class="panel tool-link" href="#forge"><span class="slot"><span class="tool-icon" data-icon="pickaxe"></span></span><span><strong>Mod Forge</strong><span class="small">Start a Fabric mod with your own items.</span></span></a>
-      <a class="panel tool-link" href="/textures"><span class="slot"><span class="tool-icon" data-icon="painting"></span></span><span><strong>Texture Forge</strong><span class="small">Draw textures and download a resource pack.</span></span></a>
-      <a class="panel tool-link" href="/modpacks"><span class="slot"><span class="tool-icon" data-icon="chest"></span></span><span><strong>Modpack Forge</strong><span class="small">Pick mods from Modrinth, get a .mrpack.</span></span></a>
-      <a class="panel tool-link" href="/plugins"><span class="slot"><span class="tool-icon" data-icon="anvil"></span></span><span><strong>Plugin Forge</strong><span class="small">Make a server plugin with your own commands.</span></span></a>
-      <a class="panel tool-link" href="/roblox"><span class="slot"><span class="tool-icon" data-icon="gamepad"></span></span><span><strong>Roblox Forge</strong><span class="small">Start a Roblox game you can open in Studio.</span></span></a>
-      <a class="panel tool-link" href="/ai-maker"><span class="slot"><span class="tool-icon" data-icon="bot"></span></span><span><strong>AI Maker</strong><span class="small">Build your own AI helper and share it.</span></span></a>
-      <a class="panel tool-link" href="/site-maker"><span class="slot"><span class="tool-icon" data-icon="monitor"></span></span><span><strong>Site Maker</strong><span class="small">Describe a page and get a website for it.</span></span></a>
-      <a class="panel tool-link" href="/my-games"><span class="slot"><span class="tool-icon" data-icon="rocket"></span></span><span><strong>Launch a game</strong><span class="small">Put your game on the games page for $1 a month.</span></span></a>
+    <div class="head-row">
+      <h2 id="tools-h">Free tools</h2>
+      <p>Make the thing yourself. No account needed; sign in to keep what you make.</p>
+    </div>
+    <div class="bench">
+
+      <article class="tool t-mod">
+        <div class="tool-text">
+          <p class="tool-tag">Fabric · Minecraft 1.21.1</p>
+          <h3><a href="#forge">Mod Forge</a></h3>
+          <p>Name your mod, list the items it adds, and get a project that builds. Send it to Modrinth as a draft when it's ready.</p>
+          <p class="gets"><b>You get</b> a .zip you can open in IntelliJ</p>
+        </div>
+        <pre class="code" aria-label="Example output: fabric.mod.json"><span class="c">// fabric.mod.json</span>
+{
+  <span class="k">"id"</span>: <span class="s">"rubytools"</span>,
+  <span class="k">"name"</span>: <span class="s">"Ruby Tools"</span>,
+  <span class="k">"authors"</span>: [<span class="s">"juniper"</span>],
+  <span class="k">"depends"</span>: {
+    <span class="k">"minecraft"</span>: <span class="s">"~1.21.1"</span>
+  }
+}</pre>
+      </article>
+
+      <article class="tool t-tex">
+        <div class="easel">
+          <div class="canvas" role="img" aria-label="A ruby pickaxe texture being painted, 16 by 16 pixels"><svg class="px" viewBox="0 0 16 16"  shape-rendering="crispEdges" aria-hidden="true" focusable="false"><path fill="#2a0e14" d="M4 1h6v1h-6zM3 2h1v1h-1zM10 2h2v1h-2zM2 3h1v2h-1zM12 3h1v2h-1zM4 4h6v1h-6zM3 5h2v1h-2zM13 5h1v1h-1zM9 5h1v2h-1zM12 6h2v1h-2zM8 7h1v1h-1zM11 7h1v1h-1zM13 7h1v1h-1zM7 8h1v1h-1zM10 8h1v1h-1zM6 9h1v1h-1zM9 9h1v1h-1zM5 10h1v1h-1zM8 10h1v1h-1zM4 11h1v1h-1zM3 12h1v1h-1z"/><path fill="#ff5a6e" d="M4 2h6v1h-6zM10 3h2v1h-2zM3 3h1v2h-1zM11 4h1v1h-1zM12 5h1v1h-1z"/><path fill="#c8203a" d="M4 3h6v1h-6zM10 4h1v1h-1zM11 5h1v1h-1z"/><path fill="#8a5a32" d="M10 5h1v1h-1zM10 6h2v1h-2zM9 7h2v1h-2zM8 8h2v1h-2zM7 9h2v1h-2zM6 10h2v1h-2z"/></svg></div>
+          <div class="swatches" aria-hidden="true"><i style="background:#2a0e14"></i><i style="background:#c8203a" class="on"></i><i style="background:#ff5a6e"></i><i style="background:#8a5a32"></i><i style="background:#5e3a1e"></i><i style="background:#f2ead6"></i><i style="background:#6fb24a"></i><i style="background:#3b6fd6"></i></div>
+        </div>
+        <div class="tool-text">
+          <p class="tool-tag">Resource pack</p>
+          <h3><a href="/textures">Texture Forge</a></h3>
+          <p>Paint 16×16 textures pixel by pixel and download a pack that drops straight into your game.</p>
+        </div>
+      </article>
+
+      <article class="tool t-plugin">
+        <div class="tool-text">
+          <p class="tool-tag">Paper server plugin</p>
+          <h3><a href="/plugins">Plugin Forge</a></h3>
+          <p>Pick the commands your server needs. We write the plugin; you drop the .jar in.</p>
+        </div>
+        <div class="console" aria-label="Example: commands from a plugin made with Plugin Forge">
+          <p><span class="cmd">&gt; /home set base</span></p>
+          <p class="ok">Home "base" saved. You have 2 of 3 homes.</p>
+          <p><span class="cmd">&gt; /warp shop</span></p>
+          <p class="ok">Off you go to shop.</p>
+          <p class="sys">[Server] ShopWarps 1.0 enabled</p>
+        </div>
+      </article>
+
+      <article class="tool t-pack">
+        <div class="tool-text">
+          <p class="tool-tag">From Modrinth</p>
+          <h3><a href="/modpacks">Modpack Forge</a></h3>
+          <p>Search mods, pick Fabric, NeoForge, Forge or Quilt, and export one file your friends can install.</p>
+        </div>
+        <div class="packlist" aria-label="Example modpack">
+          <p class="pack-name">Cozy Pack <span class="meta">Fabric 1.21.1 · 14 mods</span></p>
+          <ul>
+            <li><span>Sodium</span><span class="meta">faster frames</span></li>
+            <li><span>Lithium</span><span class="meta">server speed</span></li>
+            <li><span>Xaero's Minimap</span><span class="meta">map</span></li>
+            <li><span>AppleSkin</span><span class="meta">food info</span></li>
+          </ul>
+        </div>
+      </article>
+
+      <article class="tool t-ai">
+        <div class="tool-text">
+          <p class="tool-tag">Your own assistant</p>
+          <h3><a href="/ai-maker">AI Maker</a></h3>
+          <p>Give an AI helper a name, a face and a job, then share a link with your server.</p>
+        </div>
+        <div class="bubbles" aria-label="Example chat with an assistant called Rae">
+          <p class="bubble me">how do i make a piston door</p>
+          <div class="bot-line"><span class="head-sm"><svg class="px" viewBox="0 0 8 8"  shape-rendering="crispEdges" aria-hidden="true" focusable="false"><path fill="#c9562a" d="M0 0h8v2h-8z"/><path fill="#8d3c1d" d="M0 2h5v1h-5z"/><path fill="#d47855" d="M5 2h3v1h-3z"/><path fill="#b97a53" d="M0 3h8v1h-8zM0 4h1v1h-1zM3 4h2v1h-2zM7 4h1v1h-1zM4 5h4v1h-4zM0 5h3v2h-3zM5 6h3v1h-3zM0 7h8v1h-8z"/><path fill="#ffffff" d="M1 4h1v1h-1zM6 4h1v1h-1z"/><path fill="#2a1a10" d="M2 4h1v1h-1zM5 4h1v1h-1z"/><path fill="#986444" d="M3 5h1v1h-1zM3 6h2v1h-2z"/></svg></span><p class="bubble">A 2×2 door needs 4 sticky pistons. Want the wiring one step at a time?</p></div>
+          <p class="bot-name">Rae · redstone helper for Birchwood SMP</p>
+        </div>
+      </article>
+
+      <article class="tool t-roblox">
+        <div class="tool-text">
+          <p class="tool-tag">Roblox Studio</p>
+          <h3><a href="/roblox">Roblox Forge</a></h3>
+          <p>Coins, shops, VIP passes and a leaderboard, ready to paste into Studio.</p>
+        </div>
+        <pre class="code code-sm" aria-label="Example output: a Lua script"><span class="c">-- Coins.lua</span>
+<span class="k">local</span> Players = game:GetService(<span class="s">"Players"</span>)
+Players.PlayerAdded:Connect(<span class="k">function</span>(p)
+  <span class="k">local</span> stats = Instance.new(<span class="s">"Folder"</span>)
+  stats.Name = <span class="s">"leaderstats"</span>
+  stats.Parent = p
+<span class="k">end</span>)</pre>
+      </article>
+
+      <article class="tool t-site">
+        <div class="browser" aria-label="Example: a one-page site made with Site Maker">
+          <div class="browser-bar" aria-hidden="true"><i></i><i></i><i></i><span>birchwood-smp.site</span></div>
+          <div class="sitemock" aria-hidden="true">
+            <div class="sm-hero"><b>Birchwood SMP</b><span>A friendly survival server for 10 friends</span><em>play.birchwood.gg</em></div>
+            <div class="sm-row"><i></i><i></i><i></i></div>
+          </div>
+        </div>
+        <div class="tool-text">
+          <p class="tool-tag">One-page site</p>
+          <h3><a href="/site-maker">Site Maker</a></h3>
+          <p>Describe your server or project in a few lines. An AI builds a page you can preview, change and download.</p>
+          <p class="gets"><b>Want payments and your own domain?</b> <a href="#shop">Hire us for a website.</a></p>
+        </div>
+      </article>
+
     </div>
   </div>
 </section>
@@ -177,10 +261,10 @@
     <h2>Questions</h2>
     <details><summary>Who owns what ForgeCenter makes?</summary><p>You do. Mods are published from your Modrinth account, payments go to your Stripe account, and websites use your domain. We never publish anything without your approval.</p></details>
     <details><summary>Do I need my own Stripe account?</summary><p>Only if your project takes payments. You connect it once and money from your customers goes straight to you.</p></details>
-    <details><summary>Why does a game cost $10,000 to $20,000?</summary><p>A finished game with art, sound, testing and a Steam launch is months of work. The $10,000 deposit starts the project, and the final price depends on its size.</p></details>
-    <details><summary>What do I get with Minecraft hosting?</summary><p>A server for 10 players with 2 GB of RAM, 100 GB of storage, a dedicated CPU and DDoS protection, billed monthly. Cancel any time.</p></details>
+    <details><summary>How much does a custom game cost?</summary><p>$499 to $2,000 depending on size. The $499 deposit starts the project, and the final price is agreed in writing before work goes past it.</p></details>
+    <details><summary>What do I get with Minecraft hosting?</summary><p>For $8 a month, a server for 10 players with 2 GB of RAM, 100 GB of storage, a dedicated CPU and DDoS protection, billed monthly. Cancel any time.</p></details>
     <details><summary>How do I sign in?</summary><p>With an account you already have: Google (including Gmail), Microsoft (Outlook, Hotmail or Xbox), GitHub, Discord, or your phone number through WhatsApp. That way every account belongs to a real person. ForgeCenter never sees your password, and you can connect more than one so you never get locked out.</p></details>
-    <details><summary>What is the wallet?</summary><p>Store credit you can add by card and spend on anything with a one-time price, like a Discord bot or a showcase slot, in one step. It holds up to $2,000, doesn't expire, and can't be withdrawn or sent to someone else. Find it on your account page.</p></details>
+    <details><summary>What are orbs?</summary><p>ForgeCenter's currency: 1 orb is 1 cent. Buy orbs by card and spend on anything with a one-time price, like a Discord bot or a showcase slot, in one step. It holds up to 200,000 orbs ($2,000), doesn't expire, and can't be withdrawn or sent to someone else. Find it on your account page.</p></details>
     <details><summary>Why is my account in the teen group?</summary><p>Like on Discord, every account starts in the teen group. Adults confirm their age once, with a credit card check or an ID scan and selfie through Stripe, to unlock adult-only purchases (marked in the prices) and 18+ showcase listings. ForgeCenter keeps only the result. Accounts are for people 13 and older.</p></details>
     <details><summary>How do I get help?</summary><p>Open a ticket on the <a href="/support">help page</a>. Forge Support, an AI assistant, answers straight away and passes anything it can't solve, such as refunds, to a person.</p></details>
     <details><summary>Is the AI assistant really mine?</summary><p>It's branded and set up for you, with its own instructions and higher limits. It runs on a leading AI model behind the scenes, so it stays fast and up to date.</p></details>

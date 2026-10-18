@@ -66,7 +66,7 @@ Orders and payments
 
 Websites, games and AI assistants
 - After paying, the customer writes a project brief on the order and can message the team in the order's messages. When the project is ready, an "Open your project" link appears on the order.
-- Websites come with a domain that costs $2 a month. Games cost $10,000 to $20,000 depending on scope and launch on Steam; the $10,000 deposit starts the project. The Dedicated AI assistant also raises the Forge mentor limit to 300 messages a day.
+- Websites come with a domain that costs $2 a month. Games cost $499 to $2,000 depending on scope and launch on Steam; the $499 deposit starts the project. The Dedicated AI assistant also raises the Forge mentor limit to 300 messages a day.
 
 Minecraft server hosting
 - 10 players, 2 GB RAM, 100 GB storage, a dedicated CPU and DDoS protection, billed monthly. The server is set up automatically after payment, usually within a few minutes, and the customer gets an email when it's ready.

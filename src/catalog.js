@@ -3,36 +3,36 @@
 // line item in Stripe so receipts show clear names.
 export const catalog = {
   website: {
-    name: "Fully furnished website", price: 100000,
+    name: "Fully furnished website", price: 14900,
     monthly: 200, monthlyName: "Website domain",
     desc: "Complete site with payments, billing, a built-in AI assistant and your own domain. The domain is $2 a month.",
   },
   game: {
-    name: "Fully furnished game (deposit)", price: 1000000,
-    desc: "Custom game, $10,000 to $20,000 depending on scope, launched on Steam with payments set up. This deposit starts the project.",
+    name: "Fully furnished game (deposit)", price: 49900,
+    desc: "Custom game, $499 to $2,000 depending on scope, launched on Steam with payments set up. This deposit starts the project.",
   },
   discord: {
-    name: "Discord bot", price: 10000,
+    name: "Discord bot", price: 2500,
     desc: "Hosted 24/7 with tickets, memes, reaction roles, moderation and mini-games.",
   },
   mcserver: {
-    name: "Minecraft server hosting", monthly: 10000, monthlyName: "Minecraft server hosting",
+    name: "Minecraft server hosting", monthly: 800, monthlyName: "Minecraft server hosting",
     desc: "10 players, 2 GB RAM, 100 GB storage, a dedicated CPU and DDoS protection. Billed monthly.",
   },
   roblox: {
-    name: "Custom Roblox game (deposit)", price: 200000,
-    desc: "A Roblox game built for you, $2,000 to $8,000 depending on scope, published to your Roblox group with game passes set up. This deposit starts the project.",
+    name: "Custom Roblox game (deposit)", price: 24900,
+    desc: "A Roblox game built for you, $249 to $1,000 depending on scope, published to your Roblox group with game passes set up. This deposit starts the project.",
   },
   launcher: {
-    name: "Custom Minecraft launcher", price: 50000,
+    name: "Custom Minecraft launcher", price: 7900,
     desc: "Your own branded launcher for your server or modpack: your logo and news, one-click install and updates, for Windows, macOS and Linux.",
   },
   ai: {
-    name: "Dedicated AI assistant", price: 10000,
+    name: "Dedicated AI assistant", price: 1900,
     desc: "Your own branded AI assistant, plus 10 times the daily Forge mentor limit.",
   },
   showcase: {
-    name: "Showcase slot", price: 1000,
+    name: "Showcase slot", price: 300,
     desc: "List one website or server in the ForgeCenter showcase.",
   },
   // Bought per game from My games (src/launchpad.js), not from the shop.

@@ -70,22 +70,22 @@ test("wallet errors and emails talk in orbs", async () => {
   assert.equal(full.body.error, "An account can hold up to 200,000 orbs, and yours has no room for another pack right now. Spend some orbs first.");
   db.prepare("DELETE FROM wallet_entries WHERE user_id = ?").run(user.id);
 
-  give(user.id, 7500);
+  give(user.id, 1000);
   const short = await api("/api/wallet/pay", { method: "POST", cookie, body: { product: "discord" } });
   assert.equal(short.status, 402);
-  assert.equal(short.body.error, "You need 2,500 more orbs. Buy orbs at /orbs, or pay by card.");
+  assert.equal(short.body.error, "You need 1,500 more orbs. Buy orbs at /orbs, or pay by card.");
   const monthly = await api("/api/wallet/pay", { method: "POST", cookie, body: { product: "mcserver" } });
   assert.match(monthly.body.error, /can't be paid with orbs/);
 
-  give(user.id, 2500);
+  give(user.id, 1500);
   emails.length = 0;
   const paid = await api("/api/wallet/pay", { method: "POST", cookie, body: { product: "discord" } });
   assert.equal(paid.status, 200);
   assert.equal(paid.body.balance, 0);
   await settle();
   const thanks = emails.find(m => m.to.includes("orb-words@example.com") && /Thanks for your order/.test(m.subject));
-  assert.match(thanks.text, /You paid for Discord bot with 10,000 orbs\./);
-  assert.ok(emails.some(m => m.to.includes("owner@example.com") && /paid for Discord bot with 10,000 orbs/.test(m.text)));
+  assert.match(thanks.text, /You paid for Discord bot with 2,500 orbs\./);
+  assert.ok(emails.some(m => m.to.includes("owner@example.com") && /paid for Discord bot with 2,500 orbs/.test(m.text)));
 
   // The owner gives orbs and refunds as orbs; the customer's email says how many.
   const owner = signIn("owner@example.com");
@@ -95,7 +95,7 @@ test("wallet errors and emails talk in orbs", async () => {
   const gift = await api(`/api/admin/users/${user.id}/wallet-credit`, { method: "POST", cookie: owner.cookie, body: { amount: 550, note: "Sorry for the downtime" } });
   assert.equal(gift.status, 200);
   const refund = await api(`/api/admin/orders/${paid.body.orderId}/wallet-refund`, { method: "POST", cookie: owner.cookie, body: { amount: 20000 } });
-  assert.match(refund.body.error, /At most 10,000 orbs \(\$100\) of this order/);
+  assert.match(refund.body.error, /At most 2,500 orbs \(\$25\) of this order/);
   await settle();
   const credited = emails.find(m => m.to.includes("orb-words@example.com"));
   assert.equal(credited.subject, "550 orbs added to your ForgeCenter account");
@@ -110,7 +110,7 @@ test("the catalog marks what orbs can pay for, and the public orb facts need no 
   assert.equal(catalog.showcase.orbPayable, true);
   assert.equal(catalog.mcserver.orbPayable, false); // monthly: by card so it can renew
   assert.equal(catalog.website.orbPayable, false);
-  assert.equal(catalog.game.orbPayable, false); // more than an account can hold
+  assert.equal(catalog.game.orbPayable, true); // a $499 deposit fits in an account
   assert.equal(catalog.game.walletPayable, true);
 
   const info = (await api("/api/wallet/info")).body;
@@ -127,8 +127,8 @@ test("Forge Support's help notes describe orbs", async () => {
   give(user.id, 1234);
   const r = await api("/api/support", { method: "POST", cookie, body: { subject: "Orbs", category: "wallet", body: "How do orbs work?" } });
   assert.equal(r.status, 201);
-  assert.match(system, /- Discord bot: \$100 \(or 10,000 orbs\)\./);
-  assert.match(system, /- Fully furnished game \(deposit\): \$10,000\. /);
+  assert.match(system, /- Discord bot: \$25 \(or 2,500 orbs\)\./);
+  assert.match(system, /- Fully furnished game \(deposit\): \$499 \(or 49,900 orbs\)\. /);
   assert.match(system, /each extra message costs 5 orbs/);
   assert.match(system, /How to buy and spend orbs: \/support#wallet/);
   assert.match(system, /Orb balance: 1,234 orbs/);
