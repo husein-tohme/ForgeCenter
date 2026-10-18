@@ -1,5 +1,5 @@
-// Modpack Forge: search Modrinth and build a .mrpack modpack (Fabric) with its
-// required dependencies. Follows the .mrpack format: https://support.modrinth.com/en/articles/8802351
+// Modpack Forge: search Modrinth and build a .mrpack modpack (Fabric, Quilt, Forge or
+// NeoForge) with its required dependencies. Follows the .mrpack format: https://support.modrinth.com/en/articles/8802351
 const API = "https://api.modrinth.com/v2";
 const USER_AGENT = "ForgeCenter/0.2 (github.com/husein-tohme/ForgeCenter)";
 const ALLOWED_DOWNLOAD_HOSTS = new Set(["cdn.modrinth.com", "github.com", "raw.githubusercontent.com", "gitlab.com"]);
@@ -30,10 +30,20 @@ export async function gameVersions() {
 // Server plugins are the projects published for these loaders.
 const PLUGIN_LOADERS = ["paper", "purpur", "spigot", "bukkit"];
 
-export async function searchMods({ query, gameVersion, kind = "mod" }) {
+// Mod loaders a modpack can use. Quilt also runs most Fabric mods.
+export const LOADERS = {
+  fabric: { name: "Fabric", accepts: ["fabric"], dependency: "fabric-loader" },
+  quilt: { name: "Quilt", accepts: ["quilt", "fabric"], dependency: "quilt-loader" },
+  forge: { name: "Forge", accepts: ["forge"], dependency: "forge" },
+  neoforge: { name: "NeoForge", accepts: ["neoforge"], dependency: "neoforge" },
+};
+export const isLoader = l => Object.hasOwn(LOADERS, l);
+
+export async function searchMods({ query, gameVersion, kind = "mod", loader = "fabric" }) {
+  const accepts = LOADERS[isLoader(loader) ? loader : "fabric"].accepts;
   const facets = kind === "plugin"
     ? [PLUGIN_LOADERS.map(l => `categories:${l}`), [`versions:${gameVersion}`]]
-    : [["project_type:mod"], ["categories:fabric"], [`versions:${gameVersion}`]];
+    : [["project_type:mod"], accepts.map(l => `categories:${l}`), [`versions:${gameVersion}`]];
   const data = await getJson(`${API}/search?query=${encodeURIComponent(query)}&limit=20&index=relevance&facets=${q(facets)}`);
   return data.hits.map(h => ({
     id: h.project_id, slug: h.slug, title: h.title, description: h.description,
@@ -48,9 +58,31 @@ const allowedDownload = url => {
 };
 const safeFilename = name => String(name).split(/[\\/]/).pop().replace(/[^\w.+\-]/g, "_");
 
-// Resolves each picked mod to its newest Fabric file for the game version, plus
+// The newest stable loader build for a Minecraft version, from each loader's own site.
+async function loaderVersionFor(loader, gameVersion) {
+  if (loader === "fabric") {
+    const list = await getJson("https://meta.fabricmc.net/v2/versions/loader", 6 * 60 * 60_000);
+    return (list.find(l => l.stable) ?? list[0])?.version;
+  }
+  if (loader === "quilt") {
+    const list = await getJson("https://meta.quiltmc.org/v3/versions/loader", 6 * 60 * 60_000);
+    return (list.find(l => !/beta|pre|rc/i.test(l.version)) ?? list[0])?.version;
+  }
+  if (loader === "forge") {
+    const { promos } = await getJson("https://files.minecraftforge.net/net/minecraftforge/forge/promotions_slim.json", 6 * 60 * 60_000);
+    return promos?.[`${gameVersion}-recommended`] ?? promos?.[`${gameVersion}-latest`];
+  }
+  // NeoForge numbers its builds after the game: 1.21.1 -> 21.1.x, 1.21 -> 21.0.x.
+  const [, minor, patch = "0"] = gameVersion.split(".");
+  const { versions = [] } = await getJson("https://maven.neoforged.net/api/maven/versions/releases/net/neoforged/neoforge", 6 * 60 * 60_000);
+  const matching = versions.filter(v => v.startsWith(`${minor}.${patch}.`));
+  return matching.filter(v => !/beta|alpha/i.test(v)).pop() ?? matching.pop();
+}
+
+// Resolves each picked mod to its newest file for the loader and game version, plus
 // any required dependencies (like Fabric API).
-export async function planModpack({ gameVersion, projectIds }) {
+export async function planModpack({ gameVersion, projectIds, loader = "fabric" }) {
+  if (!isLoader(loader)) loader = "fabric";
   const picked = new Set(projectIds);
   const queue = [...picked];
   const seen = new Set();
@@ -61,7 +93,7 @@ export async function planModpack({ gameVersion, projectIds }) {
     const id = queue.shift();
     if (seen.has(id)) continue;
     seen.add(id);
-    const versions = await getJson(`${API}/project/${encodeURIComponent(id)}/version?loaders=${q(["fabric"])}&game_versions=${q([gameVersion])}`);
+    const versions = await getJson(`${API}/project/${encodeURIComponent(id)}/version?loaders=${q(LOADERS[loader].accepts)}&game_versions=${q([gameVersion])}`);
     const version = versions.find(v => v.version_type === "release") ?? versions[0];
     const file = version && (version.files.find(f => f.primary) ?? version.files[0]);
     if (!file || !allowedDownload(file.url)) { skipped.push(id); continue; }
@@ -85,24 +117,24 @@ export async function planModpack({ gameVersion, projectIds }) {
     f.env = { client: ENV(p?.client_side), server: ENV(p?.server_side) };
   }
 
-  const loaders = await getJson("https://meta.fabricmc.net/v2/versions/loader", 6 * 60 * 60_000);
-  const loaderVersion = (loaders.find(l => l.stable) ?? loaders[0])?.version;
-  if (!loaderVersion) throw new Error("Couldn't find a Fabric loader version.");
+  const loaderVersion = await loaderVersionFor(loader, gameVersion);
+  if (!loaderVersion) throw new Error(`None of ${LOADERS[loader].name}'s builds support Minecraft ${gameVersion} yet. Pick another version or loader.`);
 
   return {
-    gameVersion, loaderVersion, files,
+    gameVersion, loader, loaderName: LOADERS[loader].name, loaderVersion, files,
     skipped: skipped.map(id => ({ id, title: byId[id]?.title ?? id })),
   };
 }
 
 export function mrpackFiles(plan, { name, summary }) {
-  if (!plan.files.length) throw new Error("None of the picked mods have a Fabric version for this Minecraft version.");
+  const loader = LOADERS[plan.loader ?? "fabric"];
+  if (!plan.files.length) throw new Error(`None of the picked mods have a ${loader.name} version for this Minecraft version.`);
   const title = String(name || "My Modpack").slice(0, 60);
   const index = {
     formatVersion: 1, game: "minecraft", versionId: "1.0.0", name: title,
     ...(summary ? { summary: String(summary).slice(0, 200) } : {}),
     files: plan.files.map(f => ({ path: f.path, hashes: f.hashes, env: f.env, downloads: f.downloads, fileSize: f.fileSize })),
-    dependencies: { minecraft: plan.gameVersion, "fabric-loader": plan.loaderVersion },
+    dependencies: { minecraft: plan.gameVersion, [loader.dependency]: plan.loaderVersion },
   };
   return { "modrinth.index.json": JSON.stringify(index, null, 2) };
 }

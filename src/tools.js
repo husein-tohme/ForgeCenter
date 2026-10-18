@@ -7,7 +7,7 @@ import { rateLimit } from "./limit.js";
 import { modFiles, streamZip, createModrinthProject } from "./modgen.js";
 import { texturePackFiles, TEXTURE_TARGETS, PACK_FORMATS } from "./texturepack.js";
 import { pluginFiles, pluginPreview, PAPER_VERSIONS } from "./plugingen.js";
-import { gameVersions, searchMods, planModpack, mrpackFiles, isGameVersion } from "./modrinth.js";
+import { gameVersions, searchMods, planModpack, mrpackFiles, isGameVersion, isLoader } from "./modrinth.js";
 
 export const toolsRouter = express.Router();
 
@@ -76,7 +76,8 @@ toolsRouter.get("/modrinth/search", rateLimit({ windowMs: 60_000, max: 60 }), as
   const gameVersion = String(req.query.version ?? "");
   if (!isGameVersion(gameVersion)) return res.status(400).json({ error: "Pick a Minecraft version." });
   const kind = req.query.kind === "plugin" ? "plugin" : "mod";
-  try { res.json({ results: await searchMods({ query, gameVersion, kind }) }); }
+  const loader = isLoader(req.query.loader) ? req.query.loader : "fabric";
+  try { res.json({ results: await searchMods({ query, gameVersion, kind, loader }) }); }
   catch (e) { console.error("Modrinth search failed", e.message); res.status(502).json({ error: "Modrinth didn't answer. Try again in a moment." }); }
 });
 
@@ -86,7 +87,7 @@ function modpackInput(body) {
   if (!isGameVersion(gameVersion)) throw new Error("Pick a Minecraft version.");
   if (!ids.length) throw new Error("Add at least one mod.");
   if (ids.length > 50) throw new Error("A modpack can start with up to 50 mods.");
-  return { gameVersion, projectIds: ids };
+  return { gameVersion, projectIds: ids, loader: isLoader(body.loader) ? body.loader : "fabric" };
 }
 
 toolsRouter.post("/modpack/plan", rateLimit({ windowMs: 60_000, max: 10 }), async (req, res) => {
@@ -95,7 +96,10 @@ toolsRouter.post("/modpack/plan", rateLimit({ windowMs: 60_000, max: 10 }), asyn
   try {
     const plan = await planModpack(input);
     res.json({ plan: { ...plan, files: plan.files.map(({ projectId, title, required, versionNumber, path }) => ({ projectId, title, required, versionNumber, path })) } });
-  } catch (e) { console.error("Modpack plan failed", e.message); res.status(502).json({ error: "Modrinth didn't answer. Try again in a moment." }); }
+  } catch (e) {
+    if (e.message.startsWith("None of")) return res.status(400).json({ error: e.message });
+    console.error("Modpack plan failed", e.message); res.status(502).json({ error: "Modrinth didn't answer. Try again in a moment." });
+  }
 });
 
 toolsRouter.post("/modpack", rateLimit({ windowMs: 60_000, max: 10 }), async (req, res) => {

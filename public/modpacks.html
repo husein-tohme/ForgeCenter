@@ -4,13 +4,13 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Modpack Forge · ForgeCenter</title>
-<meta name="description" content="Pick Fabric mods from Modrinth and download a ready-to-import .mrpack modpack.">
+<meta name="description" content="Pick Fabric, NeoForge, Forge or Quilt mods from Modrinth and download a ready-to-import .mrpack modpack.">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <meta name="theme-color" content="#2a2d33">
 <link rel="canonical" href="%PAGE_URL%">
 <meta property="og:site_name" content="ForgeCenter">
 <meta property="og:title" content="Modpack Forge · ForgeCenter">
-<meta property="og:description" content="Pick Fabric mods from Modrinth and download a ready-to-import .mrpack modpack.">
+<meta property="og:description" content="Pick Fabric, NeoForge, Forge or Quilt mods from Modrinth and download a ready-to-import .mrpack modpack.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="%PAGE_URL%">
 <meta property="og:image" content="%BASE_URL%/og.png">
@@ -35,13 +35,14 @@
 <main id="main" class="page">
   <div class="wrap">
     <h1 class="page-title">Modpack Forge</h1>
-    <p class="section-lede">Pick Fabric mods from Modrinth. Mods they need, like Fabric API, are added for you. Import the finished <code>.mrpack</code> into the Modrinth App, Prism Launcher or ATLauncher.</p>
+    <p class="section-lede">Pick mods from Modrinth for Fabric, NeoForge, Forge or Quilt. Mods they need, like Fabric API, are added for you. Import the finished <code>.mrpack</code> into the Modrinth App, Prism Launcher or ATLauncher.</p>
 
     <div class="mp-grid">
       <section class="panel" aria-labelledby="find-title">
         <h2 class="panel-title" id="find-title">Find mods</h2>
         <div class="mp-search">
           <label>Minecraft version<select id="version"></select></label>
+          <label>Mod loader<select id="loader"><option value="fabric">Fabric</option><option value="neoforge">NeoForge</option><option value="forge">Forge</option><option value="quilt">Quilt</option></select></label>
           <label class="grow">Search Modrinth<input id="query" type="search" placeholder="Sodium, maps, backpacks…" autocomplete="off"></label>
         </div>
         <ul class="results" id="results" aria-live="polite"><li class="hint">Loading mods…</li></ul>

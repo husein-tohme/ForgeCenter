@@ -103,3 +103,14 @@ test("account type can be personal, student or business", async () => {
   await api("/api/me", { method: "PATCH", body: { accountType: "business" }, cookie: me.cookie });
   assert.equal((await api("/api/me", { cookie: me.cookie })).body.user.accountType, "business");
 });
+
+test("sessions last a year and renew when used", async () => {
+  const me = signIn("stayer@example.com");
+  const token = me.cookie.split("=")[1];
+  const { hash } = await import("../src/auth.js");
+  db.prepare("UPDATE sessions SET expires_at = ? WHERE token_hash = ?").run(Date.now() + 1000 * 60 * 60, hash(token));
+  const r = await fetch((await import("./helpers.js")).url("/api/me"), { headers: { cookie: me.cookie } });
+  assert.match(r.headers.get("set-cookie") ?? "", /fc_session=/);
+  const left = db.prepare("SELECT expires_at FROM sessions WHERE token_hash = ?").get(hash(token)).expires_at - Date.now();
+  assert.ok(left > 360 * 24 * 60 * 60 * 1000);
+});

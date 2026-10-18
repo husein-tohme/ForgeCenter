@@ -69,6 +69,7 @@ const VERSIONS = {
   shady: [{ version_type: "release", version_number: "1.0", files: [file("shady.jar", "evil.example")], dependencies: [] }],
 };
 const PROJECTS = {
+  create: { id: "create", title: "Create", client_side: "required", server_side: "required" },
   sodium: { id: "sodium", title: "Sodium", client_side: "required", server_side: "unsupported" },
   "fabric-api": { id: "fabric-api", title: "Fabric API", client_side: "required", server_side: "required" },
   oldmod: { id: "oldmod", title: "Old Mod", client_side: "optional", server_side: "optional" },
@@ -78,9 +79,16 @@ function fakeModrinth(input, init) {
   const u = new URL(typeof input === "string" ? input : input.url);
   const json = data => Promise.resolve(new Response(JSON.stringify(data), { headers: { "content-type": "application/json" } }));
   if (u.hostname === "meta.fabricmc.net") return json([{ version: "0.17.0-beta", stable: false }, { version: "0.16.14", stable: true }]);
+  if (u.hostname === "maven.neoforged.net") return json({ versions: ["21.0.167", "21.1.77", "21.1.80-beta", "21.4.10"] });
+  if (u.hostname === "files.minecraftforge.net") return json({ promos: { "1.21.1-latest": "52.0.40", "1.20.1-recommended": "47.3.0" } });
   if (u.hostname !== "api.modrinth.com") return realFetch(input, init);
   let m;
-  if ((m = u.pathname.match(/^\/v2\/project\/([^/]+)\/version$/))) return json(VERSIONS[m[1]] ?? []);
+  if ((m = u.pathname.match(/^\/v2\/project\/([^/]+)\/version$/))) {
+    // Mods only answer for the loader they're built for.
+    const loaders = JSON.parse(u.searchParams.get("loaders"));
+    if (m[1] === "create") return json(loaders.includes("neoforge") ? [{ version_type: "release", version_number: "6.0.0", files: [file("create-6.0.0.jar")], dependencies: [] }] : []);
+    return json(loaders.includes("fabric") ? VERSIONS[m[1]] ?? [] : []);
+  }
   if (u.pathname === "/v2/projects") return json(JSON.parse(u.searchParams.get("ids")).map(id => PROJECTS[id]).filter(Boolean));
   if (u.pathname === "/v2/search") return json({ hits: [{ project_id: "sodium", slug: "sodium", title: "Sodium", description: "Fast", icon_url: null, downloads: 9, author: "jelly" }] });
   if (u.pathname === "/v2/tag/game_version") return json([{ version: "1.21.1", version_type: "release" }, { version: "24w14a", version_type: "snapshot" }]);
@@ -134,4 +142,23 @@ test("the .mrpack index follows Modrinth's format", () => {
   assert.equal(index.game, "minecraft");
   assert.deepEqual(index.dependencies, { minecraft: "1.21.1", "fabric-loader": "0.16.14" });
   assert.deepEqual(Object.keys(index.files[0]).sort(), ["downloads", "env", "fileSize", "hashes", "path"]);
+});
+
+test("modpacks can use NeoForge or Forge, with the right loader version in the index", async () => {
+  globalThis.fetch = fakeModrinth; clearModrinthCache();
+  try {
+    const neo = await api("/api/modpack/plan", { method: "POST", body: { gameVersion: "1.21.1", loader: "neoforge", projectIds: ["create", "sodium"] } });
+    assert.equal(neo.status, 200);
+    assert.equal(neo.body.plan.loaderVersion, "21.1.77"); // the newest stable 21.1.x build
+    assert.deepEqual(neo.body.plan.files.map(f => f.title), ["Create"]);
+    assert.deepEqual(neo.body.plan.skipped.map(s => s.title), ["Sodium"]); // a Fabric-only mod
+
+    const forge = await api("/api/modpack/plan", { method: "POST", body: { gameVersion: "1.21.1", loader: "forge", projectIds: ["create"] } });
+    assert.equal(forge.status, 200);
+    assert.equal(forge.body.plan.loaderVersion, "52.0.40");
+    assert.equal(forge.body.plan.files.length, 0);
+
+    const index = JSON.parse(mrpackFiles({ ...neo.body.plan, files: [{ path: "mods/c.jar", hashes: {}, env: {}, downloads: [], fileSize: 1 }] }, { name: "N" })["modrinth.index.json"]);
+    assert.deepEqual(index.dependencies, { minecraft: "1.21.1", neoforge: "21.1.77" });
+  } finally { globalThis.fetch = realFetch; }
 });
