@@ -156,6 +156,45 @@ function undo() { if (undoStack.length) { pixels = undoStack.pop(); render(); } 
 $("undo").addEventListener("click", undo);
 $("clear").addEventListener("click", () => { pushUndo(); pixels.fill(null); render(); });
 
+// Flip the drawing.
+$("flip-h").addEventListener("click", () => {
+  pushUndo();
+  pixels = pixels.map((_, i) => pixels[Math.floor(i / N) * N + (N - 1 - (i % N))]);
+  render();
+});
+$("flip-v").addEventListener("click", () => {
+  pushUndo();
+  pixels = pixels.map((_, i) => pixels[(N - 1 - Math.floor(i / N)) * N + (i % N)]);
+  render();
+});
+
+// Import any picture: it's shrunk to 16x16 on this device (nothing is uploaded), and
+// see-through parts stay see-through.
+$("import").addEventListener("change", async e => {
+  const file = e.target.files?.[0];
+  e.target.value = "";
+  if (!file) return;
+  if (file.size > 10 * 1024 * 1024) return toast("That image is over 10 MB. Pick a smaller one.");
+  let bitmap;
+  try { bitmap = await createImageBitmap(file); } catch { return toast("That file isn't an image this browser can open."); }
+  const off = document.createElement("canvas");
+  off.width = N; off.height = N;
+  const o = off.getContext("2d");
+  o.imageSmoothingEnabled = true; o.imageSmoothingQuality = "high";
+  // Fit the whole picture in the square, centred.
+  const scale = Math.min(N / bitmap.width, N / bitmap.height);
+  const w = bitmap.width * scale, h = bitmap.height * scale;
+  o.drawImage(bitmap, (N - w) / 2, (N - h) / 2, w, h);
+  const data = o.getImageData(0, 0, N, N).data;
+  pushUndo();
+  pixels = pixels.map((_, i) => {
+    const [r, g, b, a] = data.slice(i * 4, i * 4 + 4);
+    return a < 128 ? null : `#${[r, g, b].map(v => v.toString(16).padStart(2, "0")).join("")}`;
+  });
+  render();
+  toast("Image imported. Touch it up with the pencil, then add it to your pack.");
+});
+
 function setColor(c) {
   color = c.toLowerCase();
   $("color").value = color;

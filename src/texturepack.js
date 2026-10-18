@@ -7,11 +7,18 @@ export const TEXTURE_TARGETS = {
     "diamond_sword", "diamond_pickaxe", "diamond_axe", "diamond_shovel", "iron_sword", "netherite_sword",
     "wooden_sword", "apple", "golden_apple", "bread", "cookie", "diamond", "emerald", "gold_ingot",
     "iron_ingot", "stick", "ender_pearl", "totem_of_undying", "nether_star", "experience_bottle",
+    "iron_pickaxe", "golden_sword", "stone_sword", "bow", "arrow", "carrot", "golden_carrot", "cake",
+    "egg", "feather", "flint", "coal", "redstone", "lapis_lazuli", "quartz", "slime_ball", "snowball",
+    "book", "paper", "bucket", "water_bucket", "map", "shears", "bone", "string",
   ],
   block: [
     "dirt", "stone", "cobblestone", "oak_planks", "bricks", "sand", "gravel", "obsidian", "glass",
     "diamond_ore", "diamond_block", "emerald_block", "gold_block", "iron_block", "netherrack",
     "end_stone", "tnt_side", "crafting_table_front", "bookshelf",
+    "oak_log", "birch_planks", "spruce_planks", "stone_bricks", "mossy_cobblestone", "coal_ore", "iron_ore",
+    "gold_ore", "redstone_ore", "lapis_ore", "emerald_ore", "redstone_block", "lapis_block", "coal_block",
+    "clay", "snow", "ice", "glowstone", "soul_sand", "sponge", "pumpkin_side", "melon_side", "furnace_front",
+    "white_wool", "red_wool", "blue_wool", "black_wool", "terracotta", "quartz_block_side", "amethyst_block",
   ],
 };
 const VALID = new Set(Object.entries(TEXTURE_TARGETS).flatMap(([kind, names]) => names.map(n => `${kind}/${n}`)));
@@ -35,8 +42,17 @@ const versionOf = v => BY_LABEL.get(ALIASES[v] ?? v);
 
 // Before 1.13 (format 4) texture folders were plural and some files had other names;
 // some items didn't exist yet in the oldest versions.
-const LEGACY_NAMES = { oak_planks: "planks_oak", bricks: "brick", golden_apple: "apple_golden", wooden_sword: "wood_sword", totem_of_undying: "totem" };
-const ADDED_IN = { "item/netherite_sword": 5, "item/totem_of_undying": 3 };
+const LEGACY_NAMES = {
+  oak_planks: "planks_oak", birch_planks: "planks_birch", spruce_planks: "planks_spruce", bricks: "brick", stone_bricks: "stonebrick",
+  mossy_cobblestone: "cobblestone_mossy", oak_log: "log_oak", white_wool: "wool_colored_white", red_wool: "wool_colored_red",
+  blue_wool: "wool_colored_blue", black_wool: "wool_colored_black", terracotta: "hardened_clay", quartz_block_side: "quartz_block_side",
+  golden_apple: "apple_golden", wooden_sword: "wood_sword", golden_sword: "gold_sword", golden_carrot: "carrot_golden",
+  totem_of_undying: "totem", lapis_lazuli: "dye_powder_blue", experience_bottle: "experience_bottle", map: "map_empty",
+  water_bucket: "bucket_water", bucket: "bucket_empty", clock: "clock", compass: "compass", furnace_front: "furnace_front_off",
+  slime_ball: "slimeball", snowball: "snowball", quartz: "quartz", melon_side: "melon_side", pumpkin_side: "pumpkin_side",
+};
+// The pack_format each texture first appeared in (or got its modern file name).
+const ADDED_IN = { "item/netherite_sword": 5, "item/totem_of_undying": 3, "block/amethyst_block": 7 };
 const pathFor = (target, format) => {
   const [kind, name] = target.split("/");
   if (format >= 4) return `assets/minecraft/textures/${target}.png`;
