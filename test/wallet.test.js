@@ -70,10 +70,10 @@ test("top-ups must be whole dollars within the limits, and the wallet has a cap"
 
 test("paying from the wallet makes a paid order and starts it like a card payment", async () => {
   const { user, cookie } = signIn("spender@example.com");
-  give(user.id, 15000);
+  give(user.id, 3000);
   const r = await api("/api/wallet/pay", { method: "POST", cookie, body: { product: "discord" } });
   assert.equal(r.status, 200);
-  assert.equal(r.body.balance, 5000);
+  assert.equal(r.body.balance, 500);
   const order = (await api(`/api/orders/${r.body.orderId}`, { cookie })).body.order;
   assert.equal(order.status, "paid");
   assert.equal(order.paidWith, "wallet");
@@ -82,9 +82,9 @@ test("paying from the wallet makes a paid order and starts it like a card paymen
 
   const short = await api("/api/wallet/pay", { method: "POST", cookie, body: { product: "ai" } });
   assert.equal(short.status, 402);
-  assert.match(short.body.error, /You need 5,000 more orbs/);
+  assert.match(short.body.error, /You need 1,400 more orbs/);
   assert.equal((await api("/api/wallet/pay", { method: "POST", cookie, body: { product: "mcserver" } })).status, 400);
-  assert.equal(await balance(cookie), 5000);
+  assert.equal(await balance(cookie), 500);
 });
 
 test("a top-up refunded from the Stripe Dashboard comes out of the wallet, once", async () => {
@@ -144,17 +144,17 @@ test("a disputed top-up's credit is held back until the bank decides, and the ow
 test("the owner can refund an order or give credit to a wallet, within limits", async () => {
   const owner = signIn("owner@example.com");
   const c = signIn("refunded@example.com");
-  give(c.user.id, 10000);
+  give(c.user.id, 1900);
   const orderId = (await api("/api/wallet/pay", { method: "POST", cookie: c.cookie, body: { product: "ai" } })).body.orderId;
 
-  const tooMuch = await api(`/api/admin/orders/${orderId}/wallet-refund`, { method: "POST", cookie: owner.cookie, body: { amount: 10001 } });
+  const tooMuch = await api(`/api/admin/orders/${orderId}/wallet-refund`, { method: "POST", cookie: owner.cookie, body: { amount: 1901 } });
   assert.equal(tooMuch.status, 400);
   assert.equal((await api(`/api/admin/orders/${orderId}/wallet-refund`, { method: "POST", cookie: c.cookie, body: { amount: 100 } })).status, 403);
-  const ok = await api(`/api/admin/orders/${orderId}/wallet-refund`, { method: "POST", cookie: owner.cookie, body: { amount: 6000 } });
+  const ok = await api(`/api/admin/orders/${orderId}/wallet-refund`, { method: "POST", cookie: owner.cookie, body: { amount: 1000 } });
   assert.equal(ok.status, 200);
-  assert.equal(ok.body.balance, 6000);
-  assert.equal((await api(`/api/admin/orders/${orderId}/wallet-refund`, { method: "POST", cookie: owner.cookie, body: { amount: 4001 } })).status, 400);
-  assert.ok(emails.some(m => m.to.includes("refunded@example.com") && /6,000 orbs added/.test(m.subject)));
+  assert.equal(ok.body.balance, 1000);
+  assert.equal((await api(`/api/admin/orders/${orderId}/wallet-refund`, { method: "POST", cookie: owner.cookie, body: { amount: 901 } })).status, 400);
+  assert.ok(emails.some(m => m.to.includes("refunded@example.com") && /1,000 orbs added/.test(m.subject)));
 
   // An order the owner marked canceled before anyone paid can't be "refunded" as credit.
   const unpaid = Number(db.prepare(`INSERT INTO orders (user_id, product, amount, status, created_at, updated_at)
@@ -166,7 +166,7 @@ test("the owner can refund an order or give credit to a wallet, within limits", 
   const noNote = await api(`/api/admin/users/${c.user.id}/wallet-credit`, { method: "POST", cookie: owner.cookie, body: { amount: 500 } });
   assert.equal(noNote.status, 400);
   const credit = await api(`/api/admin/users/${c.user.id}/wallet-credit`, { method: "POST", cookie: owner.cookie, body: { amount: 500, note: "Sorry for the downtime" } });
-  assert.equal(credit.body.balance, 6500);
+  assert.equal(credit.body.balance, 1500);
   const entries = (await api("/api/wallet", { cookie: c.cookie })).body.entries;
   assert.deepEqual(entries.slice(0, 3).map(e => e.kind), ["credit", "refund", "purchase"]);
 });
