@@ -1,5 +1,6 @@
 // Shared by the games pages (games.js, game.js, my-games.js): game icons, cards,
 // the status pill and a confirm dialog. Choices come from /api/games/options.
+import { coverUrl } from "./covers.js";
 import { $, api, esc, icon, registerIcons, toast, getUser, date } from "./common.js";
 
 // Game icons that common.js doesn't already draw (gamepad, diamond, grass, pickaxe, chest, rocket).
@@ -72,6 +73,7 @@ export function gameCard(g, opts, { preview = false } = {}) {
   const title = esc(g.title || "Your game");
   return `
     <article class="panel lp-card ${accentClass(g.accent)}">
+      <img class="lp-cover" src="${coverUrl({ id: g.id ?? 0, accent: g.accent, title: g.title || "" })}" alt="" width="320" height="180">
       <div class="lp-card-head">
         <span class="slot lp-icon">${gameIcon(g.icon)}</span>
         <div class="lp-card-name">

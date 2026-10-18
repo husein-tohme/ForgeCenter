@@ -1,25 +1,6 @@
 import { $, api, esc, icon, money, orbs, toast, refreshUser, requireSignIn, onUser, getUser, getCatalog, ready, PRODUCT_ICON } from "./common.js";
 import { reportButton } from "./report.js";
-
-// ---------- Crafting table ----------
-// key matches src/catalog.js; pattern is the 3x3 recipe shape.
-const ITEMS = [
-  { key: "website",  icon: "monitor", label: "Website",          pattern: "xxx.x.xxx" },
-  { key: "game",     icon: "diamond", label: "Game",             pattern: ".x.xxx.x." },
-  { key: "discord",  icon: "bot",     label: "Discord bot",      pattern: "x.x.x.x.x" },
-  { key: "mcserver", icon: "grass",   label: "Minecraft server", pattern: "xxxxxxxxx" },
-  { key: "ai",       icon: "eye",     label: "Dedicated AI",     pattern: ".x.x.x.x." },
-  { key: "mod",      icon: "pickaxe", label: "Minecraft mod",    pattern: "xxx.x..x." },
-  { key: "textures", icon: "painting", label: "Texture pack",    pattern: "xxxx.xxxx" },
-  { key: "modpack",  icon: "chest",   label: "Modpack",          pattern: "xxxxxx..." },
-  { key: "learn",    icon: "book",    label: "Learn to code",    pattern: "x..xx.xxx" },
-];
-const FREE = {
-  mod:   { name: "Minecraft mod", desc: "Free. Generate a mod project in your name and publish it to Modrinth.", href: "#forge", cta: "Open Mod Forge" },
-  textures: { name: "Texture pack", desc: "Free. Draw your own textures pixel by pixel and download a resource pack.", href: "/textures", cta: "Open Texture Forge" },
-  modpack: { name: "Modpack", desc: "Free. Pick mods from Modrinth and download a modpack you can import into any launcher.", href: "/modpacks", cta: "Open Modpack Forge" },
-  learn: { name: "Coding lessons", desc: "Free with a Google account. Learn step by step with Forge, your AI mentor.", href: "#mentor", cta: "Start learning" },
-};
+import { coverUrl } from "./covers.js";
 
 let catalog = {};
 getCatalog().then(data => {
@@ -27,52 +8,35 @@ getCatalog().then(data => {
   catalog = data; renderTrades();
 });
 
-const grid = $("grid");
-for (let i = 0; i < 9; i++) grid.insertAdjacentHTML("beforeend", `<div class="slot"></div>`);
-const hotbar = $("hotbar");
-hotbar.innerHTML = ITEMS.map(it =>
-  `<button class="hot" type="button" aria-pressed="false" data-key="${it.key}" title="${it.label}">${icon(it.icon, it.label)}</button>`).join("");
-
-let craftRun = 0;
-hotbar.addEventListener("click", e => {
-  const btn = e.target.closest(".hot"); if (!btn) return;
-  hotbar.querySelectorAll(".hot").forEach(b => b.setAttribute("aria-pressed", String(b === btn)));
-  craft(ITEMS.find(i => i.key === btn.dataset.key));
+// ---------- Live now: real games from the launchpad, as server-list rows ----------
+const PLATFORM = { "minecraft-server": "Minecraft server", "minecraft-map": "Minecraft map", "minecraft-mod": "Minecraft mod", roblox: "Roblox", web: "Web browser", steam: "Steam", itch: "itch.io", other: "Game" };
+api("/api/games").then(r => {
+  const games = (r.data.games ?? []).filter(g => !g.restricted).slice(0, 6);
+  if (!games.length) {
+    $("live-games").innerHTML = `<div class="srv-empty"><p><strong>No games are live yet.</strong> Made a Minecraft server, map, mod or Roblox game? Put it here for $1 a month and be the first one players see.</p></div>`;
+    return;
+  }
+  $("live-count").textContent = `${games.length === 6 ? "Newest 6" : games.length} live · creators keep a game here for $1 a month`;
+  $("live-games").innerHTML = games.map(g => `
+    <a class="srv srv-link" href="/game?id=${g.id}">
+      <img class="srv-art" src="${coverUrl(g)}" alt="" width="128" height="72">
+      <span class="srv-main">
+        <span class="srv-top"><span class="srv-name">${esc(g.title)}</span></span>
+        <span class="srv-motd">${esc(g.tagline || "")}</span>
+        <span class="srv-by">by ${esc(g.creator || "a creator")}</span>
+      </span>
+      <span class="srv-side">
+        <span class="status"><span class="dot"></span>Live</span>
+        <span class="srv-where">${esc(g.serverAddress || PLATFORM[g.platform] || "Game")}</span>
+      </span>
+    </a>`).join("");
 });
-
-function craft(item) {
-  const run = ++craftRun;
-  const step = matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 55;
-  const slots = [...grid.children];
-  slots.forEach(s => (s.innerHTML = ""));
-  $("out").innerHTML = ""; $("out").classList.remove("pop");
-  const filled = [...item.pattern].map((ch, i) => (ch === "x" ? i : -1)).filter(i => i >= 0);
-  filled.forEach((idx, n) => setTimeout(() => { if (run === craftRun) slots[idx].innerHTML = icon(item.icon); }, n * step));
-  setTimeout(() => {
-    if (run !== craftRun) return;
-    $("out").innerHTML = icon(item.icon, item.label);
-    void $("out").offsetWidth; $("out").classList.add("pop");
-    showResult(item);
-  }, step ? filled.length * step + 120 : 0);
-}
 
 const priceHtml = p => `<span class="price"><span class="gem">${icon("emerald")}</span>${
   p.price ? money(p.price) : money(p.monthly)}${!p.price && p.monthly ? '<span class="per">a month</span>' : ""}${
   p.price && p.monthly ? `<span class="per">+ ${money(p.monthly)}/mo</span>` : ""}</span>`;
 // One-time items can also be paid with orbs (1 orb = 1 cent).
 const orbLine = (p, tag = "span") => p.orbPayable ? `<${tag} class="per">or <a href="/orbs">${orbs(p.price)}</a></${tag}>` : "";
-
-function showResult(item) {
-  const free = FREE[item.key];
-  if (free) {
-    $("result").innerHTML = `<h3>${free.name}</h3><p>${free.desc}</p><a class="btn btn-buy" href="${free.href}">${free.cta}</a>`;
-    return;
-  }
-  const p = catalog[item.key];
-  if (!p) { $("result").innerHTML = `<p class="hint">Prices are still loading.</p>`; return; }
-  $("result").innerHTML = `<h3>${esc(p.name)}</h3><p>${esc(p.desc)}</p>
-    <div class="price-line">${priceHtml(p)}${orbLine(p)}<button class="btn btn-buy" type="button" data-buy="${item.key}">Go to checkout</button></div>`;
-}
 
 // ---------- Villager-style trade list ----------
 function renderTrades() {
