@@ -144,7 +144,7 @@ test("a public page shows badges and work, never email, phone, age group, wallet
     }
     assert.doesNotMatch(text, /"(teen|adult)"/);
     assert.deepEqual(Object.keys(r.body.creator).sort(),
-      ["badges", "bio", "canModerate", "creations", "handle", "isOwner", "links", "listings", "memberSince", "name", "picture", "support"]);
+      ["badges", "bio", "canModerate", "creations", "handle", "isOwner", "links", "listings", "memberSince", "name", "payLinks", "picture", "support"]);
   }
   const page = (await profile("steve-stone")).body.creator;
   assert.equal(page.name, "Steve Stone");

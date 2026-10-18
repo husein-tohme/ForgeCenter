@@ -25,6 +25,7 @@ A Minecraft-themed storefront: Minecraft server hosting, Discord bots, websites,
 - `src/aimaker.js` AI Maker assistants, share links (`/assistant?t=`) and their chat; avatars in `public/js/ai-avatars.js`
 - `src/sitemaker.js` Site Maker (AI one-page sites) and its HTML sanitiser
 - `src/launchpad.js` Game Launchpad (`/games`, `/game`, `/my-games`): $1/month per game, a `launch` order per game
+- `src/payouts.js` creator payouts (Stripe Connect Express) and pay links (`/pay?l=`), shown on creator pages
 - `src/donations.js` donations (`/donate`): Checkout Sessions with kind `donation` and monthly donation subscriptions
 - `src/reports.js` reports (the `registerReportTarget` registry), owner moderation and suspensions; rules at `/rules`
 - `src/tutor.js` the Forge mentor and the daily AI allowance it shares with AI Maker and Site Maker; `src/ai.js` the shared Claude client
@@ -47,6 +48,7 @@ A Minecraft-themed storefront: Minecraft server hosting, Discord bots, websites,
 - **Suspended accounts are blocked by `requireUser`.** Only the support ticket routes use `requireUserOrSuspended`, so people can appeal. Owners can't be suspended, and suspended accounts can't delete themselves. Any new public content must hide a suspended owner's things and call `registerReportTarget` so it can be reported.
 - **Game launches are fulfilled in the webhook** through the normal order path: `fulfillCheckout` marks the `launch` order paid, then `handleLaunchEvent` links it to the game and syncs its subscription. A game is live only while that subscription is active (the `LIVE` rule in `games-live.js`).
 - **Text people type reaches generated code only as data.** Roblox Forge puts it through `luaString()`; AI Maker quotes the creator's setup after ForgeCenter's rules; Site Maker pages go through `sanitizeHtml()` before they're stored and are previewed in an `<iframe sandbox>` with no allow tokens.
+- **Creator money never touches ForgeCenter.** Pay links are direct charges on the creator's connected account (`stripeAccount`) with an `application_fee_amount`; only adults can connect, and only `charges_enabled` accounts' links are live.
 - **User-supplied links** are validated as `http(s)://` server-side before they're shown.
 - Never commit `.env`, `data/`, or `*.db` files. Fake tokens in tests are built from parts so secret scanners don't flag them.
 
