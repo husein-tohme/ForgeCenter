@@ -16,10 +16,31 @@ export const TEXTURE_TARGETS = {
 };
 const VALID = new Set(Object.entries(TEXTURE_TARGETS).flatMap(([kind, names]) => names.map(n => `${kind}/${n}`)));
 
-// pack_format per Minecraft Java version.
-export const PACK_FORMATS = {
-  "1.21.8": 64, "1.21.7": 64, "1.21.6": 63, "1.21.5": 55, "1.21.4": 46,
-  "1.21.3": 42, "1.21.2": 42, "1.21.1": 34, "1.21": 34, "1.20.6": 32, "1.20.4": 22, "1.20.1": 15,
+// pack_format for every Java version that has resource packs (1.6.1 onwards), newest
+// first. "1.21.9+" also covers the year-numbered releases (26.x): from 1.21.9 the game
+// reads min_format/max_format, so those packs say "this version and every later one".
+export const VERSIONS = [
+  ["1.21.9+ (and 26.x)", 69, { open: true }],
+  ["1.21.7 – 1.21.8", 64], ["1.21.6", 63], ["1.21.5", 55], ["1.21.4", 46], ["1.21.2 – 1.21.3", 42],
+  ["1.21 – 1.21.1", 34], ["1.20.5 – 1.20.6", 32], ["1.20.3 – 1.20.4", 22], ["1.20.2", 18], ["1.20 – 1.20.1", 15],
+  ["1.19.4", 13], ["1.19.3", 12], ["1.19 – 1.19.2", 9], ["1.18", 8], ["1.17", 7], ["1.16.2 – 1.16.5", 6],
+  ["1.15 – 1.16.1", 5], ["1.13 – 1.14", 4], ["1.11 – 1.12", 3], ["1.9 – 1.10", 2], ["1.6 – 1.8", 1],
+];
+// Old spellings the API and saved settings may still send, mapped to their row.
+const ALIASES = { "1.21.8": "1.21.7 – 1.21.8", "1.21.7": "1.21.7 – 1.21.8", "1.21.3": "1.21.2 – 1.21.3", "1.21.2": "1.21.2 – 1.21.3",
+  "1.21.1": "1.21 – 1.21.1", "1.21": "1.21 – 1.21.1", "1.20.6": "1.20.5 – 1.20.6", "1.20.4": "1.20.3 – 1.20.4", "1.20.1": "1.20 – 1.20.1" };
+const BY_LABEL = new Map(VERSIONS.map(([label, format, opts]) => [label, { format, ...opts }]));
+export const PACK_FORMATS = Object.fromEntries(VERSIONS.map(([l, f]) => [l, f]));
+const versionOf = v => BY_LABEL.get(ALIASES[v] ?? v);
+
+// Before 1.13 (format 4) texture folders were plural and some files had other names;
+// some items didn't exist yet in the oldest versions.
+const LEGACY_NAMES = { oak_planks: "planks_oak", bricks: "brick", golden_apple: "apple_golden", wooden_sword: "wood_sword", totem_of_undying: "totem" };
+const ADDED_IN = { "item/netherite_sword": 5, "item/totem_of_undying": 3 };
+const pathFor = (target, format) => {
+  const [kind, name] = target.split("/");
+  if (format >= 4) return `assets/minecraft/textures/${target}.png`;
+  return `assets/minecraft/textures/${kind}s/${LEGACY_NAMES[name] ?? name}.png`;
 };
 
 const PNG_SIGNATURE = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
@@ -40,19 +61,22 @@ export function decodeTexture(dataUrl) {
 export function texturePackFiles({ name, description, gameVersion, textures }) {
   if (!Array.isArray(textures) || !textures.length) throw new Error("Add at least one texture to the pack.");
   if (textures.length > 40) throw new Error("A pack can hold up to 40 textures.");
-  const format = PACK_FORMATS[gameVersion];
-  if (!format) throw new Error("Pick a Minecraft version.");
+  const version = versionOf(gameVersion);
+  if (!version) throw new Error("Pick a Minecraft version.");
+  const { format } = version;
 
   const files = {};
   for (const t of textures) {
     if (!VALID.has(t?.target)) throw new Error("One of the textures replaces something Texture Forge doesn't support.");
-    files[`assets/minecraft/textures/${t.target}.png`] = decodeTexture(t.png);
+    if ((ADDED_IN[t.target] ?? 0) > format) throw new Error(`${t.target.split("/")[1].replaceAll("_", " ")} isn't in Minecraft ${gameVersion}. Remove it or pick a newer version.`);
+    files[pathFor(t.target, format)] = decodeTexture(t.png);
   }
   const title = String(name || "My Texture Pack").slice(0, 60);
-  files["pack.mcmeta"] = JSON.stringify({
-    pack: { pack_format: format, description: String(description || `${title}, made with ForgeCenter`).slice(0, 200) },
-  }, null, 2);
-  files["pack.png"] = files[`assets/minecraft/textures/${textures[0].target}.png`];
+  const pack = { pack_format: format, description: String(description || `${title}, made with ForgeCenter`).slice(0, 200) };
+  // 1.21.9 and later read min_format/max_format; a high max keeps it working on later releases.
+  if (version.open) Object.assign(pack, { min_format: format, max_format: 999 });
+  files["pack.mcmeta"] = JSON.stringify({ pack }, null, 2);
+  files["pack.png"] = files[pathFor(textures[0].target, format)];
   files["README.txt"] = `${title}\n\nMade with ForgeCenter Texture Forge for Minecraft ${gameVersion}.\n` +
     `Install: put this zip in .minecraft/resourcepacks, then turn it on in Options > Resource Packs.\n`;
   return files;
