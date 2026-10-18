@@ -519,6 +519,8 @@ export function openAgeConfirm(reason = null) {
   return requireSignIn(async () => {
     if (!currentUser.ageGroup) { afterBirthday = () => openAgeConfirm(reason); return openBirthday(); }
     if (currentUser.ageGroup === "adult") return toast("Your age is already confirmed.");
+    // Age checks run through Stripe too, so they open together with the shop.
+    if (paymentsOff) return toast("Age checks open soon, together with the shop. Everything that isn't 18+ works right now.");
     const d = $("age-dialog") ?? ageDialog();
     $("age-reason").textContent = reason ?? `Confirmed adults can ${await adultPerks()}. ForgeCenter keeps only the result.`;
     $("age-error").hidden = true;
@@ -661,6 +663,7 @@ config.then(c => {
     if (b.dataset.soon) return;
     b.dataset.soon = "1"; b.textContent = "Coming soon"; b.disabled = true; b.classList.remove("btn-buy");
   });
+  document.querySelectorAll("[data-confirm-age]").forEach(b => { b.textContent = "Age checks coming soon"; b.disabled = true; });
   mark(document);
   new MutationObserver(() => mark(document)).observe(document.body, { childList: true, subtree: true });
   if (!document.querySelector(".soon-bar")) {
