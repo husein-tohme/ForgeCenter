@@ -41,13 +41,14 @@
         <h1 class="page-title" id="orbs-title">Orbs</h1>
         <p class="orb-lede">ForgeCenter's own currency, like the XP orbs you pick up in Minecraft. Buy a pack once, then spend orbs whenever you want.</p>
         <p class="orb-rate"><span class="orb-rate-chip">1 orb = 1 cent</span> <span class="small">So 2,500 orbs cost $25. No bonus orbs, no hidden fees.</span></p>
-        <p class="orb-balance" id="balance" aria-live="polite" hidden></p>
+        <div class="orb-balance" id="balance" aria-live="polite" hidden></div>
       </div>
     </section>
 
     <section class="orb-section" id="packs" aria-labelledby="packs-title">
       <h2 id="packs-title">Orb packs</h2>
       <p class="section-lede">Paid by card through Stripe. Your orbs show up a few seconds after you pay.</p>
+      <p class="note" id="packs-unavailable" hidden>Buying orbs isn't available yet. Check back soon.</p>
       <div class="orb-packs-grid" id="pack-list"></div>
       <form class="panel orb-custom-form" id="custom-form">
         <label for="custom-orbs">Other amount, in orbs</label>
@@ -63,7 +64,7 @@
 
     <section class="orb-section" aria-labelledby="spend-title">
       <h2 id="spend-title">What can I get with orbs?</h2>
-      <p class="section-lede">Anything with a one-time price. When you have enough orbs, the checkout asks whether to pay with orbs or by card. Monthly plans, like Minecraft server hosting, are paid by card so they can renew.</p>
+      <p class="section-lede">Anything with a one-time price. When you have enough orbs, checkout asks whether to pay with orbs or by card. Monthly plans, like Minecraft server hosting, are paid by card so they can renew.</p>
       <div class="panel trades" id="spend-list"><p class="hint">Loading…</p></div>
     </section>
 

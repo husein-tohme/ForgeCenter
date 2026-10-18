@@ -6,12 +6,11 @@ import express from "express";
 import { ARTICLES } from "../public/js/help-articles.js";
 import Anthropic from "@anthropic-ai/sdk";
 import { db, now, walletBalance } from "./db.js";
-import { catalog, isAdultOnly, orbs, walletPayable } from "./catalog.js";
+import { catalog, isAdultOnly, orbs, orbPayable } from "./catalog.js";
 import { PROVIDER_NAMES, isAdmin, requireAdmin, requireUser, requireUserOrSuspended } from "./auth.js";
 import { rateLimit } from "./limit.js";
 import { notify } from "./email.js";
-import { WALLET_LIMITS } from "./wallet.js";
-import { ORBS_PER_AI_UNIT } from "./tutor.js";
+import { WALLET_LIMITS, ORBS_PER_AI_UNIT } from "./wallet.js";
 
 export const CATEGORIES = {
   billing: "Payments and billing",
@@ -38,7 +37,7 @@ export const setSupportModel = fn => { callModel = fn ?? anthropic; };
 const aiEnabled = () => callModel !== anthropic || !!process.env.ANTHROPIC_API_KEY;
 
 const usd = cents => `$${(cents / 100).toLocaleString("en-US")}`;
-const priceText = item => [item.price ? `${usd(item.price)}${walletPayable(item) ? ` (or ${orbs(item.price)})` : ""}` : "",
+const priceText = item => [item.price ? `${usd(item.price)}${orbPayable(item) ? ` (or ${orbs(item.price)})` : ""}` : "",
   item.monthly ? `${usd(item.monthly)} a month` : ""].filter(Boolean).join(" plus ");
 
 const ADULT_PRODUCTS = Object.keys(catalog).filter(isAdultOnly).map(k => catalog[k].name.toLowerCase()).join(" and ");
@@ -84,7 +83,7 @@ Discord bots
 Orbs
 - Orbs are ForgeCenter's own currency, like Minecraft XP orbs. 1 orb is worth 1 US cent, so 2,500 orbs cost $25. Customers buy orb packs by card at /orbs or in the Orbs section of the account page: ${orbs(WALLET_LIMITS.minTopup)} to ${orbs(WALLET_LIMITS.maxTopup)} at a time (in hundreds), and an account holds up to ${orbs(WALLET_LIMITS.maxBalance)}. There are no bonus orbs.
 - Orbs pay for one-time items, such as a Discord bot, the Dedicated AI assistant or a showcase slot, if the balance covers the whole price: choose "Pay with orbs" at checkout. Monthly plans are paid by card.
-- AI messages: the free daily allowance is shared by the Forge mentor, AI Maker and Site Maker. With "When my free AI messages run out, use orbs" turned on in the Orbs section of the account page, each extra message costs ${orbs(ORBS_PER_AI_UNIT)} (a Site Maker build counts as several messages). It's off until the customer turns it on. If the AI fails or won't answer, the orbs for that message go back automatically.
+- AI messages: the free daily allowance is shared by the Forge mentor, AI Maker and Site Maker. With "When my free AI messages run out, use orbs" turned on in the Orbs section of the account page, each extra message costs ${orbs(ORBS_PER_AI_UNIT)} (a Site Maker build counts as several messages). It's off until the customer turns it on. If the AI fails or can't finish, the orbs for that message go back automatically. Orb spending shows in the history under Orbs on the account page.
 - Orbs can't be withdrawn, sold, swapped for cash or sent to someone else, and they never expire. The team can refund unused orb packs to the card they came from; that needs a person.
 
 Age groups (like Discord)

@@ -6,22 +6,30 @@
 // than a money service. Unused orb packs can be refunded to the card they came from
 // (from the Stripe Dashboard), and the owner can refund orders as orbs.
 import express from "express";
-import { db, now, walletBalance } from "./db.js";
-import { catalog, isAdultOnly, walletPayable, orbs, usd } from "./catalog.js";
+import { db, now, walletBalance, addColumn } from "./db.js";
+import { catalog, isAdultOnly, walletPayable, orbs, usd, MAX_ORBS } from "./catalog.js";
 import { isAdult, requireAdmin, requireUser } from "./auth.js";
 import { rateLimit } from "./limit.js";
 import { notify } from "./email.js";
 import { getStripe, ensureCustomer, baseUrl, CHECKOUT_LABELS, checkoutKind } from "./stripe.js";
 import { afterPayment } from "./orders.js";
-import { aiOrbsOn, ORBS_PER_AI_UNIT, FREE_DAILY, AI_PLAN_DAILY } from "./tutor.js";
 
 // Cents, which are orbs. The balance cap keeps this small-purchase credit, not a place to park money.
-export const WALLET_LIMITS = { minTopup: 500, maxTopup: 50000, maxBalance: 200000 };
+export const WALLET_LIMITS = { minTopup: 500, maxTopup: 50000, maxBalance: MAX_ORBS };
 const MAX_OWNER_CREDIT = 50000;
+
+// "When my free AI messages run out, use orbs": off until the person turns it on in the
+// Orbs section of the account page. Each AI message past the free daily allowance then
+// costs ORBS_PER_AI_UNIT orbs, which spendAllowance in tutor.js takes.
+export const ORBS_PER_AI_UNIT = Math.max(1, Number.parseInt(process.env.AI_ORBS_PER_UNIT, 10) || 5);
+addColumn("users", "ai_orbs", "INTEGER DEFAULT 0");
+export const aiOrbsOn = userId => !!db.prepare("SELECT ai_orbs FROM users WHERE id = ?").get(userId)?.ai_orbs;
 
 // Runs fn inside one write transaction, so balance checks and entries can't interleave.
 // Exported for the other place that spends orbs: AI messages (spendAllowance in tutor.js).
+// Called inside a transaction that's already open, fn just joins it.
 export function transaction(fn) {
+  if (db.isTransaction) return fn();
   db.exec("BEGIN IMMEDIATE");
   try { const out = fn(); db.exec("COMMIT"); return out; }
   catch (e) { db.exec("ROLLBACK"); throw e; }
@@ -136,12 +144,12 @@ walletRouter.get("/", requireUser, async (req, res) => {
 
 // Public facts for the orbs page, so signed-out visitors see the same numbers.
 walletRouter.get("/info", (_req, res) => {
-  res.json({ limits: WALLET_LIMITS, orbsPerAiUnit: ORBS_PER_AI_UNIT, freeDaily: FREE_DAILY, aiPlanDaily: AI_PLAN_DAILY, available: !!getStripe() });
+  res.json({ limits: WALLET_LIMITS, orbsPerAiUnit: ORBS_PER_AI_UNIT, available: !!getStripe() });
 });
 
 // "When my free AI messages run out, use orbs" (see spendAllowance in tutor.js).
 walletRouter.patch("/ai-orbs", requireUser, (req, res) => {
-  if (typeof req.body?.on !== "boolean") return res.status(400).json({ error: "Send on: true or on: false." });
+  if (typeof req.body?.on !== "boolean") return res.status(400).json({ error: "Send { \"on\": true } to turn it on, or { \"on\": false } to turn it off." });
   db.prepare("UPDATE users SET ai_orbs = ? WHERE id = ?").run(req.body.on ? 1 : 0, req.user.id);
   res.json({ aiOrbs: req.body.on, orbsPerAiUnit: ORBS_PER_AI_UNIT });
 });
@@ -156,7 +164,7 @@ walletRouter.post("/topup", requireUser, rateLimit({ windowMs: 60_000, max: 5 })
   if (amount > room) {
     return res.status(400).json({ error: room >= minTopup
       ? `You can hold up to ${orbs(maxBalance)}, so you can buy ${orbs(Math.floor(room / 100) * 100)} at most right now.`
-      : `You already have as many orbs as an account can hold (${orbs(maxBalance)}). Spend some before buying more.` });
+      : `An account can hold up to ${orbs(maxBalance)}, and yours has no room for another pack right now. Spend some orbs first.` });
   }
   const stripe = getStripe();
   if (!stripe) return res.status(503).json({ error: "Payments aren't set up yet." });
@@ -172,7 +180,10 @@ walletRouter.post("/topup", requireUser, rateLimit({ windowMs: 60_000, max: 5 })
         name: `${amount.toLocaleString("en-US")} ForgeCenter orbs`,
         description: "ForgeCenter's own currency, 1 orb for each cent. Orbs never expire, and they can't be withdrawn, sold or sent to other people." } } }],
       metadata, payment_intent_data: { metadata },
-      success_url: `${baseUrl(req)}/account?topup=${id}#wallet`, cancel_url: `${baseUrl(req)}/account#wallet`,
+      // Back to the page the pack was bought on: the orbs page or the account page.
+      ...(req.body?.from === "orbs"
+        ? { success_url: `${baseUrl(req)}/orbs?topup=${id}`, cancel_url: `${baseUrl(req)}/orbs#packs` }
+        : { success_url: `${baseUrl(req)}/account?topup=${id}#wallet`, cancel_url: `${baseUrl(req)}/account#wallet` }),
       // Just over Stripe's 30-minute minimum, so an abandoned checkout clears quickly.
       expires_at: Math.floor(Date.now() / 1000) + 31 * 60,
       integration_identifier: CHECKOUT_LABELS.wallet,

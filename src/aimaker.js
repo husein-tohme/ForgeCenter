@@ -47,7 +47,6 @@ const view = (a, req) => ({
 });
 const byId = id => db.prepare("SELECT * FROM assistants WHERE id = ?").get(id);
 
-
 // Checks the fields that were sent; `partial` skips missing ones (for PATCH).
 function readFields(body = {}, partial = false) {
   const out = {};

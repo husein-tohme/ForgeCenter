@@ -50,10 +50,11 @@ export const notify = {
         `Hi ${c.name},\n\nYour game is live on the ForgeCenter games page:\n${site()}/games\n\nIt's $1 a month. You can edit it or cancel any time from My games:\n${site()}/my-games\n\nIf you cancel, it stays up until the end of the month you've paid for, and that month isn't refunded.\n\nForgeCenter`);
       return;
     }
+    const withOrbs = order.paid_with === "wallet" ? ` with ${orbs(order.amount)}` : "";
     send(owners(), `New order: ${productName(order)} (order ${order.id})`,
-      `${c?.name ?? "A customer"} (${c?.email ?? "unknown email"}) paid for ${productName(order)}.\n\nOpen the owner panel: ${site()}/admin`);
+      `${c?.name ?? "A customer"} (${c?.email ?? "unknown email"}) paid for ${productName(order)}${withOrbs}.\n\nOpen the owner panel: ${site()}/admin`);
     if (c) send(c.email, `Thanks for your order: ${productName(order)}`,
-      `Hi ${c.name},\n\nYour payment for ${productName(order)} went through.\n\nNext step: write your project brief so work can start:\n${orderLink(order)}\n\nForgeCenter`);
+      `Hi ${c.name},\n\n${withOrbs ? `You paid for ${productName(order)}${withOrbs}.` : `Your payment for ${productName(order)} went through.`}\n\nNext step: write your project brief so work can start:\n${orderLink(order)}\n\nForgeCenter`);
   },
 
   paymentFailed(order) {

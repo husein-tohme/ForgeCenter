@@ -60,7 +60,7 @@ const priceHtml = p => `<span class="price"><span class="gem">${icon("emerald")}
   p.price ? money(p.price) : money(p.monthly)}${!p.price && p.monthly ? '<span class="per">a month</span>' : ""}${
   p.price && p.monthly ? `<span class="per">+ ${money(p.monthly)}/mo</span>` : ""}</span>`;
 // One-time items can also be paid with orbs (1 orb = 1 cent).
-const orbLine = (p, tag = "span") => p.walletPayable ? `<${tag} class="per">or <a href="/orbs">${orbs(p.price)}</a></${tag}>` : "";
+const orbLine = (p, tag = "span") => p.orbPayable ? `<${tag} class="per">or <a href="/orbs">${orbs(p.price)}</a></${tag}>` : "";
 
 function showResult(item) {
   const free = FREE[item.key];

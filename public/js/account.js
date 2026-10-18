@@ -187,7 +187,8 @@ const ENTRY_TEXT = {
   dispute: e => e.note || "Card dispute",
   api: e => e.note || "Developer API call",
   reward: e => `Creator reward: ${e.note}`,
-  ai: e => e.note || "AI messages",
+  ai: e => e.note || "AI messages after your free ones",
+  ai_refund: e => e.note || "Orbs back for AI messages",
 };
 const PACKS = [500, 1000, 2500, 5000, 10000];
 
@@ -249,7 +250,7 @@ function renderAiOrbs(on, perUnit) {
     <span class="slot">${icon("eye")}</span>
     <div>
       <label class="check-row"><input type="checkbox" id="ai-orbs-on" ${on ? "checked" : ""}> When my free AI messages run out, use orbs</label>
-      <p class="small">The Forge mentor, AI Maker and Site Maker share your free messages each day. With this on, each extra message costs ${orbs(perUnit)}, and a Site Maker build counts as several messages. If the AI fails, you get the orbs back. Off unless you turn it on.</p>
+      <p class="small">The Forge mentor, AI Maker and Site Maker share your free messages each day. With this on, each extra message costs ${orbs(perUnit)}, and a Site Maker build counts as several messages. If the AI fails or can't finish, you get the orbs back. It's off until you turn it on. <a href="/orbs">What do orbs cost?</a></p>
     </div>`;
   $("ai-orbs-on").addEventListener("change", async e => {
     const want = e.target.checked;
