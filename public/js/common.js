@@ -551,15 +551,15 @@ document.addEventListener("click", e => {
 }
 
 // ---------- Creator referral links (?ref=handle) ----------
-// Remembered for 30 days, then sent once after sign-in. The server decides whether it
+// Remembered until the tab closes, and sent once after sign-in. The server decides whether it
 // counts (new accounts without orders only).
 {
   const REF = "fc-ref";
   const params = new URLSearchParams(location.search);
   const code = params.get("ref");
   if (code !== null) {
-    if (/^[a-z0-9-]{3,24}$/i.test(code) && cookieChoice() !== "reject") {
-      try { localStorage.setItem(REF, JSON.stringify({ code: code.toLowerCase(), at: Date.now() })); } catch {}
+    if (/^[a-z0-9-]{3,24}$/i.test(code)) {
+      try { sessionStorage.setItem(REF, JSON.stringify({ code: code.toLowerCase(), at: Date.now() })); } catch {}
     }
     params.delete("ref");
     history.replaceState(null, "", location.pathname + (params.size ? `?${params}` : "") + location.hash);
@@ -567,33 +567,31 @@ document.addEventListener("click", e => {
   onUser(async user => {
     if (!user?.ageGroup || user.ageGroup === "under13") return;
     let saved = null;
-    try { saved = JSON.parse(localStorage.getItem(REF) || "null"); localStorage.removeItem(REF); } catch {}
+    try { saved = JSON.parse(sessionStorage.getItem(REF) || "null"); sessionStorage.removeItem(REF); } catch {}
     if (!saved?.code || !(Date.now() - saved.at < 30 * 24 * 60 * 60 * 1000)) return;
     const r = await api("/api/creators/referral/claim", { method: "POST", body: { code: saved.code } });
     if (r.ok) toast(`Welcome! You joined through a link from @${r.data.creator.handle}.`);
   });
 }
 
-// ---------- Cookie choice ----------
-// The sign-in cookie is needed for the site to work. The only optional storage is
-// remembering a creator's referral link, so Reject turns that off. Both buttons are
-// the same size and equally easy to press.
-const CONSENT = "fc-cookies";
+// ---------- Cookie notice ----------
+// ForgeCenter only stores what it needs to work (the sign-in cookie, and a creator's
+// referral link until you sign in during the same visit), so there's nothing optional
+// to accept or reject: the notice just says so, once.
+const NOTICE = "fc-cookies";
 export function cookieChoice() { try { return localStorage.getItem("fc-cookies"); } catch { return null; } }
-function cookieBanner() {
+function cookieNotice() {
   if (cookieChoice()) return;
   const bar = document.createElement("div");
   bar.className = "cookie-bar panel";
   bar.setAttribute("role", "region");
-  bar.setAttribute("aria-label", "Cookie choice");
-  bar.innerHTML = `<p>ForgeCenter uses one cookie to keep you signed in. With your OK it also remembers which creator's link brought you here, so they get credit. No ads or tracking. <a href="/privacy#cookies">Details</a></p>
-    <div class="cookie-actions"><button class="btn" type="button" data-c="reject">Reject optional</button><button class="btn" type="button" data-c="accept">Accept</button></div>`;
-  bar.addEventListener("click", e => {
-    const c = e.target.closest("[data-c]")?.dataset.c;
-    if (!c) return;
-    try { localStorage.setItem(CONSENT, c); if (c === "reject") localStorage.removeItem("fc-ref"); } catch {}
+  bar.setAttribute("aria-label", "Cookie notice");
+  bar.innerHTML = `<p>ForgeCenter only uses the cookies it needs to work, like the one that keeps you signed in. No ads, no tracking. <a href="/privacy#cookies">Details</a></p>
+    <div class="cookie-actions"><button class="btn btn-buy" type="button">Got it</button></div>`;
+  bar.querySelector("button").addEventListener("click", () => {
+    try { localStorage.setItem(NOTICE, "seen"); } catch {}
     bar.remove();
   });
   document.body.append(bar);
 }
-cookieBanner();
+cookieNotice();
