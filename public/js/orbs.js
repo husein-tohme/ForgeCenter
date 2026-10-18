@@ -2,7 +2,7 @@
 // 1 orb = 1 US cent, so every amount from the server (in cents) is also an orb count.
 import { $, api, esc, icon, money, cash, orbs, toast, onUser, getUser, ready, requireSignIn, openSignIn, getCatalog, refreshUser, checkout, stack, PRODUCT_ICON } from "./common.js";
 
-const PACKS = [500, 1000, 2500, 5000, 10000];
+const PACKS = [500, 1000, 2500, 5000, 10000, 25000, 50000];
 const ORDER = ["showcase", "discord", "ai", "launcher", "roblox"]; // cheapest first; others follow by price
 
 const params = new URLSearchParams(location.search);

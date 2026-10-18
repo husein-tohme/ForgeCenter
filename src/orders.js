@@ -5,7 +5,7 @@ import { catalog, modeOf, isAdultOnly } from "./catalog.js";
 import { isAdmin, isAdult, requireAdmin, requireUser, requireUserOrSuspended } from "./auth.js";
 import { rateLimit } from "./limit.js";
 import { notify } from "./email.js";
-import { getStripe, ensureCustomer, baseUrl, CHECKOUT_LABELS } from "./stripe.js";
+import { getStripe, ensureCustomer, baseUrl, CHECKOUT_LABELS, SAVE_CARD } from "./stripe.js";
 import { createServiceForOrder, serviceForOrder, publicService } from "./services.js";
 import { donationsBetween } from "./donations.js";
 import { rewardReferral } from "./creators.js";
@@ -133,7 +133,7 @@ ordersRouter.post("/checkout", requireUser, rateLimit({ windowMs: 60_000, max: 1
     const session = await stripe.checkout.sessions.create({
       mode, line_items, customer,
       client_reference_id: String(orderId), metadata,
-      ...(mode === "subscription" ? { subscription_data: { metadata } } : { payment_intent_data: { metadata } }),
+      ...(mode === "subscription" ? { subscription_data: { metadata } } : { payment_intent_data: { metadata }, ...SAVE_CARD }),
       success_url: `${baseUrl(req)}/account.html?order=${orderId}&paid=1`,
       cancel_url: `${baseUrl(req)}/#shop`,
       integration_identifier: CHECKOUT_LABELS.shop,

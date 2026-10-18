@@ -11,7 +11,7 @@ import { catalog, isAdultOnly, walletPayable, orbs, usd, MAX_ORBS } from "./cata
 import { isAdult, requireAdmin, requireUser } from "./auth.js";
 import { rateLimit } from "./limit.js";
 import { notify } from "./email.js";
-import { getStripe, ensureCustomer, baseUrl, CHECKOUT_LABELS, checkoutKind } from "./stripe.js";
+import { getStripe, ensureCustomer, baseUrl, CHECKOUT_LABELS, checkoutKind, SAVE_CARD } from "./stripe.js";
 import { afterPayment } from "./orders.js";
 
 // Cents, which are orbs. The balance cap keeps this small-purchase credit, not a place to park money.
@@ -179,7 +179,7 @@ walletRouter.post("/topup", requireUser, rateLimit({ windowMs: 60_000, max: 5 })
       line_items: [{ quantity: 1, price_data: { currency: "usd", unit_amount: amount, product_data: {
         name: `${amount.toLocaleString("en-US")} ForgeCenter orbs`,
         description: "ForgeCenter's own currency, 1 orb for each cent. Orbs never expire, and they can't be withdrawn, sold or sent to other people." } } }],
-      metadata, payment_intent_data: { metadata },
+      metadata, payment_intent_data: { metadata }, ...SAVE_CARD,
       // Back to the page the pack was bought on: the orbs page or the account page.
       ...(req.body?.from === "orbs"
         ? { success_url: `${baseUrl(req)}/orbs?topup=${id}`, cancel_url: `${baseUrl(req)}/orbs#packs` }
