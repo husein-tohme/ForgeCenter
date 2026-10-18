@@ -1,0 +1,20 @@
+# Adds Caddy in front of the website for a free HTTPS padlock (Let's Encrypt).
+# Used by scripts/free-host.sh:
+#   SITE_DOMAIN=yourname.duckdns.org docker compose -f docker-compose.yml -f docker-compose.caddy.yml up -d --build
+services:
+  caddy:
+    image: caddy:2-alpine
+    command: ["caddy", "reverse-proxy", "--from", "${SITE_DOMAIN}", "--to", "web:3000"]
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - caddy-data:/data
+      - caddy-config:/config
+    depends_on:
+      - web
+    restart: unless-stopped
+
+volumes:
+  caddy-data:
+  caddy-config:

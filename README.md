@@ -159,6 +159,10 @@ Create a free [Resend](https://resend.com) account, verify your domain, and set 
 
 ## Deploy
 
+**Free ($0):** [docs/FREE-HOSTING.md](docs/FREE-HOSTING.md) puts the site on an Oracle Cloud Always Free server at a free DuckDNS address with HTTPS, using one setup command (`scripts/free-host.sh`).
+
+**Render, free with no card:** [docs/FREE-RENDER.md](docs/FREE-RENDER.md). `render.yaml` deploys the free plan in one click; Litestream (`Dockerfile.render`, `scripts/render-start.sh`, `litestream.yml`) restores the database from Supabase Storage on start and backs it up every second, because the free disk is wiped on restart. The site sleeps when idle and customer bots are off (`BOTS=off`). For an always-on paid setup with a disk, follow the notes at the bottom of `render.yaml`.
+
 With Docker on a VPS: fill in `.env` (with `NODE_ENV=production`), run `docker compose up -d --build`, and put an HTTPS reverse proxy such as Caddy in front of port 3000. Accounts, orders and bot data live in the `forgecenter-data` volume.
 
 Any Node 22 host works (Render, Railway, Fly.io, a VPS). Run two processes from the same folder: `npm start` (the website) and `npm run bots` (customer Discord bots). The included `Procfile` does this on hosts that read it. Set `NODE_ENV=production` (this makes the sign-in cookie HTTPS-only), set `BASE_URL` to your domain, and put `DATABASE_PATH` on a **persistent disk** so accounts and orders survive restarts.

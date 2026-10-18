@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sign-in setup · ForgeCenter</title>
+<meta name="robots" content="noindex">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<meta name="theme-color" content="#2a2d33">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=Pixelify+Sans:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="top">
+  <div class="wrap top-inner">
+    <a class="logo" href="/" aria-label="ForgeCenter home"><span class="logo-icon" data-icon="anvil"></span>ForgeCenter</a>
+    <nav aria-label="Main"><a href="/#shop">Prices</a><a href="/#tools">Free tools</a><a href="/games">Games</a><a href="/creators">Creators</a><a href="/#mentor">Learn to code</a><a href="/support">Help</a></nav>
+    <div class="auth" id="auth-slot"></div>
+  </div>
+</header>
+
+<main id="main" class="page">
+  <div class="wrap">
+    <h1 class="page-title">Sign-in setup</h1>
+    <p class="section-lede">Turn on ways for people to sign in. GitHub takes one click; the others need a few minutes in each company's developer site.</p>
+
+    <section class="panel acct-section" id="unlock" hidden>
+      <h2>Enter your setup code</h2>
+      <p>Nobody can sign in yet, so this page is unlocked with a one-time code from the server log. On Render: open your service, then <strong>Logs</strong>, and look for <strong>Sign-in setup code</strong>.</p>
+      <form class="inline-form" id="code-form">
+        <label class="grow">Setup code<input name="code" id="code" required autocomplete="off" placeholder="ABCDE-12345"></label>
+        <button class="btn btn-buy" type="submit">Unlock</button>
+      </form>
+    </section>
+
+    <section class="panel acct-section" id="github">
+      <h2>GitHub</h2>
+      <p id="github-status" class="hint">Checking…</p>
+      <button class="btn btn-buy" type="button" id="github-go" hidden>Set up GitHub sign-in</button>
+      <p class="small" id="github-help" hidden>GitHub opens with the app already filled in. Press the green <strong>Create GitHub App</strong> button there and you'll come straight back here. Nothing to copy.</p>
+    </section>
+
+    <section class="panel acct-section">
+      <h2>Google, Discord and Microsoft</h2>
+      <p>These companies don't allow one-click setup, so each needs a free app made in their developer site (about 5 minutes each). Paste the keys into your host's environment settings:</p>
+      <ul>
+        <li><strong>Google:</strong> <a href="https://console.cloud.google.com/apis/credentials" target="_blank" rel="noopener">Google Cloud credentials</a>, OAuth client ID, Web application, add your site under Authorized JavaScript origins. Set <code>GOOGLE_CLIENT_ID</code>.</li>
+        <li><strong>Discord:</strong> <a href="https://discord.com/developers/applications" target="_blank" rel="noopener">Discord developer portal</a>, New Application, OAuth2, add the redirect <code id="discord-cb"></code>. Set <code>DISCORD_CLIENT_ID</code> and <code>DISCORD_CLIENT_SECRET</code>.</li>
+        <li><strong>Microsoft:</strong> <a href="https://entra.microsoft.com/#view/Microsoft_AAD_RegisteredApps/ApplicationsListBlade" target="_blank" rel="noopener">App registrations</a>, New registration, any account type, Web redirect <code id="microsoft-cb"></code>. Set <code>MICROSOFT_CLIENT_ID</code> and <code>MICROSOFT_CLIENT_SECRET</code>.</li>
+      </ul>
+    </section>
+  </div>
+</main>
+
+<footer class="foot">
+  <div class="wrap foot-inner">
+    <span><span class="logo-icon" data-icon="anvil"></span>ForgeCenter</span>
+    <nav aria-label="Site"><a href="/games">Games</a> <a href="/creators">Creators</a> <a href="/developers">Developers</a> <a href="/donate">Donate</a> <a href="/rules">Rules</a> <a href="/privacy">Privacy</a> <a href="/terms">Terms</a> <a href="/support">Help</a></nav>
+  </div>
+</footer>
+<div class="toast" id="toast" role="status" hidden></div>
+<script type="module" src="/js/setup-signin.js"></script>
+</body>
+</html>

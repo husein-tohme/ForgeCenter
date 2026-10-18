@@ -6,6 +6,7 @@
   "type": "module",
   "scripts": {
     "start": "node --disable-warning=ExperimentalWarning src/server.js",
+    "start:all": "node scripts/start-all.mjs",
     "dev": "node --disable-warning=ExperimentalWarning --env-file-if-exists=.env --watch-path=src src/server.js",
     "test": "node --disable-warning=ExperimentalWarning --test test/*.test.js",
     "bots": "node --disable-warning=ExperimentalWarning src/bots.js",

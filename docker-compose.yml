@@ -10,7 +10,7 @@ services:
       DATABASE_PATH: /app/data/forgecenter.db
       BOT_DATA_DIR: /app/data/bots
     ports:
-      - "3000:3000"
+      - "127.0.0.1:3000:3000"
     volumes:
       - forgecenter-data:/app/data
     restart: unless-stopped

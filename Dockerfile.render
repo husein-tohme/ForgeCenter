@@ -1,0 +1,28 @@
+# ForgeCenter for Render's free plan: the website plus Litestream, which restores the
+# database from Supabase Storage on start and backs it up every second (the free plan's
+# disk is wiped on every restart). See render.yaml.
+FROM node:22-alpine
+
+ARG LITESTREAM_VERSION=0.3.13
+ARG LITESTREAM_SHA256=eb75a3de5cab03875cdae9f5f539e6aedadd66607003d9b1e7a9077948818ba0
+RUN wget -q -O /tmp/litestream.tgz "https://github.com/benbjohnson/litestream/releases/download/v${LITESTREAM_VERSION}/litestream-v${LITESTREAM_VERSION}-linux-amd64.tar.gz" \
+ && echo "${LITESTREAM_SHA256}  /tmp/litestream.tgz" | sha256sum -c - \
+ && tar -xzf /tmp/litestream.tgz -C /usr/local/bin litestream \
+ && rm /tmp/litestream.tgz
+
+WORKDIR /app
+ENV NODE_ENV=production
+
+COPY package.json package-lock.json ./
+RUN npm ci --omit=dev && npm cache clean --force
+
+COPY src ./src
+COPY public ./public
+COPY scripts ./scripts
+COPY litestream.yml ./
+
+RUN mkdir -p /app/data && chown node:node /app/data
+USER node
+
+EXPOSE 3000
+CMD ["sh", "scripts/render-start.sh"]
