@@ -38,17 +38,21 @@ const priceHtml = p => `<span class="price"><span class="gem">${icon("emerald")}
 // One-time items can also be paid with orbs (1 orb = 1 cent).
 const orbLine = (p, tag = "span") => p.orbPayable ? `<${tag} class="per">or <a href="/orbs">${orbs(p.price)}</a></${tag}>` : "";
 
-// ---------- Villager-style trade list ----------
+// ---------- Price cards: one colour per product, so the list reads at a glance ----------
+const COLOR = { website: "#3b82f6", mcserver: "#4caf50", discord: "#7c5cff", game: "#22c3d6", roblox: "#e5483b", launcher: "#f28c28", ai: "#14b8a6", showcase: "#e8b923" };
+const per = p => p.price ? (p.monthly ? `+ ${money(p.monthly)}/month` : "one-time") : "a month";
 function renderTrades() {
-  const order = ["website", "mcserver", "discord", "game", "roblox", "launcher", "ai", "showcase"];
+  const order = ["mcserver", "discord", "ai", "website", "launcher", "showcase", "roblox", "game"];
   $("trades").innerHTML = order.filter(k => catalog[k]).map(k => {
     const p = catalog[k];
-    return `<div class="trade${k === "website" ? " featured" : ""}">
-      <div class="slot">${icon(PRODUCT_ICON[k])}</div>
-      <div><h3>${esc(p.name)}</h3><p>${esc(p.desc)}</p>${orbLine(p, "p")}${p.adultOnly ? `<p class="small">For adults: confirm your age before buying.</p>` : ""}</div>
-      ${priceHtml(p)}
-      <button class="btn btn-buy" type="button" data-buy="${k}">Trade</button>
-    </div>`;
+    return `<article class="price-card" style="--c:${COLOR[k]}">
+      <div class="pc-top"><span class="pc-icon">${icon(PRODUCT_ICON[k])}</span><h3>${esc(p.name.replace(/ \(deposit\)$/, ""))}</h3></div>
+      <p class="pc-price">${money(p.price || p.monthly)}<span>${per(p)}</span></p>
+      <p class="pc-desc">${esc(p.desc)}</p>
+      ${p.orbPayable ? `<p class="pc-orbs">or ${orbs(p.price)}</p>` : ""}
+      ${p.adultOnly ? `<p class="pc-note">18+ · confirm your age first</p>` : ""}
+      <button class="btn btn-buy pc-buy" type="button" data-buy="${k}">${p.monthly && !p.price ? "Start" : "Buy"}</button>
+    </article>`;
   }).join("");
 }
 

@@ -312,7 +312,7 @@ async function loadShowcase() {
       <button class="btn btn-buy" type="submit">Submit listing</button></form>`;
   } else if (!listings.length) {
     html = `<p class="hint">Buy a showcase slot to list a website or server on the homepage.</p>
-      <button class="btn" type="button" data-buy="showcase">Buy a showcase slot for $10</button>`;
+      <button class="btn" type="button" data-buy="showcase">Buy a showcase slot for $3</button>`;
   }
   $("showcase").innerHTML = html;
   $("listing-form")?.addEventListener("submit", async e => {
