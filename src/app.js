@@ -90,6 +90,8 @@ export function createApp() {
       ...(whatsappEnabled() ? ["whatsapp"] : []),
     ],
     contactEmail: process.env.CONTACT_EMAIL || null,
+    // Without Stripe keys the shop shows "Coming soon" instead of failing at checkout.
+    payments: !!process.env.STRIPE_SECRET_KEY,
   }));
   app.get("/api/catalog", (_req, res) => res.json(publicCatalog()));
 
