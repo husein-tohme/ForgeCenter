@@ -455,3 +455,37 @@ async function loadCreator() {
   });
   onUser(user => { if (user) loadPayouts(); });
 }
+
+// ---------- Side menu: one link per section, built from the headings ----------
+{
+  const root = $("account");
+  const sections = [...root.querySelectorAll(".acct-section")];
+  const COLORS = ["#4caf50", "#3b82f6", "#e8b923", "#7c5cff", "#f28c28", "#22c3d6", "#e5483b", "#14b8a6", "#d94f9a", "#9aa0a6"];
+  const nav = document.createElement("nav");
+  nav.className = "acct-nav panel";
+  nav.setAttribute("aria-label", "Account sections");
+  nav.innerHTML = sections.map((sec, i) => {
+    const h = sec.querySelector("h2");
+    if (!h) return "";
+    sec.id ||= `sec-${h.textContent.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-")}`;
+    sec.style.setProperty("--sec", sec.classList.contains("danger") ? "#e5483b" : COLORS[i % COLORS.length]);
+    return `<a href="#${sec.id}" style="--sec:${sec.style.getPropertyValue("--sec")}">${esc(h.textContent.trim())}</a>`;
+  }).join("");
+  const body = document.createElement("div");
+  body.className = "acct-body";
+  sections[0].before(body);
+  sections.forEach(sec => body.append(sec));
+  const layout = document.createElement("div");
+  layout.className = "acct-layout";
+  body.before(layout);
+  layout.append(nav, body);
+  // Highlight the section in view.
+  const links = new Map([...nav.querySelectorAll("a")].map(a => [a.hash.slice(1), a]));
+  const observer = new IntersectionObserver(entries => {
+    for (const e of entries) if (e.isIntersecting) {
+      links.forEach(a => a.removeAttribute("aria-current"));
+      links.get(e.target.id)?.setAttribute("aria-current", "true");
+    }
+  }, { rootMargin: "-30% 0px -60% 0px" });
+  sections.forEach(sec => observer.observe(sec));
+}
