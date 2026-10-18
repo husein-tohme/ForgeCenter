@@ -641,3 +641,8 @@ dialog.gate h2 { font-size: 1.6rem; }
 .cookie-bar p { margin: 0; flex: 1 1 320px; }
 .cookie-actions { display: flex; gap: 10px; }
 .cookie-actions .btn { min-width: 140px; }
+
+/* Wide tables scroll inside their box on phones instead of widening the page. */
+.table-wrap { overflow-x: auto; margin: 16px 0; }
+.legal table { border-collapse: collapse; width: 100%; min-width: 560px; }
+.legal th, .legal td { text-align: left; vertical-align: top; padding: 8px 10px; border-bottom: 1px solid rgba(255,255,255,.15); }
