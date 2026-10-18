@@ -318,6 +318,7 @@ export const getCatalog = () => catalogPromise ??= api("/api/catalog").then(r =>
 let afterBirthday = null;
 
 export function checkout(product, button) {
+  if (paymentsOff) return comingSoon();
   return requireSignIn(async () => {
     if (!currentUser.ageGroup) { afterBirthday = () => checkout(product, button); return openBirthday(); }
     const item = (await getCatalog())[product];
@@ -643,3 +644,29 @@ cookieNotice();
   // Mark the current page in the menu.
   document.querySelectorAll(".top nav a").forEach(a => { if (a.pathname === location.pathname && a.pathname !== "/") a.setAttribute("aria-current", "page"); });
 }
+
+// ---------- Payments not switched on yet ----------
+// Before Stripe is set up, anything that costs money says "Coming soon" instead of
+// erroring. Free tools, sign-in and everything else work as normal.
+let paymentsOff = false;
+export const paymentsOn = () => !paymentsOff;
+function comingSoon() {
+  toast("Buying opens soon. Everything free on ForgeCenter works right now.");
+}
+config.then(c => {
+  if (c?.payments !== false) return;
+  paymentsOff = true;
+  document.documentElement.classList.add("payments-off");
+  const mark = root => root.querySelectorAll("[data-buy], .pc-buy, .donate-btn, [data-pack], [data-orb-buy], [data-pack-jump], #topup-custom-btn").forEach(b => {
+    if (b.dataset.soon) return;
+    b.dataset.soon = "1"; b.textContent = "Coming soon"; b.disabled = true; b.classList.remove("btn-buy");
+  });
+  mark(document);
+  new MutationObserver(() => mark(document)).observe(document.body, { childList: true, subtree: true });
+  if (!document.querySelector(".soon-bar")) {
+    const bar = document.createElement("div");
+    bar.className = "soon-bar";
+    bar.innerHTML = `<b>Shop opening soon.</b> All the free tools work right now. <a href="/#tools">Try them</a>`;
+    document.querySelector(".top")?.after(bar);
+  }
+});
