@@ -25,6 +25,7 @@ import { creatorsRouter, adminCreatorsRouter } from "./creators.js";
 import { pagesRouter, notFound } from "./pages.js";
 import { donationsRouter, keepMonthlyDonors } from "./donations.js";
 import { payoutsRouter } from "./payouts.js";
+import { githubRouter } from "./github-repos.js";
 
 export function createApp() {
   const app = express();
@@ -112,7 +113,7 @@ export function createApp() {
   app.use("/api/donations", donationsRouter);
   app.use("/api/payouts", payoutsRouter);
   app.use("/api/developer", developerRouter);
-  app.use("/api/creators", creatorsRouter);
+  app.use("/api/creators", githubRouter, creatorsRouter);
   app.use("/api/roblox", robloxRouter);
   app.use("/api/assistants", assistantsRouter);
   app.use("/api/sites", sitesRouter);
