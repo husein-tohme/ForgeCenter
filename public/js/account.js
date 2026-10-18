@@ -370,11 +370,29 @@ async function loadCreator() {
 
 // ---------- Email settings ----------
 {
-  const box = $("#email-updates");
+  const box = $("email-updates");
   onUser(user => { if (user) box.checked = user.emailUpdates !== false; });
   box?.addEventListener("change", async () => {
     const r = await api("/api/me", { method: "PATCH", body: { emailUpdates: box.checked } });
     if (!r.ok) { box.checked = !box.checked; return toast(r.data.error || "That didn't save. Try again."); }
     toast(box.checked ? "Update emails are on." : "Update emails are off. Receipts still arrive.");
+  });
+}
+
+// ---------- Account type ----------
+{
+  const set = $("account-type"), note = $("business-note");
+  const show = type => {
+    set.querySelectorAll("input").forEach(i => { i.checked = i.value === type; });
+    note.hidden = type !== "business";
+  };
+  onUser(user => { if (user) show(user.accountType ?? "personal"); });
+  set?.addEventListener("change", async e => {
+    const type = e.target.value;
+    const r = await api("/api/me", { method: "PATCH", body: { accountType: type } });
+    if (!r.ok) { show(getUser()?.accountType ?? "personal"); return toast(r.data.error || "That didn't save. Try again."); }
+    note.hidden = type !== "business";
+    await refreshUser();
+    toast(`Account type set to ${type}.`);
   });
 }

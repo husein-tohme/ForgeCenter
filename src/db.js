@@ -287,6 +287,7 @@ addColumn("users", "age_confirmed_at", "TEXT");
 addColumn("users", "suspended_at", "TEXT");
 addColumn("users", "terms_accepted_at", "TEXT");
 addColumn("users", "terms_version", "TEXT");
+addColumn("users", "account_type", "TEXT NOT NULL DEFAULT 'personal'");
 addColumn("users", "suspended_reason", "TEXT");
 addColumn("orders", "paid_with", "TEXT");
 if (!columns("orders").includes("paid_at")) {

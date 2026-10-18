@@ -95,3 +95,11 @@ test("data export downloads your rows and leaves secrets out", async () => {
   assert.doesNotMatch(JSON.stringify(r.body), /token_hash|value_enc|key_hash/);
   assert.equal((await api("/api/me/export")).status, 401);
 });
+
+test("account type can be personal, student or business", async () => {
+  const me = signIn("typer@example.com");
+  assert.equal((await api("/api/me", { cookie: me.cookie })).body.user.accountType, "personal");
+  assert.equal((await api("/api/me", { method: "PATCH", body: { accountType: "pirate" }, cookie: me.cookie })).status, 400);
+  await api("/api/me", { method: "PATCH", body: { accountType: "business" }, cookie: me.cookie });
+  assert.equal((await api("/api/me", { cookie: me.cookie })).body.user.accountType, "business");
+});

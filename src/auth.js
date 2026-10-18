@@ -24,7 +24,7 @@ export const publicUser = u => u && ({
   id: u.id, email: u.email, phone: u.phone, name: u.name, picture: u.picture,
   isAdmin: isAdmin(u), hasBilling: !!u.stripe_customer_id,
   ageGroup: u.age_group, ageMethod: u.age_method, ageConfirmedAt: u.age_confirmed_at,
-  wallet: walletBalance(u.id), emailUpdates: !u.email_optout,
+  wallet: walletBalance(u.id), emailUpdates: !u.email_optout, accountType: u.account_type ?? "personal",
   suspended: u.suspended_at ? { at: u.suspended_at, reason: u.suspended_reason } : null,
 });
 
@@ -168,12 +168,19 @@ authRouter.post("/logout", (req, res) => {
   res.json({ ok: true });
 });
 
+export const ACCOUNT_TYPES = ["personal", "student", "business"];
+
 // ---------- The signed-in account ----------
 export const meRouter = express.Router();
 
 meRouter.get("/", (req, res) => res.json({ user: publicUser(req.user) ?? null }));
 
 meRouter.patch("/", requireSignedIn, (req, res) => {
+  if (req.body?.accountType !== undefined) {
+    // Business accounts come under the data processing agreement (/dpa).
+    if (!ACCOUNT_TYPES.includes(req.body.accountType)) return res.status(400).json({ error: "Choose personal, student or business." });
+    db.prepare("UPDATE users SET account_type = ? WHERE id = ?").run(req.body.accountType, req.user.id);
+  }
   if (typeof req.body?.emailUpdates === "boolean") {
     db.prepare("UPDATE users SET email_optout = ? WHERE id = ?").run(req.body.emailUpdates ? 0 : 1, req.user.id);
   }

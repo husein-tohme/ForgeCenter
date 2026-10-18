@@ -95,6 +95,17 @@
       </section>
 
       <section class="acct-section">
+        <h2>Account type</h2>
+        <fieldset class="type-pick" id="account-type">
+          <legend class="small">What do you use ForgeCenter for?</legend>
+          <label class="check-row"><input type="radio" name="atype" value="personal"> Personal: just for me</label>
+          <label class="check-row"><input type="radio" name="atype" value="student"> Student: for school or learning</label>
+          <label class="check-row"><input type="radio" name="atype" value="business"> Business: for a company, server network or paid project</label>
+        </fieldset>
+        <p class="small" id="business-note" hidden>Business accounts are covered by the <a href="/dpa">data processing agreement</a>. The companies that help process data are on the <a href="/subprocessors">subprocessors</a> page.</p>
+      </section>
+
+      <section class="acct-section">
         <h2>Emails</h2>
         <label class="check-row"><input type="checkbox" id="email-updates"> Send me update emails: order progress, replies to my tickets and messages, thank-yous</label>
         <p class="small">Receipts and payment problems are always emailed, because they're about money.</p>
