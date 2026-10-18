@@ -6,7 +6,7 @@ import { db, now } from "./db.js";
 import { requireUser } from "./auth.js";
 import { rateLimit } from "./limit.js";
 import { ask, textOf, aiEnabled } from "./ai.js";
-import { spendAllowance, dailyLimit } from "./tutor.js";
+import { spendAllowance, dailyLimit, outOfAi } from "./tutor.js";
 
 db.exec(`
 CREATE TABLE IF NOT EXISTS sites (
@@ -280,13 +280,10 @@ ${escText(description)}
 
 // ---------- Allowance ----------
 // Spent up front so two requests at once can't both squeeze past the limit, and given
-// back when nothing was built: people only pay for sites they get.
+// back when nothing was built: people only pay for sites they get. Past the free
+// messages a build can be paid with orbs, and refund() gives those back too.
 const today = () => new Date().toISOString().slice(0, 10);
-function reserve(userId, cost) {
-  const day = today();
-  const r = spendAllowance(userId, cost);
-  return { ...r, refund: () => db.prepare("UPDATE tutor_usage SET count = MAX(0, count - ?) WHERE user_id = ? AND day = ?").run(cost, userId, day) };
-}
+const reserve = (userId, cost) => spendAllowance(userId, cost, { tool: "Site Maker" });
 const remaining = userId => {
   const used = db.prepare("SELECT count FROM tutor_usage WHERE user_id = ? AND day = ?").get(userId, today())?.count ?? 0;
   return Math.max(0, dailyLimit(userId) - used);
@@ -297,7 +294,7 @@ async function build(user, messages, cost) {
   if (!aiEnabled()) return { status: 503, error: "Site Maker isn't set up yet. The site owner needs to add an Anthropic API key." };
   const spent = reserve(user.id, cost);
   if (!spent.ok) {
-    return { status: 429, error: `This needs ${cost} AI messages and you have ${spent.remaining} left today. Your allowance resets at midnight UTC.` };
+    return outOfAi(spent, `This needs ${cost} AI messages and you have ${spent.remaining} left today. Your allowance resets at midnight UTC.`);
   }
   let r;
   try {

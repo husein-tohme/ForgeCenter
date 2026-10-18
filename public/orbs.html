@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Orbs · ForgeCenter</title>
+<meta name="description" content="Orbs are ForgeCenter's own currency. Buy a pack, then spend orbs on Discord bots, AI assistants, showcase slots and extra AI messages whenever you want.">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<meta name="theme-color" content="#2a2d33">
+<link rel="canonical" href="%PAGE_URL%">
+<meta property="og:site_name" content="ForgeCenter">
+<meta property="og:title" content="Orbs · ForgeCenter">
+<meta property="og:description" content="Orbs are ForgeCenter's own currency. Buy a pack, then spend orbs on Discord bots, AI assistants, showcase slots and extra AI messages whenever you want.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="%PAGE_URL%">
+<meta property="og:image" content="%BASE_URL%/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=Pixelify+Sans:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/styles.css">
+<link rel="stylesheet" href="/css/orbs.css">
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="top">
+  <div class="wrap top-inner">
+    <a class="logo" href="/" aria-label="ForgeCenter home"><span class="logo-icon" data-icon="anvil"></span>ForgeCenter</a>
+    <nav aria-label="Main"><a href="/#shop">Prices</a><a href="/#tools">Free tools</a><a href="/games">Games</a><a href="/creators">Creators</a><a href="/#mentor">Learn to code</a><a href="/support">Help</a></nav>
+    <div class="auth" id="auth-slot"></div>
+  </div>
+</header>
+
+<main id="main" class="page orbs-page">
+  <div class="wrap">
+    <section class="panel orb-hero" aria-labelledby="orbs-title">
+      <div class="orb-hero-art" id="hero-art"><span class="slot orb-hero-slot" data-icon="orb"></span></div>
+      <div class="orb-hero-text">
+        <h1 class="page-title" id="orbs-title">Orbs</h1>
+        <p class="orb-lede">ForgeCenter's own currency, like the XP orbs you pick up in Minecraft. Buy a pack once, then spend orbs whenever you want.</p>
+        <p class="orb-rate"><span class="orb-rate-chip">1 orb = 1 cent</span> <span class="small">So 2,500 orbs cost $25. No bonus orbs, no hidden fees.</span></p>
+        <p class="orb-balance" id="balance" aria-live="polite" hidden></p>
+      </div>
+    </section>
+
+    <section class="orb-section" id="packs" aria-labelledby="packs-title">
+      <h2 id="packs-title">Orb packs</h2>
+      <p class="section-lede">Paid by card through Stripe. Your orbs show up a few seconds after you pay.</p>
+      <div class="orb-packs-grid" id="pack-list"></div>
+      <form class="panel orb-custom-form" id="custom-form">
+        <label for="custom-orbs">Other amount, in orbs</label>
+        <div class="orb-custom-row">
+          <input id="custom-orbs" name="orbs" type="number" inputmode="numeric" min="500" max="50000" step="100" placeholder="1,500" required aria-describedby="custom-help">
+          <button class="btn" type="submit">Buy</button>
+          <span class="orb-custom-price" id="custom-price" aria-live="polite"></span>
+        </div>
+        <p class="small" id="custom-help">Any amount in hundreds, from 500 to 50,000 orbs.</p>
+      </form>
+      <p class="note orb-closed-loop"><strong>Orbs stay on ForgeCenter.</strong> They can't be withdrawn, sold, cashed out or sent to other people. You can only spend them here.</p>
+    </section>
+
+    <section class="orb-section" aria-labelledby="spend-title">
+      <h2 id="spend-title">What can I get with orbs?</h2>
+      <p class="section-lede">Anything with a one-time price. When you have enough orbs, the checkout asks whether to pay with orbs or by card. Monthly plans, like Minecraft server hosting, are paid by card so they can renew.</p>
+      <div class="panel trades" id="spend-list"><p class="hint">Loading…</p></div>
+    </section>
+
+    <section class="orb-section" aria-labelledby="ai-title">
+      <h2 id="ai-title">Extra AI messages</h2>
+      <p class="section-lede" id="ai-lede">The Forge mentor, AI Maker and Site Maker share a free allowance of messages each day. When it runs out, you can keep going with orbs.</p>
+      <div class="orb-ai-grid" id="ai-list"></div>
+      <div class="panel orb-ai-setting" id="ai-setting"></div>
+    </section>
+
+    <section class="orb-section" aria-labelledby="rules-title">
+      <h2 id="rules-title">The rules</h2>
+      <ul class="orb-rules" id="rules"></ul>
+      <p class="small">More questions? Read <a href="/support#wallet">How to buy and spend orbs</a> or the <a href="/terms">terms</a>.</p>
+    </section>
+  </div>
+</main>
+
+<footer class="foot">
+  <div class="wrap foot-inner">
+    <span><span class="logo-icon" data-icon="anvil"></span>ForgeCenter</span>
+    <nav aria-label="Site"><a href="/games">Games</a> <a href="/creators">Creators</a> <a href="/developers">Developers</a> <a href="/donate">Donate</a> <a href="/rules">Rules</a> <a href="/privacy">Privacy</a> <a href="/terms">Terms</a> <a href="/support">Help</a></nav>
+  </div>
+</footer>
+<div class="toast" id="toast" role="status" hidden></div>
+<script type="module" src="/js/orbs.js"></script>
+</body>
+</html>

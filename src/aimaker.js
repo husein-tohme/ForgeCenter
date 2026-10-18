@@ -9,7 +9,7 @@ import { requireUser, requireAdmin } from "./auth.js";
 import { rateLimit } from "./limit.js";
 import { paidOrderCount } from "./orders.js";
 import { baseUrl } from "./stripe.js";
-import { spendAllowance } from "./tutor.js";
+import { spendAllowance, outOfAi } from "./tutor.js";
 import { ask, textOf, aiEnabled, cleanHistory } from "./ai.js";
 import { registerReportTarget } from "./reports.js";
 
@@ -47,10 +47,6 @@ const view = (a, req) => ({
 });
 const byId = id => db.prepare("SELECT * FROM assistants WHERE id = ?").get(id);
 
-// The daily AI allowance lives in tutor_usage (src/tutor.js), one row per person per UTC day.
-const today = () => new Date().toISOString().slice(0, 10);
-const refundAllowance = (userId, day) =>
-  db.prepare("UPDATE tutor_usage SET count = MAX(count - 1, 0) WHERE user_id = ? AND day = ?").run(userId, day);
 
 // Checks the fields that were sent; `partial` skips missing ones (for PATCH).
 function readFields(body = {}, partial = false) {
@@ -204,10 +200,11 @@ assistantsRouter.post("/:id/chat", rateLimit({ windowMs: 60_000, max: 15 }), asy
 
   // The chatter pays from their own daily allowance, never the maker's. It's taken up
   // front so parallel requests can't overspend, and given back if the model call fails.
-  const day = today();
-  const spent = spendAllowance(req.user.id, 1);
+  // Past the free messages it can be paid with orbs, which spent.refund() gives back too.
+  const spent = spendAllowance(req.user.id, 1, { tool: "AI Maker" });
   if (!spent.ok) {
-    return res.status(429).json({ error: `You've used all ${spent.limit} AI messages for today. They come back at midnight UTC.` });
+    const out = outOfAi(spent, `You've used all ${spent.limit} AI messages for today. They come back at midnight UTC.`);
+    return res.status(out.status).json({ error: out.error });
   }
 
   try {
@@ -219,7 +216,7 @@ assistantsRouter.post("/:id/chat", rateLimit({ windowMs: 60_000, max: 15 }), asy
     res.json({ reply: reply || "I'm not sure what to say to that. Could you put it another way?", remaining: spent.remaining });
   } catch (e) {
     console.error("AI Maker chat failed", e.message);
-    refundAllowance(req.user.id, day);
+    spent.refund();
     res.status(502).json({ error: "The assistant couldn't answer right now. Try again in a moment." });
   }
 });

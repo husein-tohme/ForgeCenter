@@ -57,23 +57,26 @@ export const ARTICLES = [
   },
   {
     id: "wallet",
-    title: "How to add funds and pay from your wallet",
-    tags: "wallet balance add funds top up credit pay from wallet store credit emerald limit refund",
-    summary: "Top up your ForgeCenter wallet by card and pay for one-time items in one step.",
+    title: "How to buy and spend orbs",
+    tags: "orbs orb xp currency wallet balance buy add funds top up credit pay with orbs store credit limit refund ai messages",
+    summary: "Orbs are ForgeCenter's own currency. Buy a pack by card, then spend orbs on one-time items and extra AI messages.",
     body: [
-      { h: "Add funds" },
+      { p: "1 orb is worth 1 US cent, so 2,500 orbs cost $25. See everything you can get with orbs on the [orbs page](/orbs)." },
+      { h: "Buy orbs" },
       { steps: [
-        "Open [My account](/account) and scroll to **Wallet**.",
-        "Choose an amount, or type one under **Other amount**.",
-        "Pay by card on the Stripe page. You'll come back to your account, and the money shows up in a few seconds.",
+        "Open the [orbs page](/orbs), or [My account](/account) and scroll to **Orbs**.",
+        "Choose a pack, or type a number of orbs under **Other amount**.",
+        "Pay by card on the Stripe page. You'll come back to ForgeCenter, and your orbs show up in a few seconds.",
       ] },
       { list: [
-        "You can add $5 to $500 at a time, and your wallet holds up to $2,000.",
-        "Wallet credit never expires, but it can't be withdrawn or sent to someone else.",
+        "You can buy 500 to 50,000 orbs at a time, in hundreds, and hold up to 200,000.",
+        "Orbs never expire, but they can't be withdrawn, sold or sent to someone else.",
       ] },
-      { h: "Pay from your wallet" },
-      { p: "When your balance covers the whole price of a one-time item, like a Discord bot, the Dedicated AI assistant or a showcase slot, pressing **Trade** asks how you want to pay. Choose **Pay from wallet**. Monthly plans are always paid by card." },
-      { note: "Want unused credit back on your card? Open a support ticket and a person will refund the top-up." },
+      { h: "Spend orbs" },
+      { p: "When you have enough orbs for the whole price of a one-time item, like a Discord bot, the Dedicated AI assistant or a showcase slot, pressing **Trade** asks how you want to pay. Choose **Pay with orbs**. Monthly plans are always paid by card." },
+      { h: "Keep chatting when your free AI messages run out" },
+      { p: "The Forge mentor, AI Maker and Site Maker share a free daily allowance. Turn on **When my free AI messages run out, use orbs** in the Orbs section of your account, and each extra message costs a few orbs (the price is shown next to the setting). If the AI fails, you get those orbs back." },
+      { note: "Want an unused orb pack refunded to your card? Open a support ticket and a person will refund it." },
     ],
   },
   {
@@ -116,17 +119,17 @@ export const ARTICLES = [
   {
     id: "refunds",
     title: "Can I get a refund?",
-    tags: "refund money back cancel order chargeback dispute wallet credit donation mistake",
+    tags: "refund money back cancel order chargeback dispute wallet orbs credit donation mistake",
     summary: "What you can get back, and how to ask.",
     body: [
       { p: "If work on your order hasn't started yet, yes: you get a full refund. Ask in the order's messages or open a support ticket." },
       { list: [
         "**Work has started**: you get back the part that hasn't been done yet.",
         "**Monthly plans**: not refunded for the month you're in. Cancelling stops the next payment.",
-        "**Unused wallet top-ups**: refunded to the card they came from, on request.",
+        "**Unused orb packs**: refunded to the card they came from, on request.",
         "**Donations**: only refunded if made by mistake, within 14 days.",
       ] },
-      { p: "Refunds go back to your card, or into your wallet as credit if you'd rather have that." },
+      { p: "Refunds go back to your card, or into your account as orbs if you'd rather have that." },
       { note: "Please talk to us before disputing a payment with your bank. A refund is quicker for everyone." },
     ],
   },
@@ -160,7 +163,7 @@ export const ARTICLES = [
     body: [
       { steps: [
         "Cancel any monthly plans under **Manage billing**.",
-        "Spend your wallet balance, or open a support ticket to have it refunded. It needs to be at exactly $0.",
+        "Spend your orbs, or open a support ticket to have unused orb packs refunded. Your balance needs to be at exactly 0 orbs.",
         "Open [My account](/account), scroll to the bottom and press **Delete my account**.",
       ] },
       { p: "Your profile, saved creations, showcase listings, messages, support tickets and age checks are removed, and your game server panel login is switched off. Records of past payments are kept for tax law, without your name, project briefs or messages." },

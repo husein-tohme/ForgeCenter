@@ -1,13 +1,13 @@
 import { renderService } from "./service.js";
-import { $, api, esc, icon, registerIcons, money, cash, date, toast, getUser, onUser, adultPerks, openSignIn, signOut, pill, renderSignInOptions, refreshUser, stack, STATUS, SUB_STATUS, PRODUCT_ICON, PROVIDER_NAMES } from "./common.js";
+import { $, api, esc, icon, registerIcons, money, cash, orbs, date, toast, getUser, onUser, adultPerks, openSignIn, signOut, pill, renderSignInOptions, refreshUser, stack, STATUS, SUB_STATUS, PRODUCT_ICON, PROVIDER_NAMES } from "./common.js";
 
 const params = new URLSearchParams(location.search);
 const focusOrder = Number(params.get("order")) || null;
 const ageCheck = Number(params.get("age_check")) || null;
 const toppedUp = params.has("topup");
 if (params.get("paid") === "1") toast("Payment received. Your order will update in a moment.");
-if (params.get("paid") === "wallet") toast("Paid from your wallet. Your order is below.");
-if (params.get("topup")) toast("Thanks! Your funds will show in your wallet in a moment.");
+if (params.get("paid") === "wallet") toast("Paid with orbs. Your order is below.");
+if (params.get("topup")) toast("Thanks! Your orbs will show up in a moment.");
 // Read once; drop them so a reload doesn't repeat the messages.
 for (const k of ["paid", "topup", "age_check"]) params.delete(k);
 history.replaceState(null, "", location.pathname + (params.size ? `?${params}` : "") + location.hash);
@@ -91,7 +91,8 @@ const launchHelp = o => LAUNCH_HELP[o.status]
   ?? (o.subscriptionStatus === "active" ? "Your game is on the ForgeCenter games page. Edit it, cancel or switch it back on in My games."
     : o.subscriptionStatus === "past_due" ? "Your last payment failed, so your game is off the games page. Update your card in Manage billing to bring it back."
     : "This launch has ended. You can launch your game again from My games.");
-const amountText = o => [o.amount ? money(o.amount) : "", o.monthly ? `${money(o.monthly)} a month` : ""].filter(Boolean).join(" + ");
+const amountText = o => o.paidWith === "wallet" ? `paid with ${orbs(o.amount)}`
+  : [o.amount ? money(o.amount) : "", o.monthly ? `${money(o.monthly)} a month` : ""].filter(Boolean).join(" + ");
 
 async function loadOrders() {
   const r = await api("/api/orders");
@@ -175,43 +176,49 @@ async function loadOrder(d) {
   });
 }
 
-// ---------- Wallet ----------
+// ---------- Orbs ----------
+// Amounts are in cents, which are orbs (1 orb = 1 cent).
 const ENTRY_TEXT = {
-  topup: () => "Added funds",
-  purchase: e => `Paid for ${e.product ?? "an order"}${e.orderId ? ` (order ${e.orderId})` : ""}`,
-  refund: e => `Refund for order ${e.orderId}`,
-  credit: e => `Credit from ForgeCenter: ${e.note}`,
-  topup_refund: () => "Top-up refunded to your card",
+  topup: () => "Bought orbs",
+  purchase: e => `Spent on ${e.product ?? "an order"}${e.orderId ? ` (order ${e.orderId})` : ""}`,
+  refund: e => `Orbs back for order ${e.orderId}`,
+  credit: e => `Orbs from ForgeCenter: ${e.note}`,
+  topup_refund: () => "Orb pack refunded to your card",
   dispute: e => e.note || "Card dispute",
   api: e => e.note || "Developer API call",
   reward: e => `Creator reward: ${e.note}`,
+  ai: e => e.note || "AI messages",
 };
+const PACKS = [500, 1000, 2500, 5000, 10000];
 
 async function loadWallet(retry = toppedUp) {
   const r = await api("/api/wallet");
   if (!r.ok) { $("wallet-panel").innerHTML = `<p class="error">${esc(r.data.error)}</p>`; return; }
-  const { balance, entries, pending, limits, available } = r.data;
-  const pendingCents = pending.reduce((n, t) => n + t.amount, 0);
+  const { balance, entries, pending, limits, available, aiOrbs, orbsPerAiUnit } = r.data;
+  const pendingOrbs = pending.reduce((n, t) => n + t.amount, 0);
   $("wallet-panel").innerHTML = `
-    <div class="wallet-balance">${stack(balance, { big: true })}<span class="small">${cash(balance)} to spend</span></div>
+    <div class="wallet-balance">${stack(balance, { big: true })}
+      <span><strong class="num">${esc(orbs(balance))}</strong><br><span class="small">Worth ${cash(balance)}</span></span></div>
     <div class="wallet-add">
-      <h3>Add funds</h3>
-      ${available ? `<div class="amounts">
-        ${[1000, 2500, 5000, 10000].map(a => `<button class="btn btn-buy" type="button" data-topup="${a}">Add <span class="num">${money(a)}</span></button>`).join("")}
-        <form class="custom" id="topup-custom">
-          <label>Other amount<input name="dollars" type="number" inputmode="numeric" min="${limits.minTopup / 100}" max="${limits.maxTopup / 100}" step="1" placeholder="$" required></label>
-          <button class="btn" type="submit">Add</button>
-        </form>
+      <h3>Buy orbs</h3>
+      ${available ? `<div class="orb-packs">
+        ${PACKS.map(a => `<button class="btn btn-buy orb-pack" type="button" data-topup="${a}"><span class="num">${a.toLocaleString("en-US")}</span> orbs<span class="pack-price">${money(a)}</span></button>`).join("")}
       </div>
-      <p class="small">${money(limits.minTopup)} to ${money(limits.maxTopup)} at a time, and up to ${money(limits.maxBalance)} in your wallet. Paid by card through Stripe.</p>`
-        : `<p class="hint">Adding funds isn't available yet.</p>`}
-      ${pendingCents ? `<p class="small">${cash(pendingCents)} is on its way and will appear once your payment goes through.</p>` : ""}
+      <form class="custom orb-custom" id="topup-custom">
+        <label>Other amount, in orbs<input name="orbs" type="number" inputmode="numeric" min="${limits.minTopup}" max="${limits.maxTopup}" step="100" placeholder="${limits.minTopup}" required></label>
+        <button class="btn" type="submit">Buy</button>
+        <span class="small" id="custom-price" aria-live="polite"></span>
+      </form>
+      <p class="small">${orbs(limits.minTopup)} to ${orbs(limits.maxTopup)} at a time, in hundreds, and up to ${orbs(limits.maxBalance)} in your account. Paid by card through Stripe. No bonus orbs, no tricks: 1 orb is 1 cent.</p>`
+        : `<p class="hint">Buying orbs isn't available yet.</p>`}
+      ${pendingOrbs ? `<p class="small">${orbs(pendingOrbs)} on the way. They'll show up once your payment goes through.</p>` : ""}
     </div>`;
+  renderAiOrbs(aiOrbs, orbsPerAiUnit);
   $("ledger").innerHTML = entries.length ? entries.map(e => `<li>
       <span>${esc((ENTRY_TEXT[e.kind] ?? (() => e.kind))(e))}</span>
-      <span class="amount ${e.amount > 0 ? "plus" : ""}">${e.amount > 0 ? "+" : ""}${cash(e.amount)}</span>
+      <span class="amount ${e.amount > 0 ? "plus" : ""}">${e.amount > 0 ? "+" : ""}${orbs(e.amount)}</span>
       <span class="small">${date(e.createdAt)}</span></li>`).join("")
-    : `<li class="hint">Nothing yet. Funds you add and spend show up here.</li>`;
+    : `<li class="hint">Nothing yet. Orbs you buy and spend show up here.</li>`;
 
   const topUp = async (amount, button) => {
     button.disabled = true;
@@ -220,13 +227,38 @@ async function loadWallet(retry = toppedUp) {
     if (res.data.url) location.href = res.data.url; else toast(res.data.error);
   };
   $("wallet-panel").querySelectorAll("[data-topup]").forEach(b => b.addEventListener("click", () => topUp(Number(b.dataset.topup), b)));
-  $("topup-custom")?.addEventListener("submit", e => {
+  const custom = $("topup-custom");
+  custom?.elements.orbs.addEventListener("input", e => {
+    const n = Number(e.target.value);
+    $("custom-price").textContent = n >= limits.minTopup && n <= limits.maxTopup && n % 100 === 0 ? `${money(n)} by card` : "";
+  });
+  custom?.addEventListener("submit", e => {
     e.preventDefault();
-    topUp(Math.round(Number(e.target.elements.dollars.value) * 100), e.target.querySelector("button"));
+    topUp(Math.round(Number(e.target.elements.orbs.value)), e.target.querySelector("button"));
   });
   // Just back from Stripe: the webhook usually lands within a few seconds.
-  if (retry && pendingCents) setTimeout(async () => { await loadWallet(false); refreshUser(); }, 3000);
+  if (retry && pendingOrbs) setTimeout(async () => { await loadWallet(false); refreshUser(); }, 3000);
   else if (retry) refreshUser();
+}
+
+// "When my free AI messages run out, use orbs."
+function renderAiOrbs(on, perUnit) {
+  const box = $("ai-orbs");
+  box.hidden = false;
+  box.innerHTML = `
+    <span class="slot">${icon("eye")}</span>
+    <div>
+      <label class="check-row"><input type="checkbox" id="ai-orbs-on" ${on ? "checked" : ""}> When my free AI messages run out, use orbs</label>
+      <p class="small">The Forge mentor, AI Maker and Site Maker share your free messages each day. With this on, each extra message costs ${orbs(perUnit)}, and a Site Maker build counts as several messages. If the AI fails, you get the orbs back. Off unless you turn it on.</p>
+    </div>`;
+  $("ai-orbs-on").addEventListener("change", async e => {
+    const want = e.target.checked;
+    e.target.disabled = true;
+    const res = await api("/api/wallet/ai-orbs", { method: "PATCH", body: { on: want } });
+    e.target.disabled = false;
+    if (!res.ok) { e.target.checked = !want; return toast(res.data.error); }
+    toast(want ? `On. Extra AI messages will cost ${orbs(perUnit)} each.` : "Off. AI messages stop when your free ones run out.");
+  });
 }
 
 // ---------- Age group ----------

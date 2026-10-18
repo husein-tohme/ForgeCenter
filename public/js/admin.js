@@ -1,5 +1,5 @@
 import { renderService } from "./service.js";
-import { $, api, esc, icon, money, cash, date, toast, onUser, openSignIn, pill, STATUS, SUB_STATUS, PRODUCT_ICON } from "./common.js";
+import { $, api, esc, icon, money, cash, orbs, date, toast, onUser, openSignIn, pill, STATUS, SUB_STATUS, PRODUCT_ICON } from "./common.js";
 
 $("signin-here").addEventListener("click", () => openSignIn());
 $("filter").addEventListener("change", loadOrders);
@@ -18,8 +18,8 @@ onUser(user => {
 });
 
 let loaded = false;
-// Dollar amounts typed by the owner, as cents.
-const toCents = value => Math.round(Number(String(value).replace(/[$,\s]/g, "")) * 100);
+// Orb counts typed by the owner ("1,000" or "1000"); 0 when it isn't a whole number. 1 orb = 1 cent.
+const toOrbs = value => { const n = Number(String(value).replace(/[,\s]/g, "")); return Number.isInteger(n) && n > 0 ? n : 0; };
 
 // ---------- Overview ----------
 const dollars = cents => {
@@ -59,7 +59,7 @@ async function loadOverview() {
         <span class="hero-figure">${dollars(o.sales.cents)}</span>
         <span class="stat-delta">${plural(o.sales.orders, "order", "orders")}. ${delta}</span>
         ${o.donationsCents ? `<span class="stat-delta">Plus ${cash(o.donationsCents)} in donations.</span>` : ""}
-        <span class="stat-delta">Customers hold ${cash(o.walletCents)} in wallet credit.</span>
+        <span class="stat-delta">Customers hold ${orbs(o.walletCents)} (${cash(o.walletCents)}).</span>
       </div>
       <div class="stat-tiles">
         <div class="panel stat"><span class="stat-label">Recurring revenue</span><span class="stat-value">${dollars(o.recurringCents)}</span><span class="stat-delta">a month</span></div>
@@ -133,7 +133,7 @@ async function loadOrder(d) {
   d.dataset.loaded = "1";
   const refundable = ["paid", "in_progress", "delivered", "canceled"].includes(o.status);
   body.innerHTML = `
-    ${o.paidWith === "wallet" ? `<p class="small">Paid from the customer's wallet.</p>` : ""}
+    ${o.paidWith === "wallet" ? `<p class="small">Paid with ${orbs(o.amount)} from the customer's account.</p>` : ""}
     ${o.monthly && o.subscriptionStatus ? `<p class="small">${esc(SUB_STATUS[o.subscriptionStatus] ?? o.subscriptionStatus)}</p>` : ""}
     <div class="service-box"></div>
     <h3>Brief from the customer</h3>
@@ -151,12 +151,12 @@ async function loadOrder(d) {
       <button class="btn btn-buy" type="submit">Send reply</button>
     </form>
     ${refundable ? `
-    <h3>Refund as wallet credit</h3>
+    <h3>Refund as orbs</h3>
     <form class="inline-form refund-form">
-      <label>Amount<input class="amount-input" name="amount" inputmode="decimal" placeholder="$0.00" required></label>
-      <button class="btn" type="submit">Refund to wallet</button>
+      <label>Orbs<input class="amount-input" name="amount" inputmode="numeric" placeholder="1,000" required></label>
+      <button class="btn" type="submit">Refund as orbs</button>
     </form>
-    <p class="small">The customer can spend it on ForgeCenter. To refund their card instead, use the Stripe Dashboard.</p>` : ""}`;
+    <p class="small">1 orb is 1 cent, so this order is ${orbs(o.amount + o.monthly)} in total. The customer can spend the orbs on ForgeCenter. To refund their card instead, use the Stripe Dashboard.</p>` : ""}`;
 
   renderService(body.querySelector(".service-box"), o.service, { owner: true, reload: () => loadOrder(d) });
 
@@ -170,12 +170,13 @@ async function loadOrder(d) {
   });
   body.querySelector(".refund-form")?.addEventListener("submit", async e => {
     e.preventDefault();
-    const amount = toCents(e.target.elements.amount.value);
-    if (!confirm(`Refund ${cash(amount)} of order ${o.id} to the customer's wallet?`)) return;
+    const amount = toOrbs(e.target.elements.amount.value);
+    if (!amount) return toast("Enter a whole number of orbs, like 1,000.");
+    if (!confirm(`Refund ${orbs(amount)} (${cash(amount)}) of order ${o.id} to the customer as orbs?`)) return;
     const res = await api(`/api/admin/orders/${o.id}/wallet-refund`, { method: "POST", body: { amount } });
     if (!res.ok) return toast(res.data.error);
     e.target.reset();
-    toast(`Refunded ${cash(amount)} to their wallet. They now have ${cash(res.data.balance)}.`);
+    toast(`Refunded ${orbs(amount)}. They now have ${orbs(res.data.balance)}.`);
     loadOverview();
   });
   body.querySelector(".msg-form").addEventListener("submit", async e => {
@@ -250,7 +251,7 @@ async function loadTicket(d) {
   d.querySelector(".pill").outerHTML = ticketPill(t.status);
   body.innerHTML = `
     ${t.handoffNote && t.status !== "closed" ? `<p class="note"><strong>Forge Support's note:</strong> ${esc(t.handoffNote)}<br><span class="small">Written by the AI from the customer's messages. Check the facts before refunding or giving credit.</span></p>` : ""}
-    ${c ? `<p class="small">${esc(c.name)}, ${esc(c.email ?? c.phone ?? "no email")}, ${c.ageGroup === "adult" ? "confirmed adult" : "teen group"}, ${cash(c.wallet)} in their wallet${t.orderId ? `, about order ${t.orderId}` : ""}</p>` : ""}
+    ${c ? `<p class="small">${esc(c.name)}, ${esc(c.email ?? c.phone ?? "no email")}, ${c.ageGroup === "adult" ? "confirmed adult" : "teen group"}, ${orbs(c.wallet)}${t.orderId ? `, about order ${t.orderId}` : ""}</p>` : ""}
     <div class="thread">${t.messages.map(m => {
       const [who, cls] = TICKET_AUTHOR[m.author] ?? [m.author, ""];
       return `<div class="msg-row ${cls}"><b>${who}</b><span class="small">${date(m.createdAt)}</span><p>${esc(m.body)}</p></div>`;
@@ -263,11 +264,11 @@ async function loadTicket(d) {
     </form>
     <div class="ticket-actions"><button class="btn" type="button" data-close>Close ticket</button></div>` : ""}
     ${c ? `
-    <h3>Give wallet credit</h3>
+    <h3>Give orbs</h3>
     <form class="inline-form credit-form">
-      <label>Amount<input class="amount-input" name="amount" inputmode="decimal" placeholder="$0.00" required></label>
+      <label>Orbs<input class="amount-input" name="amount" inputmode="numeric" placeholder="500" required></label>
       <label class="grow">Note for the customer<input name="note" maxlength="140" placeholder="Sorry for the downtime" required></label>
-      <button class="btn" type="submit">Give credit</button>
+      <button class="btn" type="submit">Give orbs</button>
     </form>` : ""}`;
 
   body.querySelector(".ticket-reply")?.addEventListener("submit", async e => {
@@ -285,11 +286,12 @@ async function loadTicket(d) {
   });
   body.querySelector(".credit-form")?.addEventListener("submit", async e => {
     e.preventDefault();
-    const amount = toCents(e.target.elements.amount.value);
-    if (!confirm(`Give ${cash(amount)} of wallet credit to ${c.name}?`)) return;
+    const amount = toOrbs(e.target.elements.amount.value);
+    if (!amount) return toast("Enter a whole number of orbs, like 500.");
+    if (!confirm(`Give ${orbs(amount)} (${cash(amount)}) to ${c.name}?`)) return;
     const res = await api(`/api/admin/users/${c.id}/wallet-credit`, { method: "POST", body: { amount, note: e.target.elements.note.value } });
     if (!res.ok) return toast(res.data.error);
-    toast(`Credit added. ${c.name} now has ${cash(res.data.balance)}.`);
+    toast(`Orbs added. ${c.name} now has ${orbs(res.data.balance)}.`);
     d.dataset.loaded = ""; loadTicket(d); loadOverview();
   });
 }

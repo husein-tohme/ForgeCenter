@@ -6,18 +6,19 @@ import express from "express";
 import { ARTICLES } from "../public/js/help-articles.js";
 import Anthropic from "@anthropic-ai/sdk";
 import { db, now, walletBalance } from "./db.js";
-import { catalog, isAdultOnly } from "./catalog.js";
+import { catalog, isAdultOnly, orbs, walletPayable } from "./catalog.js";
 import { PROVIDER_NAMES, isAdmin, requireAdmin, requireUser, requireUserOrSuspended } from "./auth.js";
 import { rateLimit } from "./limit.js";
 import { notify } from "./email.js";
 import { WALLET_LIMITS } from "./wallet.js";
+import { ORBS_PER_AI_UNIT } from "./tutor.js";
 
 export const CATEGORIES = {
   billing: "Payments and billing",
   server: "Minecraft server",
   bot: "Discord bot",
   project: "Website, game or AI project",
-  wallet: "Wallet",
+  wallet: "Orbs",
   account: "Account, sign-in or age check",
   other: "Something else",
 };
@@ -37,7 +38,8 @@ export const setSupportModel = fn => { callModel = fn ?? anthropic; };
 const aiEnabled = () => callModel !== anthropic || !!process.env.ANTHROPIC_API_KEY;
 
 const usd = cents => `$${(cents / 100).toLocaleString("en-US")}`;
-const priceText = item => [item.price ? usd(item.price) : "", item.monthly ? `${usd(item.monthly)} a month` : ""].filter(Boolean).join(" plus ");
+const priceText = item => [item.price ? `${usd(item.price)}${walletPayable(item) ? ` (or ${orbs(item.price)})` : ""}` : "",
+  item.monthly ? `${usd(item.monthly)} a month` : ""].filter(Boolean).join(" plus ");
 
 const ADULT_PRODUCTS = Object.keys(catalog).filter(isAdultOnly).map(k => catalog[k].name.toLowerCase()).join(" and ");
 
@@ -46,7 +48,7 @@ const SYSTEM = `You are Forge Support, the support assistant for ForgeCenter, a 
 
 How to help:
 - Answer from the help notes below and the customer details you're given. If the notes don't cover something, say you're not sure and hand the ticket to a person. Never guess about prices, policies or what happened with an order.
-- Use the hand_to_person tool when the customer asks for a person; when money is involved (refunds, chargebacks, cancelling a project, discounts, wallet credit, refunding unused wallet funds); when a payment went through but an order is missing; when a server or bot is still broken after the steps in the notes; for sign-in or account problems you can't solve; for anything only the team can do; or when two tries haven't solved it. After handing over, tell the customer in one or two sentences that a person will reply on this ticket, usually within a day (and by email only if the customer details say the account has an email address).
+- Use the hand_to_person tool when the customer asks for a person; when money is involved (refunds, chargebacks, cancelling a project, discounts, giving orbs, refunding unused orb packs); when a payment went through but an order is missing; when a server or bot is still broken after the steps in the notes; for sign-in or account problems you can't solve; for anything only the team can do; or when two tries haven't solved it. After handing over, tell the customer in one or two sentences that a person will reply on this ticket, usually within a day (and by email only if the customer details say the account has an email address).
 - Never promise refunds, credit, discounts or deadlines, and never say the team has done something unless the ticket shows it.
 - Never ask for passwords, sign-in codes, card numbers, Discord bot tokens or API keys. If the customer pastes a token or key, tell them to reset it right away; for a Discord bot that's Developer Portal, then Bot, then Reset Token, then paste the new token on the order page.
 - Keep replies short: a few sentences or a short list of steps. Write plain text without Markdown headings, tables or bold. Reply in the customer's language.
@@ -79,10 +81,11 @@ Discord bots
 - Setup on the order page: create a New Application in the Discord Developer Portal; on its Bot page turn on Server Members Intent and Message Content Intent and save; choose Reset Token and copy the token; paste it on the order page. Then use "Add the bot to your server", drag the bot's role above the roles it should hand out, and run /setup in the server.
 - The order page shows whether the bot is Online, Starting, Crashed or Stopped, any recent errors, and a Restart button. If the token stops working, reset it in the Developer Portal and paste the new one under "Replace the token".
 
-Wallet
-- The wallet holds store credit. Customers add ${usd(WALLET_LIMITS.minTopup)} to ${usd(WALLET_LIMITS.maxTopup)} at a time by card on the account page, and it holds up to ${usd(WALLET_LIMITS.maxBalance)}.
-- Credit pays for one-time items, such as a Discord bot, the Dedicated AI assistant or a showcase slot, if the balance covers the whole price: choose "Pay from wallet" at checkout. Monthly plans are paid by card.
-- Credit can't be withdrawn or sent to someone else, and it doesn't expire. The team can refund unused top-ups to the card they came from; that needs a person.
+Orbs
+- Orbs are ForgeCenter's own currency, like Minecraft XP orbs. 1 orb is worth 1 US cent, so 2,500 orbs cost $25. Customers buy orb packs by card at /orbs or in the Orbs section of the account page: ${orbs(WALLET_LIMITS.minTopup)} to ${orbs(WALLET_LIMITS.maxTopup)} at a time (in hundreds), and an account holds up to ${orbs(WALLET_LIMITS.maxBalance)}. There are no bonus orbs.
+- Orbs pay for one-time items, such as a Discord bot, the Dedicated AI assistant or a showcase slot, if the balance covers the whole price: choose "Pay with orbs" at checkout. Monthly plans are paid by card.
+- AI messages: the free daily allowance is shared by the Forge mentor, AI Maker and Site Maker. With "When my free AI messages run out, use orbs" turned on in the Orbs section of the account page, each extra message costs ${orbs(ORBS_PER_AI_UNIT)} (a Site Maker build counts as several messages). It's off until the customer turns it on. If the AI fails or won't answer, the orbs for that message go back automatically.
+- Orbs can't be withdrawn, sold, swapped for cash or sent to someone else, and they never expire. The team can refund unused orb packs to the card they came from; that needs a person.
 
 Age groups (like Discord)
 - Every account starts in the teen age group. Adults confirm their age on the account page, either with a credit card check (no charge, the card isn't saved, and the bank may show a small temporary hold) or with an ID scan and a selfie through Stripe. ForgeCenter keeps only the result, and the ID images are deleted. Debit and prepaid cards don't count, because only credit cards are limited to adults.
@@ -91,13 +94,13 @@ Age groups (like Discord)
 Accounts and sign-in
 - People sign in with an account they already have: Google (including Gmail), Microsoft, GitHub, Discord or a WhatsApp code, whichever the site has switched on. ForgeCenter has no passwords. Connecting more than one sign-in method on the account page prevents lockouts.
 - Accounts with the same verified email are joined automatically.
-- Deleting the account is at the bottom of the account page. Subscriptions must be cancelled and the wallet empty first.
+- Deleting the account is at the bottom of the account page. Subscriptions must be cancelled and the orb balance at 0 first.
 
 Showcase and free tools
 - A showcase slot lists a website or server on the home page; submit it on the account page and it goes live after a review. Adults can mark a listing 18+.
 - Free tools: Mod Forge (a Fabric mod project, with an optional Modrinth draft), Texture Forge (resource packs), Modpack Forge (.mrpack files), Plugin Forge (Paper plugins) and Roblox Forge (a Roblox game project for Roblox Studio). AI Maker (/ai-maker) builds your own AI assistant you can share with a link, and Site Maker (/site-maker) builds a one-page website from a description. The Forge coding mentor gives 30 free messages a day, resetting at midnight UTC; AI Maker chats and Site Maker builds use the same daily allowance.
 - Creators can make a public creator page at /creators and launch a game on the games page (/games) for $1 a month from /my-games. They can cancel a launch any time; the game stays up until the end of the paid month, which isn't refunded.
-- Donations to ForgeCenter are at /donate. The developer API (/developers) lets confirmed adults make API keys paid from the wallet.
+- Donations to ForgeCenter are at /donate. The developer API (/developers) lets confirmed adults make API keys paid with orbs.
 
 Help articles
 - Step-by-step articles on the Help page. When one covers the question, give its link (the path exactly as shown) along with your answer.
@@ -127,7 +130,7 @@ function customerContext(user, ticket) {
     LEFT JOIN services s ON s.order_id = o.id WHERE o.user_id = ? ORDER BY o.id DESC LIMIT 15`).all(user.id);
   const lines = orders.map(o => {
     const parts = [`Order ${o.id}: ${catalog[o.product]?.name ?? o.product}, placed ${o.created_at.slice(0, 10)}, status ${o.status}`];
-    if (o.paid_with === "wallet") parts.push("paid from the wallet");
+    if (o.paid_with === "wallet") parts.push("paid with orbs");
     if (o.subscription_status) parts.push(`subscription ${o.subscription_status}`);
     if (o.state) parts.push(`${o.kind === "minecraft" ? "server" : "bot"} ${SERVICE_STATE[o.state] ?? o.state}`);
     if (o.address) parts.push(`address ${o.address}`);
@@ -141,7 +144,7 @@ function customerContext(user, ticket) {
 - Age group: ${user.age_group === "adult" ? "adult (confirmed)" : "teen"}
 - Signs in with: ${providers.join(", ") || "unknown"}
 - Email address on the account: ${user.email ? "yes" : "no (replies only appear on the ticket)"}
-- Wallet balance: ${usd(walletBalance(user.id))}
+- Orb balance: ${orbs(walletBalance(user.id))}
 Orders, newest first:
 ${lines.join("\n") || "- No orders yet."}
 

@@ -11,6 +11,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=Pixelify+Sans:wght@500;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/styles.css">
+<link rel="stylesheet" href="/css/orbs.css">
 </head>
 <body>
 <a class="skip" href="#main">Skip to content</a>
@@ -64,9 +65,10 @@
       </section>
 
       <section class="acct-section" id="wallet">
-        <h2>Wallet</h2>
-        <p class="section-lede">Store credit for ForgeCenter. Pay for bots, AI assistants and showcase slots in one step. Credit can't be withdrawn or sent to someone else, and it doesn't expire.</p>
-        <div class="panel wallet" id="wallet-panel"><p class="hint">Loading your wallet…</p></div>
+        <h2 id="orbs">Orbs</h2>
+        <p class="section-lede">ForgeCenter's own currency. Spend orbs on bots, AI assistants, showcase slots and extra AI messages whenever you like. 1 orb is worth 1 cent. Orbs never expire, and they can't be withdrawn, sold or sent to other people. <a href="/orbs">What can I get with orbs?</a></p>
+        <div class="panel wallet" id="wallet-panel"><p class="hint">Loading your orbs…</p></div>
+        <div class="panel ai-orbs" id="ai-orbs" hidden></div>
         <h3>History</h3>
         <ul class="ledger" id="ledger"></ul>
       </section>
@@ -94,7 +96,7 @@
 
       <section class="acct-section danger">
         <h2>Delete account</h2>
-        <p>This removes your profile, saved creations, showcase listings, messages and support tickets, and switches off your game server panel login. Receipts for past orders and wallet payments are kept for tax records without your name attached. Cancel subscriptions and use up or refund wallet credit first.</p>
+        <p>This removes your profile, saved creations, showcase listings, messages and support tickets, and switches off your game server panel login. Receipts for past orders and orb payments are kept for tax records without your name attached. Cancel subscriptions and spend your orbs (or have unused orb packs refunded) first.</p>
         <button class="btn btn-danger" type="button" id="delete">Delete my account</button>
       </section>
     </div>

@@ -1,7 +1,7 @@
 // Email notifications through Resend (resend.com). If RESEND_API_KEY or EMAIL_FROM
 // isn't set, emails are skipped and the site works the same without them.
 import { db } from "./db.js";
-import { catalog } from "./catalog.js";
+import { catalog, orbs, usd } from "./catalog.js";
 
 async function resend(message) {
   if (!process.env.RESEND_API_KEY || !process.env.EMAIL_FROM) return false;
@@ -94,13 +94,13 @@ export const notify = {
 
   underageAccount(user) {
     send(owners(), `Account ${user.id} closed: under 13`,
-      `${user.name} (${user.email ?? user.phone ?? "no email"}) said they're under 13. Their account has paid subscriptions or wallet credit, so it was closed instead of deleted.\n\nCancel and refund their subscriptions in Stripe and refund any wallet credit. The account stays locked: it can sign in but can't use anything.`);
+      `${user.name} (${user.email ?? user.phone ?? "no email"}) said they're under 13. Their account has paid subscriptions or orbs, so it was closed instead of deleted.\n\nCancel and refund their subscriptions in Stripe and refund any unused orb packs to their card. The account stays locked: it can sign in but can't use anything.`);
   },
 
   walletCredited(userId, cents, reason) {
     const c = db.prepare("SELECT email, name FROM users WHERE id = ?").get(userId);
-    if (c) send(c.email, `$${(cents / 100).toFixed(2)} added to your ForgeCenter wallet`,
-      `Hi ${c.name},\n\nWe added $${(cents / 100).toFixed(2)} to your wallet for ${reason}. You can spend it on anything with a one-time price.\n\nSee your wallet: ${site()}/account#wallet\n\nForgeCenter`);
+    if (c) send(c.email, `${orbs(cents)} added to your ForgeCenter account`,
+      `Hi ${c.name},\n\nWe added ${orbs(cents)} (worth ${usd(cents)}) to your account for ${reason}. Spend them on anything with a one-time price, or on AI messages once your free ones run out. Orbs never expire.\n\nSee your orbs: ${site()}/account#wallet\n\nForgeCenter`);
   },
 
   ticketWaiting(ticket) {
@@ -129,9 +129,10 @@ export const notify = {
 
   topupDisputed(topup, won) {
     const c = topup.user_id ? db.prepare("SELECT email, name FROM users WHERE id = ?").get(topup.user_id) : null;
-    send(owners(), won ? `Dispute won: wallet top-up ${topup.id}` : `Dispute opened: wallet top-up ${topup.id}`,
+    const pack = `${orbs(topup.amount)} (${usd(topup.amount)})`;
+    send(owners(), won ? `Dispute won: orb pack ${topup.id}` : `Dispute opened: orb pack ${topup.id}`,
       won
-        ? `The card dispute on ${c?.name ?? "a customer"}'s $${(topup.amount / 100).toFixed(2)} top-up closed in your favour, so the credit went back into their wallet.`
-        : `${c?.name ?? "A customer"} (${c?.email ?? "no email"}) disputed a $${(topup.amount / 100).toFixed(2)} wallet top-up with their bank. That credit was taken out of their wallet, which may now be below zero. Respond to the dispute in the Stripe Dashboard.`);
+        ? `The card dispute on ${c?.name ?? "a customer"}'s ${pack} orb pack closed in your favour, so the orbs went back into their account.`
+        : `${c?.name ?? "A customer"} (${c?.email ?? "no email"}) disputed a ${pack} orb pack with their bank. Those orbs were taken out of their account, which may now be below zero. Respond to the dispute in the Stripe Dashboard.`);
   },
 };

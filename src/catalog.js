@@ -50,8 +50,14 @@ export const modeOf = item => (item.monthly ? "subscription" : "payment");
 export const isAdultOnly = key =>
   (process.env.ADULT_ONLY_PRODUCTS ?? "game,website,roblox,launcher").split(",").map(s => s.trim()).includes(key);
 
-// One-time products can be paid from the wallet; monthly plans go through Stripe.
+// One-time products can be paid with orbs; monthly plans go through Stripe.
 export const walletPayable = item => !!item?.price && !item.monthly;
+
+// Orbs are ForgeCenter's currency: 1 orb = 1 US cent, so wallet amounts in cents are orb
+// counts. "2,500 orbs", "1 orb", "−300 orbs".
+export const orbs = n => `${n < 0 ? "−" : ""}${Math.abs(n).toLocaleString("en-US")} ${Math.abs(n) === 1 ? "orb" : "orbs"}`;
+// The dollar value, for the small print next to an orb amount.
+export const usd = cents => `$${(cents / 100).toLocaleString("en-US", { minimumFractionDigits: cents % 100 ? 2 : 0, maximumFractionDigits: 2 })}`;
 
 export const publicCatalog = () => Object.fromEntries(Object.entries(catalog).map(([key, item]) =>
   [key, { ...item, adultOnly: isAdultOnly(key), walletPayable: walletPayable(item) }]));
