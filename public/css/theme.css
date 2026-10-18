@@ -107,7 +107,7 @@ label { color: var(--ink); }
 .trade.featured { background: rgba(98, 216, 98, .08); }
 .chip { background: #0b0a09; color: var(--ink); border: 2px solid var(--edge-hi); }
 .chip:hover { border-color: var(--splash); }
-button.tool {
+button.tool, label.tool-file {
   background: var(--stone) var(--tex-stone) 0 0 / 48px 48px; color: #fff; border: 2px solid #000;
   box-shadow: inset 2px 2px 0 var(--stone-hi), inset -2px -3px 0 var(--stone-lo); text-shadow: 1px 1px 0 rgba(0,0,0,.6);
 }
@@ -173,3 +173,5 @@ html[data-theme="light"] .v2 .packlist { background: #1b1714; }
 html[data-theme="light"] .v2 .code { background: #0b0b0b; color: #dcdcdc; }
 html[data-theme="light"] .v2 .head-row h2 { text-shadow: none; }
 html[data-theme="light"] .panel .page-title, html[data-theme="light"] .panel .page-title + p { color: var(--ink); text-shadow: none; }
+label.tool-file { display: inline-flex; align-items: center; padding: 4px 12px; min-height: 40px; cursor: pointer; font-family: var(--display); }
+label.tool-file:focus-within { outline: 3px solid var(--splash); }
