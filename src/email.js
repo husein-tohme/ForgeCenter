@@ -1,6 +1,8 @@
 // Email notifications through Resend (resend.com). If RESEND_API_KEY or EMAIL_FROM
 // isn't set, emails are skipped and the site works the same without them.
-import { db } from "./db.js";
+import express from "express";
+import { randomBytes } from "node:crypto";
+import { db, addColumn } from "./db.js";
 import { catalog, orbs, usd } from "./catalog.js";
 
 async function resend(message) {
@@ -17,14 +19,55 @@ async function resend(message) {
 let transport = resend;
 export const setEmailTransport = fn => { transport = fn; };
 
-// Never lets an email problem break the request that triggered it.
-function send(to, subject, text) {
-  const list = (Array.isArray(to) ? to : [to]).filter(Boolean);
-  if (!list.length) return;
-  Promise.resolve()
-    .then(() => transport({ to: list, subject, text }))
-    .catch(e => console.error("Email failed", e.message));
+// Customers can turn off optional emails (updates, replies, thank-yous). Receipts and
+// payment problems still arrive, because they're about money already taken. Each
+// account gets a random unsubscribe token; the link needs no sign-in.
+addColumn("users", "email_optout", "INTEGER NOT NULL DEFAULT 0");
+addColumn("users", "email_token", "TEXT");
+
+function unsubscribeUrl(email) {
+  const u = db.prepare("SELECT id, email_token FROM users WHERE email = ? COLLATE NOCASE").get(email);
+  if (!u) return null;
+  let token = u.email_token;
+  if (!token) {
+    token = randomBytes(18).toString("base64url");
+    db.prepare("UPDATE users SET email_token = ? WHERE id = ?").run(token, u.id);
+  }
+  return `${site()}/api/email/unsubscribe?t=${token}`;
 }
+const optedOut = email => !!db.prepare("SELECT email_optout FROM users WHERE email = ? COLLATE NOCASE").get(email)?.email_optout;
+
+// Never lets an email problem break the request that triggered it.
+function send(to, subject, text, { optional = false } = {}) {
+  const list = (Array.isArray(to) ? to : [to]).filter(Boolean);
+  for (const address of list) {
+    if (optional && optedOut(address)) continue;
+    const unsub = unsubscribeUrl(address);
+    const message = unsub
+      ? { to: [address], subject, text: `${text}\n\n--\nDon't want update emails? Unsubscribe: ${unsub}\nReceipts and payment notices are always sent.`,
+          headers: { "List-Unsubscribe": `<${unsub}>`, "List-Unsubscribe-Post": "List-Unsubscribe=One-Click" } }
+      : { to: [address], subject, text };
+    Promise.resolve()
+      .then(() => transport(message))
+      .catch(e => console.error("Email failed", e.message));
+  }
+}
+
+// GET shows a confirm button (so link scanners can't unsubscribe people); POST does it.
+// Mail apps' one-click unsubscribe POSTs straight here (RFC 8058).
+export const emailRouter = express.Router();
+const byToken = t => typeof t === "string" && t.length > 10 ? db.prepare("SELECT id FROM users WHERE email_token = ?").get(t) : null;
+emailRouter.get("/unsubscribe", (req, res) => {
+  const ok = byToken(req.query.t);
+  res.type("html").send(`<!doctype html><meta name="viewport" content="width=device-width,initial-scale=1"><title>Unsubscribe · ForgeCenter</title><link rel="stylesheet" href="/styles.css"><main class="page"><div class="wrap legal"><h1 class="page-title">Email settings</h1>${ok
+    ? `<p>Stop update emails, replies and thank-yous from ForgeCenter? Receipts and payment notices will still arrive.</p><form method="post"><button class="btn btn-buy" type="submit">Unsubscribe</button></form>`
+    : `<p>That link has expired. Sign in and open My account to change your email settings.</p>`}</div></main>`);
+});
+emailRouter.post("/unsubscribe", express.urlencoded({ extended: false, limit: "2kb" }), (req, res) => {
+  const u = byToken(req.query.t);
+  if (u) db.prepare("UPDATE users SET email_optout = 1 WHERE id = ?").run(u.id);
+  res.type("html").send(`<!doctype html><meta name="viewport" content="width=device-width,initial-scale=1"><title>Unsubscribed · ForgeCenter</title><link rel="stylesheet" href="/styles.css"><main class="page"><div class="wrap legal"><h1 class="page-title">${u ? "You're unsubscribed" : "Link expired"}</h1><p>${u ? "You won't get update emails any more. Turn them back on from My account." : "Sign in and open My account to change your email settings."}</p><a class="btn" href="/">Back to ForgeCenter</a></div></main>`);
+});
 
 const site = () => process.env.BASE_URL || "http://localhost:3000";
 const owners = () => (process.env.ADMIN_EMAILS || "").split(",").map(s => s.trim()).filter(Boolean);
@@ -47,7 +90,7 @@ export const notify = {
       send(owners(), `Game launched (order ${order.id})`,
         `${c?.name ?? "A creator"} (${c?.email ?? "unknown email"}) launched a game on the games page for $1 a month.\n\nSee it on the games page: ${site()}/games\nYou can take a game down from its page if it breaks the rules.`);
       if (c) send(c.email, "Your game is live",
-        `Hi ${c.name},\n\nYour game is live on the ForgeCenter games page:\n${site()}/games\n\nIt's $1 a month. You can edit it or cancel any time from My games:\n${site()}/my-games\n\nIf you cancel, it stays up until the end of the month you've paid for, and that month isn't refunded.\n\nForgeCenter`);
+        `Hi ${c.name},\n\nYour game is live on the ForgeCenter games page:\n${site()}/games\n\nIt's $1 a month. You can edit it or cancel any time from My games:\n${site()}/my-games\n\nIf you cancel, it stays up until the end of the month you've paid for, and that month isn't refunded.\n\nForgeCenter`, { optional: true });
       return;
     }
     const withOrbs = order.paid_with === "wallet" ? ` with ${orbs(order.amount)}` : "";
@@ -72,7 +115,7 @@ export const notify = {
       canceled: `Your ${productName(order)} order was canceled. Reply in the order's messages if this is unexpected.`,
     };
     if (lines[order.status]) send(c.email, `Order update: ${productName(order)}`,
-      `Hi ${c.name},\n\n${lines[order.status]}\n\nSee the order: ${orderLink(order)}\n\nForgeCenter`);
+      `Hi ${c.name},\n\n${lines[order.status]}\n\nSee the order: ${orderLink(order)}\n\nForgeCenter`, { optional: true });
   },
 
   provisioningFailed(orderId, reason) {
@@ -85,7 +128,7 @@ export const notify = {
     if (fromOwner) {
       const c = customerOf(order);
       if (c) send(c.email, `New message about your ${productName(order)}`,
-        `Hi ${c.name},\n\nForgeCenter wrote:\n\n${preview}\n\nReply here: ${orderLink(order)}`);
+        `Hi ${c.name},\n\nForgeCenter wrote:\n\n${preview}\n\nReply here: ${orderLink(order)}`, { optional: true });
     } else {
       const c = customerOf(order);
       send(owners(), `Message from ${c?.name ?? "a customer"} (order ${order.id})`,
@@ -114,7 +157,7 @@ export const notify = {
     const c = db.prepare("SELECT email, name FROM users WHERE id = ?").get(ticket.user_id);
     const preview = body.length > 500 ? `${body.slice(0, 500)}…` : body;
     if (c) send(c.email, `Reply to your ticket: ${ticket.subject}`,
-      `Hi ${c.name},\n\nForgeCenter wrote:\n\n${preview}\n\nReply here: ${site()}/support?ticket=${ticket.id}`);
+      `Hi ${c.name},\n\nForgeCenter wrote:\n\n${preview}\n\nReply here: ${site()}/support?ticket=${ticket.id}`, { optional: true });
   },
 
   // Signed-in donors only; Stripe emails the receipt to everyone who gives.
@@ -125,7 +168,7 @@ export const notify = {
     send(c.email, "Thank you for supporting ForgeCenter",
       `Hi ${c.name},\n\nThank you for your ${amount} donation. It keeps the free tools free and pays for the AI and servers behind them.${donation.monthly
         ? `\n\nYour donation repeats every month. Change your card or cancel any time in Manage billing:\n${site()}/account`
-        : ""}\n\nStripe sends your receipt separately.\n\nForgeCenter`);
+        : ""}\n\nStripe sends your receipt separately.\n\nForgeCenter`, { optional: true });
   },
 
   topupDisputed(topup, won) {

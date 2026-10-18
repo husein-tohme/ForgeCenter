@@ -47,3 +47,29 @@ test("a broken email service never breaks the request", async () => {
     assert.equal(r.status, 200);
   } finally { setEmailTransport(async m => { outbox.push(m); return true; }); }
 });
+
+test("update emails carry an unsubscribe link; after unsubscribing only receipts arrive", async () => {
+  const cust = signIn("quiet@example.com"), owner = signIn("owner@example.com");
+  const id = makeOrder(cust.user.id, "discord", "paid");
+  await api(`/api/admin/orders/${id}`, { method: "PATCH", body: { status: "in_progress" }, cookie: owner.cookie });
+  await settle();
+  const mail = outbox.find(m => m.to[0] === "quiet@example.com");
+  const link = mail.headers["List-Unsubscribe"].slice(1, -1);
+  assert.match(mail.text, /Unsubscribe: http/);
+
+  // Opening the link only shows a button; the POST unsubscribes.
+  const path = link.replace(/^https?:\/\/[^/]+/, "");
+  assert.equal((await api(path)).status, 200);
+  const r = await fetch(new URL(path, "http://localhost").href.replace("http://localhost", (await import("./helpers.js")).url("")), { method: "POST" });
+  assert.equal(r.status, 200);
+  assert.equal((await api("/api/me", { cookie: cust.cookie })).body.user.emailUpdates, false);
+
+  outbox = [];
+  await api(`/api/admin/orders/${id}`, { method: "PATCH", body: { status: "delivered", deliverableUrl: "https://example.com/x" }, cookie: owner.cookie });
+  await settle();
+  assert.equal(outbox.filter(m => m.to[0] === "quiet@example.com").length, 0);
+
+  // Turned back on from the account page.
+  await api("/api/me", { method: "PATCH", body: { emailUpdates: true }, cookie: cust.cookie });
+  assert.equal((await api("/api/me", { cookie: cust.cookie })).body.user.emailUpdates, true);
+});

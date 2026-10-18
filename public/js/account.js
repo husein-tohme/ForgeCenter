@@ -367,3 +367,14 @@ async function loadCreator() {
         <a class="btn" href="/creators#yours">Make your creator page</a>`}
     </section>`);
 }
+
+// ---------- Email settings ----------
+{
+  const box = $("#email-updates");
+  onUser(user => { if (user) box.checked = user.emailUpdates !== false; });
+  box?.addEventListener("change", async () => {
+    const r = await api("/api/me", { method: "PATCH", body: { emailUpdates: box.checked } });
+    if (!r.ok) { box.checked = !box.checked; return toast(r.data.error || "That didn't save. Try again."); }
+    toast(box.checked ? "Update emails are on." : "Update emails are off. Receipts still arrive.");
+  });
+}
