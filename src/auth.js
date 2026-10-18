@@ -10,7 +10,10 @@ import { panelUserId } from "./pterodactyl.js";
 import { notify } from "./email.js";
 
 const COOKIE = "fc_session";
-const MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000;
+// Stay signed in until you sign out: each visit pushes the expiry a year ahead, so
+// only a year without visiting signs you out.
+const MAX_AGE_MS = 365 * 24 * 60 * 60 * 1000;
+const RENEW_AFTER_MS = 24 * 60 * 60 * 1000;
 const google = new OAuth2Client();
 export const hash = value => createHash("sha256").update(value).digest("hex");
 
@@ -87,12 +90,19 @@ export function startSession(res, userId) {
 }
 
 // Attaches req.user when the request carries a valid session cookie.
-export function loadUser(req, _res, next) {
+export function loadUser(req, res, next) {
   const token = parseCookies(req.headers.cookie)[COOKIE];
   if (token) {
     const row = db.prepare(`SELECT u.*, s.expires_at FROM sessions s JOIN users u ON u.id = s.user_id
       WHERE s.token_hash = ?`).get(hash(token));
-    if (row && row.expires_at > Date.now()) { req.user = row; req.sessionHash = hash(token); }
+    if (row && row.expires_at > Date.now()) {
+      req.user = row; req.sessionHash = hash(token);
+      // Renew at most once a day, in the database and in the browser.
+      if (row.expires_at - Date.now() < MAX_AGE_MS - RENEW_AFTER_MS) {
+        db.prepare("UPDATE sessions SET expires_at = ? WHERE token_hash = ?").run(Date.now() + MAX_AGE_MS, req.sessionHash);
+        res.cookie(COOKIE, token, { httpOnly: true, sameSite: "lax", path: "/", maxAge: MAX_AGE_MS, secure: process.env.NODE_ENV === "production" });
+      }
+    }
     else if (row) db.prepare("DELETE FROM sessions WHERE token_hash = ?").run(hash(token));
   }
   next();

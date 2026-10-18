@@ -13,7 +13,7 @@ const modIcon = m => m.icon
 // ---------- Search ----------
 async function search() {
   const run = ++searchRun;
-  const r = await api(`/api/modrinth/search?q=${encodeURIComponent($("query").value.trim())}&version=${encodeURIComponent($("version").value)}`);
+  const r = await api(`/api/modrinth/search?q=${encodeURIComponent($("query").value.trim())}&version=${encodeURIComponent($("version").value)}&loader=${encodeURIComponent($("loader").value)}`);
   if (run !== searchRun) return;
   if (!r.ok) { $("results").innerHTML = `<li class="error">${esc(r.data.error)}</li>`; return; }
   results = r.data.results;
@@ -22,7 +22,7 @@ async function search() {
 
 function renderResults() {
   if (!results.length) {
-    $("results").innerHTML = `<li class="hint">No Fabric mods match that for Minecraft ${esc($("version").value)}. Try another word or version.</li>`;
+    $("results").innerHTML = `<li class="hint">No ${esc(loaderName())} mods match that for Minecraft ${esc($("version").value)}. Try another word or version.</li>`;
     return;
   }
   $("results").innerHTML = results.map(m => `
@@ -41,10 +41,17 @@ function renderResults() {
 let debounce;
 $("query").addEventListener("input", () => { clearTimeout(debounce); debounce = setTimeout(search, 300); });
 $("version").addEventListener("change", () => { clearPlan(); search(); save(); });
+const loaderName = () => $("loader").selectedOptions[0]?.textContent ?? "Fabric";
+// Mods are built for one loader, so switching clears the picks that may not fit.
+$("loader").addEventListener("change", () => {
+  if (picked.size) toast(`Switched to ${loaderName()}. Your picks are kept; Check pack shows which have a ${loaderName()} version.`);
+  clearPlan(); search(); save();
+});
 
 $("results").addEventListener("click", e => {
   const b = e.target.closest("[data-toggle]"); if (!b) return;
   const m = results.find(r => r.id === b.dataset.toggle);
+  if (!m) return;
   if (picked.has(m.id)) picked.delete(m.id);
   else {
     if (picked.size >= 50) return toast("A modpack can start with up to 50 mods.");
@@ -71,7 +78,7 @@ $("picked").addEventListener("click", e => {
 const clearPlan = () => { $("plan").innerHTML = ""; };
 const body = () => {
   const f = new FormData($("pack-form"));
-  return { name: f.get("name").trim() || "My Modpack", summary: f.get("summary").trim(), gameVersion: $("version").value, projectIds: [...picked.keys()] };
+  return { name: f.get("name").trim() || "My Modpack", summary: f.get("summary").trim(), gameVersion: $("version").value, loader: $("loader").value, projectIds: [...picked.keys()] };
 };
 
 $("check").addEventListener("click", async e => {
@@ -81,11 +88,11 @@ $("check").addEventListener("click", async e => {
   const r = await api("/api/modpack/plan", { method: "POST", body: body() });
   e.target.disabled = false;
   if (!r.ok) { $("plan").innerHTML = `<p class="error">${esc(r.data.error)}</p>`; return; }
-  const { files, skipped, loaderVersion, gameVersion } = r.data.plan;
+  const { files, skipped, loaderVersion, loaderName: ln = "Fabric", gameVersion } = r.data.plan;
   $("plan").innerHTML = `
-    <h3>${files.length} mod${files.length === 1 ? "" : "s"} for Minecraft ${esc(gameVersion)}, Fabric Loader ${esc(loaderVersion)}</h3>
+    <h3>${files.length} mod${files.length === 1 ? "" : "s"} for Minecraft ${esc(gameVersion)}, ${esc(ln)} ${esc(loaderVersion)}</h3>
     <ul class="plan-list">${files.map(f => `<li>${esc(f.title)} <span class="small">${esc(f.versionNumber)}${f.required ? ", added because another mod needs it" : ""}</span></li>`).join("")}</ul>
-    ${skipped.length ? `<p class="error">Not available for ${esc(gameVersion)} on Fabric, so left out: ${skipped.map(s => esc(s.title)).join(", ")}.</p>` : ""}`;
+    ${skipped.length ? `<p class="error">Not available for ${esc(gameVersion)} on ${esc(ln)}, so left out: ${skipped.map(s => esc(s.title)).join(", ")}.</p>` : ""}`;
 });
 
 $("pack-form").addEventListener("submit", async e => {
@@ -103,12 +110,13 @@ $("pack-form").addEventListener("submit", async e => {
 
 // ---------- Remember picks on this device ----------
 function save() {
-  try { localStorage.setItem(STORE, JSON.stringify({ version: $("version").value, picked: [...picked] })); } catch {}
+  try { localStorage.setItem(STORE, JSON.stringify({ version: $("version").value, loader: $("loader").value, picked: [...picked] })); } catch {}
 }
 function restore() {
   try {
     const saved = JSON.parse(localStorage.getItem(STORE) || "null");
     for (const [id, m] of saved?.picked ?? []) if (typeof id === "string" && typeof m?.title === "string") picked.set(id, { title: m.title, icon: typeof m.icon === "string" && m.icon.startsWith("https://cdn.modrinth.com/") ? m.icon : null });
+    if (["fabric", "quilt", "forge", "neoforge"].includes(saved?.loader)) $("loader").value = saved.loader;
     return saved?.version;
   } catch { return null; }
 }
