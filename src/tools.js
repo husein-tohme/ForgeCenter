@@ -53,7 +53,7 @@ toolsRouter.post("/plugin/zip", rateLimit({ windowMs: 60_000, max: 20 }), (req, 
 
 // ---------- Texture Forge ----------
 toolsRouter.get("/texturepack/options", (_req, res) =>
-  res.json({ targets: TEXTURE_TARGETS, versions: Object.keys(PACK_FORMATS) }));
+  res.json({ targets: TEXTURE_TARGETS, versions: Object.keys(PACK_FORMATS), recommended: "1.21 – 1.21.1" }));
 
 toolsRouter.post("/texturepack", rateLimit({ windowMs: 60_000, max: 20 }), (req, res) => {
   let files;

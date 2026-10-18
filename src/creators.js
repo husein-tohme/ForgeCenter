@@ -298,7 +298,7 @@ function mine(req) {
   return {
     profile: row ? {
       handle: row.handle, bio: row.bio, links: safeLinks(row.links), support: parse(row.support_links, {}),
-      hidden: !!row.hidden, url: `/c/${row.handle}`,
+      hidden: !!row.hidden, url: `/c/${row.handle}`, github: row.github ?? null,
     } : null,
     badges: earnedBadges(stats),
     allBadges: BADGES.map(badgeInfo),

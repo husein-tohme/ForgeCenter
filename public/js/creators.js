@@ -81,6 +81,7 @@ function fillForm() {
   const p = mine.profile;
   $("handle").value = p?.handle ?? "";
   $("bio").value = p?.bio ?? "";
+  $("github").value = p?.github ?? "";
   $("link-rows").innerHTML = "";
   (p?.links ?? []).forEach(l => addLinkRow(l.label, l.url));
   if (!p?.links?.length) addLinkRow();
@@ -213,6 +214,12 @@ $("creator-form").addEventListener("submit", async e => {
   btn.disabled = false;
   if (!r.ok) return showError(r.data);
   mine = r.data;
+  const gh = $("github").value.trim();
+  if (gh !== (mine.profile?.github ?? "")) {
+    const g = await api("/api/creators/mine/github", { method: "PUT", body: { username: gh } });
+    if (!g.ok) { setMsg($("github-msg"), g.data.error, "bad"); return toast(g.data.error); }
+    mine.profile.github = g.data.github;
+  }
   fillForm();
   renderSide();
   loadDirectory();

@@ -246,7 +246,7 @@ if (options.ok) {
     `<optgroup label="${kind === "item" ? "Items" : "Blocks"}">${names.map(n =>
       `<option value="${kind}/${n}">${esc(label(`${kind}/${n}`).replace(/ \(.*\)$/, ""))}</option>`).join("")}</optgroup>`).join("");
   $("version").innerHTML = versions.map(v => `<option value="${v}">${v}</option>`).join("");
-  $("version").value = versions.includes("1.21.1") ? "1.21.1" : versions[0];
+  $("version").value = options.data.recommended && versions.includes(options.data.recommended) ? options.data.recommended : versions[0];
 } else toast("Texture Forge couldn't load. Refresh the page to try again.");
 restore();
 setColor(color);

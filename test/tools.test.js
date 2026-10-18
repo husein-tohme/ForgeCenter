@@ -162,3 +162,16 @@ test("modpacks can use NeoForge or Forge, with the right loader version in the i
     assert.deepEqual(index.dependencies, { minecraft: "1.21.1", neoforge: "21.1.77" });
   } finally { globalThis.fetch = realFetch; }
 });
+
+test("texture packs work for every version: old folder names before 1.13, open-ended format for the newest", async () => {
+  const { texturePackFiles } = await import("../src/texturepack.js");
+  const t = target => ({ target, png: png(16, 16) });
+  const old = texturePackFiles({ gameVersion: "1.6 – 1.8", textures: [t("block/oak_planks"), t("item/wooden_sword")] });
+  assert.ok(old["assets/minecraft/textures/blocks/planks_oak.png"]);
+  assert.ok(old["assets/minecraft/textures/items/wood_sword.png"]);
+  assert.equal(JSON.parse(old["pack.mcmeta"]).pack.pack_format, 1);
+  assert.throws(() => texturePackFiles({ gameVersion: "1.9 – 1.10", textures: [t("item/netherite_sword")] }), /isn't in Minecraft/);
+  const newest = JSON.parse(texturePackFiles({ gameVersion: "1.21.9+ (and 26.x)", textures: [t("item/apple")] })["pack.mcmeta"]).pack;
+  assert.deepEqual([newest.min_format, newest.max_format], [69, 999]);
+  assert.equal(JSON.parse(texturePackFiles({ gameVersion: "1.21.1", textures: [t("item/apple")] })["pack.mcmeta"]).pack.pack_format, 34);
+});

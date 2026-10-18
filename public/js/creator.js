@@ -94,6 +94,8 @@ function render(c) {
           <p class="small">You pay ${name} directly on that site. ForgeCenter doesn't handle this money and can't refund it.</p>
         </section>` : ""}
 
+        <section class="panel" id="repos" hidden></section>
+
         ${c.links.length ? `<section class="panel">
           <h2 class="panel-title">Links</h2>
           <ul class="link-list">${c.links.map(l => `
@@ -125,3 +127,18 @@ ready.then(() => {
     load();
   });
 });
+
+// ---------- GitHub repos (src/github-repos.js) ----------
+async function loadRepos(handle) {
+  const box = document.getElementById("repos");
+  if (!box) return;
+  const r = await api(`/api/creators/${encodeURIComponent(handle)}/repos`);
+  if (!r.ok || !r.data.github) return;
+  const { github, repos } = r.data;
+  box.innerHTML = `<h2 class="panel-title">On GitHub</h2>
+    ${repos.length ? `<ul class="repo-list">${repos.map(x => `<li><a href="${esc(x.url)}" target="_blank" rel="noopener nofollow ugc">${esc(x.name)}</a>
+      ${x.description ? `<span class="small">${esc(x.description)}</span>` : ""}
+      <span class="small">${x.language ? esc(x.language) + " · " : ""}★ ${x.stars}</span></li>`).join("")}</ul>` : `<p class="small">No public repos to show right now.</p>`}
+    <a class="small" href="https://github.com/${encodeURIComponent(github)}" target="_blank" rel="noopener nofollow ugc">github.com/${esc(github)}</a>`;
+  box.hidden = false;
+}

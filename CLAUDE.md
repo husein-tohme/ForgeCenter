@@ -21,7 +21,7 @@ A Minecraft-themed storefront: Minecraft server hosting, Discord bots, websites,
 - `src/services.js` provisioning loop for Minecraft servers (Pterodactyl, `src/pterodactyl.js`) and bot setup; `src/botrunner.js` runs customer bots
 - `src/tools.js` free tools; generators in `modgen.js`, `texturepack.js`, `modrinth.js`, `plugingen.js`, `robloxgen.js` (Roblox Forge's router is `src/roblox.js`)
 - `src/developer.js` API keys, the public `/v1` API and its wallet charging; page `/developers`
-- `src/creators.js` creator pages (`/creators`, `/c/:handle`), badges, support links and referral rewards
+- `src/creators.js` creator pages (`/creators`, `/c/:handle`), badges, support links and referral rewards; `src/github-repos.js` adds their public GitHub repos (cached)
 - `src/aimaker.js` AI Maker assistants, share links (`/assistant?t=`) and their chat; avatars in `public/js/ai-avatars.js`
 - `src/sitemaker.js` Site Maker (AI one-page sites) and its HTML sanitiser
 - `src/launchpad.js` Game Launchpad (`/games`, `/game`, `/my-games`): $1/month per game, a `launch` order per game
