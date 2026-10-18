@@ -7,7 +7,7 @@ import { creatorPreview } from "./creators.js";
 
 const PUBLIC = resolve("public");
 // Pages search engines may list. Account and owner pages stay out.
-const LISTED = ["/", "/textures", "/modpacks", "/plugins", "/games", "/creators", "/roblox", "/ai-maker", "/site-maker", "/developers", "/donate", "/orbs", "/rules", "/privacy", "/terms", "/subprocessors", "/dpa"];
+const LISTED = ["/", "/textures", "/modpacks", "/plugins", "/games", "/creators", "/roblox", "/ai-maker", "/site-maker", "/developers", "/donate", "/orbs", "/rules", "/privacy", "/terms", "/subprocessors", "/dpa", "/support"];
 
 const cache = new Map();
 const baseUrl = req => (process.env.BASE_URL || `${req.protocol}://${req.get("host")}`).replace(/\/+$/, "");
@@ -19,7 +19,30 @@ function render(file, req, canonicalPath) {
     if (process.env.NODE_ENV === "production") cache.set(file, html);
   }
   const base = baseUrl(req);
-  return html.replaceAll("%BASE_URL%", base).replaceAll("%PAGE_URL%", base + canonicalPath);
+  html = html.replaceAll("%BASE_URL%", base).replaceAll("%PAGE_URL%", base + canonicalPath);
+  return html.includes('name="robots" content="noindex"') ? html : html.replace("</head>", `${structuredData(html, base, canonicalPath)}\n</head>`);
+}
+
+// Structured data for search engines: who ForgeCenter is on the home page, and a
+// breadcrumb (Home > page) everywhere else. "<" is escaped so text can't end the script.
+function structuredData(html, base, path) {
+  const json = obj => `<script type="application/ld+json">${JSON.stringify(obj).replace(/</g, "\\u003c")}</script>`;
+  if (path === "/") {
+    return json({
+      "@context": "https://schema.org", "@graph": [
+        { "@type": "Organization", "@id": `${base}/#org`, name: "ForgeCenter", url: `${base}/`, logo: `${base}/brand/forgecenter-avatar.png` },
+        { "@type": "WebSite", name: "ForgeCenter", url: `${base}/`, publisher: { "@id": `${base}/#org` } },
+      ],
+    });
+  }
+  const title = (html.match(/<title>([^<]*)<\/title>/)?.[1] ?? "").replace(/ · ForgeCenter$/, "").trim();
+  if (!title || title.startsWith("%")) return "";
+  return json({
+    "@context": "https://schema.org", "@type": "BreadcrumbList", itemListElement: [
+      { "@type": "ListItem", position: 1, name: "ForgeCenter", item: `${base}/` },
+      { "@type": "ListItem", position: 2, name: title, item: `${base}${path}` },
+    ],
+  });
 }
 
 export const pagesRouter = express.Router();
