@@ -256,6 +256,8 @@ meRouter.delete("/", requireSignedIn, (req, res) => {
 // check or an ID scan (age.js) moves it to adult. Only the group is stored, never
 // the birthday itself.
 const AGE_BLOCK = "fc_age_block";
+// Bump when the terms change in a way people should agree to again.
+export const TERMS_VERSION = "2026-10-18";
 const MIN_AGE = 13;
 
 export function ageOn(today, year, month, day) {
@@ -279,6 +281,7 @@ meRouter.post("/birthday", requireSignedIn, rateLimit({ windowMs: 60_000, max: 1
   const today = new Date();
   const { year, month, day } = req.body ?? {};
   if (!validBirthday(year, month, day, today)) return res.status(400).json({ error: "Choose your full date of birth." });
+  if (req.body?.acceptTerms !== true) return res.status(400).json({ error: "Tick the box to agree to the terms of service and privacy policy." });
 
   if (ageOn(today, year, month, day) < MIN_AGE) {
     res.cookie(AGE_BLOCK, "1", { httpOnly: true, sameSite: "lax", path: "/", maxAge: 24 * 60 * 60 * 1000, secure: process.env.NODE_ENV === "production" });
@@ -293,6 +296,7 @@ meRouter.post("/birthday", requireSignedIn, rateLimit({ windowMs: 60_000, max: 1
     }
     return res.status(403).json({ error: "ForgeCenter accounts are for people 13 and older, so this account wasn't kept. The free creator tools still work without an account.", needs: "closed" });
   }
-  db.prepare("UPDATE users SET age_group = 'teen' WHERE id = ? AND age_group IS NULL").run(req.user.id);
+  db.prepare("UPDATE users SET age_group = 'teen', terms_accepted_at = ?, terms_version = ? WHERE id = ? AND age_group IS NULL")
+    .run(now(), TERMS_VERSION, req.user.id);
   res.json({ user: publicUser(db.prepare("SELECT * FROM users WHERE id = ?").get(req.user.id)) });
 });

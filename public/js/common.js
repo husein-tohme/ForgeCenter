@@ -389,6 +389,7 @@ function birthdayDialog() {
         <label>Month<select name="month" required><option value="" disabled selected hidden>Choose</option>${MONTHS.map((m, i) => `<option value="${i + 1}">${m}</option>`).join("")}</select></label>
         <label>Day<select name="day" required><option value="" disabled selected hidden>Choose</option>${[...Array(31)].map((_, i) => `<option>${i + 1}</option>`).join("")}</select></label>
         <label>Year<select name="year" required><option value="" disabled selected hidden>Choose</option>${[...Array(101)].map((_, i) => `<option>${year - i}</option>`).join("")}</select></label>
+        <label class="check-row terms-row"><input type="checkbox" name="terms" required> I agree to the <a href="/terms" target="_blank">terms of service</a> and <a href="/privacy" target="_blank">privacy policy</a></label>
         <p class="error" id="birthday-error" role="alert" hidden></p>
         <button class="btn btn-buy" type="submit">Continue</button>
       </form>
@@ -400,7 +401,7 @@ function birthdayDialog() {
   $("birthday-form").addEventListener("submit", async e => {
     e.preventDefault();
     const f = e.target.elements;
-    const r = await api("/api/me/birthday", { method: "POST", body: { year: Number(f.year.value), month: Number(f.month.value), day: Number(f.day.value) } });
+    const r = await api("/api/me/birthday", { method: "POST", body: { year: Number(f.year.value), month: Number(f.month.value), day: Number(f.day.value), acceptTerms: f.terms.checked } });
     if (r.ok) {
       d.close(); setUser(r.data.user);
       const next = afterBirthday; afterBirthday = null;

@@ -18,25 +18,28 @@ test("new accounts answer a birthday question first, and start in the teen group
   assert.equal(blocked.body.needs, "birthday");
   assert.equal((await api("/api/me", { cookie })).body.user.ageGroup, null);
 
-  const feb30 = await api("/api/me/birthday", { method: "POST", cookie, body: { year: 2000, month: 2, day: 30 } });
+  const feb30 = await api("/api/me/birthday", { method: "POST", cookie, body: { year: 2000, month: 2, day: 30, acceptTerms: true } });
   assert.equal(feb30.status, 400);
-  const future = await api("/api/me/birthday", { method: "POST", cookie, body: yearsAgo(-1) });
+  const future = await api("/api/me/birthday", { method: "POST", cookie, body: { ...yearsAgo(-1), acceptTerms: true } });
   assert.equal(future.status, 400);
 
   // Even a 40-year-old starts as a teen, like Discord, until they confirm their age.
-  const r = await api("/api/me/birthday", { method: "POST", cookie, body: yearsAgo(40) });
+  const noTick = await api("/api/me/birthday", { method: "POST", cookie, body: yearsAgo(40) });
+  assert.equal(noTick.status, 400);
+  assert.match(noTick.body.error, /terms/);
+  const r = await api("/api/me/birthday", { method: "POST", cookie, body: { ...yearsAgo(40), acceptTerms: true } });
   assert.equal(r.status, 200);
   assert.equal(r.body.user.ageGroup, "teen");
   assert.equal((await api("/api/orders", { cookie })).status, 200);
   // The answer can't be changed afterwards, and the birthday itself isn't stored.
-  await api("/api/me/birthday", { method: "POST", cookie, body: yearsAgo(5) });
+  await api("/api/me/birthday", { method: "POST", cookie, body: { ...yearsAgo(5), acceptTerms: true } });
   assert.equal(userRow(user.id).age_group, "teen");
   assert.ok(!Object.keys(userRow(user.id)).some(k => /birth|dob/.test(k)));
 });
 
 test("people under 13 are turned away and their new account isn't kept", async () => {
   const { user, cookie } = signIn("kid@example.com", "kid", { age: null });
-  const r = await api("/api/me/birthday", { method: "POST", cookie, body: yearsAgo(11) });
+  const r = await api("/api/me/birthday", { method: "POST", cookie, body: { ...yearsAgo(11), acceptTerms: true } });
   assert.equal(r.status, 403);
   assert.equal(r.body.needs, "closed");
   assert.equal(userRow(user.id), undefined);
