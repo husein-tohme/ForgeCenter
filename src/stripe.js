@@ -13,6 +13,10 @@ export function getStripe() {
   return stripeClient;
 }
 
+// Checkout shows a "save my card" box, and cards saved before are offered next time.
+// Stripe keeps the card; ForgeCenter never sees or stores card numbers.
+export const SAVE_CARD = { saved_payment_method_options: { payment_method_save: "enabled" } };
+
 export const baseUrl = req => process.env.BASE_URL || `${req.protocol}://${req.get("host")}`;
 
 // Each Checkout flow has its own label so they can be compared in the Stripe Dashboard.

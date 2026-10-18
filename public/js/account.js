@@ -190,7 +190,7 @@ const ENTRY_TEXT = {
   ai: e => e.note || "AI messages after your free ones",
   ai_refund: e => e.note || "Orbs back for AI messages",
 };
-const PACKS = [500, 1000, 2500, 5000, 10000];
+const PACKS = [500, 1000, 2500, 5000, 10000, 25000, 50000];
 
 async function loadWallet(retry = toppedUp) {
   const r = await api("/api/wallet");

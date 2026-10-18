@@ -595,3 +595,26 @@ function cookieNotice() {
   document.body.append(bar);
 }
 cookieNotice();
+
+// ---------- Light and dark mode ----------
+{
+  const slot = document.getElementById("auth-slot");
+  if (slot) {
+    const btn = document.createElement("button");
+    btn.type = "button"; btn.className = "theme-btn";
+    const label = () => {
+      const light = document.documentElement.dataset.theme === "light";
+      btn.textContent = light ? "☾" : "☀";
+      btn.setAttribute("aria-label", light ? "Switch to dark mode" : "Switch to light mode");
+      btn.title = btn.getAttribute("aria-label");
+    };
+    btn.addEventListener("click", () => {
+      const next = document.documentElement.dataset.theme === "light" ? "dark" : "light";
+      document.documentElement.dataset.theme = next;
+      try { localStorage.setItem("fc-theme", next); } catch {}
+      label();
+    });
+    label();
+    slot.before(btn);
+  }
+}
