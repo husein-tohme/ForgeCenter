@@ -7,7 +7,7 @@ import { creatorPreview } from "./creators.js";
 
 const PUBLIC = resolve("public");
 // Pages search engines may list. Account and owner pages stay out.
-const LISTED = ["/", "/textures", "/modpacks", "/plugins", "/games", "/creators", "/roblox", "/ai-maker", "/site-maker", "/developers", "/donate", "/rules", "/privacy", "/terms"];
+const LISTED = ["/", "/textures", "/modpacks", "/plugins", "/games", "/creators", "/roblox", "/ai-maker", "/site-maker", "/developers", "/donate", "/orbs", "/rules", "/privacy", "/terms"];
 
 const cache = new Map();
 const baseUrl = req => (process.env.BASE_URL || `${req.protocol}://${req.get("host")}`).replace(/\/+$/, "");
