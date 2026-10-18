@@ -577,7 +577,7 @@ dialog.gate h2 { font-size: 1.6rem; }
 .choice .provider { margin-top: 4px; font-style: italic; }
 .birthday-form { display: grid; grid-template-columns: 1.4fr .8fr 1fr; gap: 10px; align-items: end; margin: 16px 0 8px; }
 .birthday-form label { font-weight: 700; }
-.birthday-form .btn, .birthday-form .error { grid-column: 1 / -1; justify-self: start; margin: 0; }
+.birthday-form .btn, .birthday-form .error, .birthday-form .terms-row { grid-column: 1 / -1; justify-self: start; margin: 0; }
 @media (max-width: 480px) { .birthday-form { grid-template-columns: 1fr 1fr; } .birthday-form label:first-child { grid-column: 1 / -1; } }
 
 /* Age group on the account page */
@@ -635,3 +635,16 @@ dialog.gate h2 { font-size: 1.6rem; }
 .inline-form .amount-input { width: 120px; }
 .inline-form .grow { flex: 1; min-width: 180px; }
 .age-status .grow { flex: 1; min-width: 220px; }
+
+/* Cookie choice: fixed to the bottom, never covers the whole page. */
+.cookie-bar { position: fixed; left: 12px; right: 12px; bottom: 12px; z-index: 50; max-width: 760px; margin: 0 auto; display: flex; gap: 12px 20px; align-items: center; flex-wrap: wrap; padding: 14px 18px; }
+.cookie-bar p { margin: 0; flex: 1 1 320px; }
+.cookie-actions { display: flex; gap: 10px; }
+.cookie-actions .btn { min-width: 140px; }
+
+/* Wide tables scroll inside their box on phones instead of widening the page. */
+.table-wrap { overflow-x: auto; margin: 16px 0; }
+.legal table { border-collapse: collapse; width: 100%; min-width: 560px; }
+.legal th, .legal td { text-align: left; vertical-align: top; padding: 8px 10px; border-bottom: 1px solid rgba(255,255,255,.15); }
+.type-pick { border: 0; padding: 0; margin: 0 0 8px; display: grid; gap: 8px; }
+.type-pick .check-row, .acct-section > .check-row { font-weight: 400; }

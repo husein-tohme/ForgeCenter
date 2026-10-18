@@ -1,0 +1,18 @@
+# ForgeCenter
+
+> A Minecraft-themed storefront and creator hub: free tools to make resource packs, modpacks, plugins and mods; Minecraft server hosting; Discord bots; AI site and assistant makers; and a games launchpad. Prices are in orbs (1 orb = 1 US cent).
+
+## Free tools
+- [Texture Forge](/textures): build resource packs
+- [Modpack Forge](/modpacks): build modpacks from Modrinth
+- [Plugin Forge](/plugins): generate Paper plugins
+- [Roblox Forge](/roblox): generate Roblox scripts
+
+## Shop and account
+- [Orbs](/orbs): buy and spend orbs
+- [Games](/games): community games
+- [Creators](/creators): creator pages
+
+## Help and legal
+- [Help](/support), [Rules](/rules), [Terms](/terms), [Privacy](/privacy)
+- [Developer API](/developers)

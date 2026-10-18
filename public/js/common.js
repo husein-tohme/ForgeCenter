@@ -38,6 +38,9 @@ const ICONS = {
     "..rrrr..", ".rr...r.", "r.rr...r", "r..rr..r", "r...rr.r", "r....rrr", ".r....r.", "..rrrr.."] },
   arcade: { c: { c: "#5b3a91", k: "#2a1846", s: "#3bd16f", S: "#c8ffd8", r: "#d9372b", b: "#3b7bd6" }, m: [
     ".cccccc.", ".kkkkkk.", ".kSsssk.", ".kssssk.", ".kkkkkk.", "ccrccbcc", ".cccccc.", ".c....c."] },
+  // An XP orb: ForgeCenter's currency.
+  orb: { c: { k: "#2f5208", y: "#7cc11b", Y: "#c6f23d", w: "#fbffd6", g: "#4f8c10" }, m: [
+    "..kkkk..", ".kyYYyk.", "kyYwwYyk", "kYwYYYyk", "kYYYYYgk", "kyYYYggk", ".kyggyk.", "..kkkk.."] },
 };
 
 // Pages add their own pixel icons, in the same { c: colours, m: 8 rows } format.
@@ -82,6 +85,8 @@ export const esc = s => String(s ?? "").replace(/[&<>"']/g, ch => ({ "&": "&amp;
 export const money = cents => "$" + (cents / 100).toLocaleString("en-US");
 // Always two decimals, for wallet amounts.
 export const cash = cents => (cents < 0 ? "−$" : "$") + (Math.abs(cents) / 100).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+// Orbs, ForgeCenter's currency: 1 orb = 1 cent, so wallet amounts in cents are orb counts.
+export const orbs = n => `${n < 0 ? "−" : ""}${Math.abs(n).toLocaleString("en-US")} ${Math.abs(n) === 1 ? "orb" : "orbs"}`;
 export const date = iso => new Date(iso).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
 
 let toastTimer;
@@ -141,7 +146,7 @@ function renderAuthSlot() {
     return;
   }
   slot.innerHTML = `${currentUser.isAdmin ? `<a class="top-link" href="/admin">Owner panel</a>` : ""}
-    <a class="wallet-chip" href="/account#wallet" aria-label="Wallet: ${cash(currentUser.wallet ?? 0)}">${stack(currentUser.wallet ?? 0)}</a>
+    <a class="wallet-chip" href="/orbs" aria-label="Your orbs: ${orbs(currentUser.wallet ?? 0)}">${stack(currentUser.wallet ?? 0)}</a>
     <a class="account-link" href="/account">${currentUser.picture
       ? `<img src="${esc(currentUser.picture)}" alt="" width="32" height="32" referrerpolicy="no-referrer">` : ""}My account</a>`;
 }
@@ -334,12 +339,17 @@ export function checkout(product, button) {
   }, { buy: product });
 }
 
-// ---------- Wallet ----------
-// The balance drawn as a Minecraft item stack: an emerald in a slot, the amount as its count.
-export function stack(cents, { big = false } = {}) {
-  const whole = cents % 100 === 0;
-  const label = whole ? `$${(cents / 100).toLocaleString("en-US")}` : cash(cents);
-  return `<span class="stack${big ? " stack-big" : ""}"><span class="stack-gem">${icon("emerald")}</span><span class="stack-count">${label}</span></span>`;
+// ---------- Orbs ----------
+// Short counts for the small stack in the header: 950, 2,500, 12.5k, 200k.
+const shortCount = n => {
+  const a = Math.abs(n), sign = n < 0 ? "−" : "";
+  if (a < 10_000) return sign + a.toLocaleString("en-US");
+  return sign + (Math.floor(a / 100) / 10).toLocaleString("en-US", { maximumFractionDigits: a < 100_000 ? 1 : 0 }) + "k";
+};
+// The orb balance drawn as a Minecraft item stack: an XP orb in a slot, the count on top.
+export function stack(count, { big = false } = {}) {
+  const label = big ? (count < 0 ? "−" : "") + Math.abs(count).toLocaleString("en-US") : shortCount(count);
+  return `<span class="stack${big ? " stack-big" : ""}"><span class="stack-gem">${icon("orb")}</span><span class="stack-count">${label}</span></span>`;
 }
 
 function choosePayment(item) {
@@ -348,10 +358,10 @@ function choosePayment(item) {
     <dialog class="panel gate" id="pay-dialog" aria-labelledby="pay-title">
       <h2 id="pay-title">Pay for ${esc(item.name.toLowerCase())}</h2>
       <div class="choices">
-        <button class="choice" type="button" value="wallet"><span class="slot">${icon("emerald")}</span>
-          <span><strong>Pay from wallet</strong><span class="small">${cash(item.price)} now. ${cash(left)} stays in your wallet.</span></span></button>
+        <button class="choice" type="button" value="wallet"><span class="slot">${icon("orb")}</span>
+          <span><strong>Pay with orbs: ${orbs(item.price)}</strong><span class="small">You'd have ${orbs(left)} left.</span></span></button>
         <button class="choice" type="button" value="card"><span class="slot">${icon("card")}</span>
-          <span><strong>Pay by card</strong><span class="small">Card, bank or wallet apps through Stripe Checkout.</span></span></button>
+          <span><strong>Pay by card: ${money(item.price)}</strong><span class="small">Card, bank or wallet apps through Stripe Checkout.</span></span></button>
       </div>
       <button class="btn" type="button" value="">Cancel</button>
     </dialog>`);
@@ -379,6 +389,7 @@ function birthdayDialog() {
         <label>Month<select name="month" required><option value="" disabled selected hidden>Choose</option>${MONTHS.map((m, i) => `<option value="${i + 1}">${m}</option>`).join("")}</select></label>
         <label>Day<select name="day" required><option value="" disabled selected hidden>Choose</option>${[...Array(31)].map((_, i) => `<option>${i + 1}</option>`).join("")}</select></label>
         <label>Year<select name="year" required><option value="" disabled selected hidden>Choose</option>${[...Array(101)].map((_, i) => `<option>${year - i}</option>`).join("")}</select></label>
+        <label class="check-row terms-row"><input type="checkbox" name="terms" required> I agree to the <a href="/terms" target="_blank">terms of service</a> and <a href="/privacy" target="_blank">privacy policy</a></label>
         <p class="error" id="birthday-error" role="alert" hidden></p>
         <button class="btn btn-buy" type="submit">Continue</button>
       </form>
@@ -390,7 +401,7 @@ function birthdayDialog() {
   $("birthday-form").addEventListener("submit", async e => {
     e.preventDefault();
     const f = e.target.elements;
-    const r = await api("/api/me/birthday", { method: "POST", body: { year: Number(f.year.value), month: Number(f.month.value), day: Number(f.day.value) } });
+    const r = await api("/api/me/birthday", { method: "POST", body: { year: Number(f.year.value), month: Number(f.month.value), day: Number(f.day.value), acceptTerms: f.terms.checked } });
     if (r.ok) {
       d.close(); setUser(r.data.user);
       const next = afterBirthday; afterBirthday = null;
@@ -547,7 +558,7 @@ document.addEventListener("click", e => {
   const params = new URLSearchParams(location.search);
   const code = params.get("ref");
   if (code !== null) {
-    if (/^[a-z0-9-]{3,24}$/i.test(code)) {
+    if (/^[a-z0-9-]{3,24}$/i.test(code) && cookieChoice() !== "reject") {
       try { localStorage.setItem(REF, JSON.stringify({ code: code.toLowerCase(), at: Date.now() })); } catch {}
     }
     params.delete("ref");
@@ -562,3 +573,27 @@ document.addEventListener("click", e => {
     if (r.ok) toast(`Welcome! You joined through a link from @${r.data.creator.handle}.`);
   });
 }
+
+// ---------- Cookie choice ----------
+// The sign-in cookie is needed for the site to work. The only optional storage is
+// remembering a creator's referral link, so Reject turns that off. Both buttons are
+// the same size and equally easy to press.
+const CONSENT = "fc-cookies";
+export function cookieChoice() { try { return localStorage.getItem("fc-cookies"); } catch { return null; } }
+function cookieBanner() {
+  if (cookieChoice()) return;
+  const bar = document.createElement("div");
+  bar.className = "cookie-bar panel";
+  bar.setAttribute("role", "region");
+  bar.setAttribute("aria-label", "Cookie choice");
+  bar.innerHTML = `<p>ForgeCenter uses one cookie to keep you signed in. With your OK it also remembers which creator's link brought you here, so they get credit. No ads or tracking. <a href="/privacy#cookies">Details</a></p>
+    <div class="cookie-actions"><button class="btn" type="button" data-c="reject">Reject optional</button><button class="btn" type="button" data-c="accept">Accept</button></div>`;
+  bar.addEventListener("click", e => {
+    const c = e.target.closest("[data-c]")?.dataset.c;
+    if (!c) return;
+    try { localStorage.setItem(CONSENT, c); if (c === "reject") localStorage.removeItem("fc-ref"); } catch {}
+    bar.remove();
+  });
+  document.body.append(bar);
+}
+cookieBanner();

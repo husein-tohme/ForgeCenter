@@ -1,4 +1,4 @@
-import { $, api, esc, icon, money, toast, requireSignIn, onUser, getUser, getCatalog, ready, PRODUCT_ICON } from "./common.js";
+import { $, api, esc, icon, money, orbs, toast, refreshUser, requireSignIn, onUser, getUser, getCatalog, ready, PRODUCT_ICON } from "./common.js";
 import { reportButton } from "./report.js";
 
 // ---------- Crafting table ----------
@@ -59,6 +59,8 @@ function craft(item) {
 const priceHtml = p => `<span class="price"><span class="gem">${icon("emerald")}</span>${
   p.price ? money(p.price) : money(p.monthly)}${!p.price && p.monthly ? '<span class="per">a month</span>' : ""}${
   p.price && p.monthly ? `<span class="per">+ ${money(p.monthly)}/mo</span>` : ""}</span>`;
+// One-time items can also be paid with orbs (1 orb = 1 cent).
+const orbLine = (p, tag = "span") => p.orbPayable ? `<${tag} class="per">or <a href="/orbs">${orbs(p.price)}</a></${tag}>` : "";
 
 function showResult(item) {
   const free = FREE[item.key];
@@ -69,7 +71,7 @@ function showResult(item) {
   const p = catalog[item.key];
   if (!p) { $("result").innerHTML = `<p class="hint">Prices are still loading.</p>`; return; }
   $("result").innerHTML = `<h3>${esc(p.name)}</h3><p>${esc(p.desc)}</p>
-    <div class="price-line">${priceHtml(p)}<button class="btn btn-buy" type="button" data-buy="${item.key}">Go to checkout</button></div>`;
+    <div class="price-line">${priceHtml(p)}${orbLine(p)}<button class="btn btn-buy" type="button" data-buy="${item.key}">Go to checkout</button></div>`;
 }
 
 // ---------- Villager-style trade list ----------
@@ -79,7 +81,7 @@ function renderTrades() {
     const p = catalog[k];
     return `<div class="trade${k === "website" ? " featured" : ""}">
       <div class="slot">${icon(PRODUCT_ICON[k])}</div>
-      <div><h3>${esc(p.name)}</h3><p>${esc(p.desc)}</p>${p.adultOnly ? `<p class="small">For adults: confirm your age before buying.</p>` : ""}</div>
+      <div><h3>${esc(p.name)}</h3><p>${esc(p.desc)}</p>${orbLine(p, "p")}${p.adultOnly ? `<p class="small">For adults: confirm your age before buying.</p>` : ""}</div>
       ${priceHtml(p)}
       <button class="btn btn-buy" type="button" data-buy="${k}">Trade</button>
     </div>`;
@@ -149,7 +151,10 @@ async function ask(text) {
   const r = await api("/api/tutor", { method: "POST", body: { messages: history } });
   if (r.data.reply) {
     history.push({ role: "assistant", content: r.data.reply });
-    $("mentor-usage").textContent = `${r.data.remaining} messages left today.`;
+    $("mentor-usage").textContent = r.data.orbsSpent
+      ? `No free messages left today, so that one cost ${orbs(r.data.orbsSpent)}.`
+      : `${r.data.remaining} messages left today.`;
+    if (r.data.orbsSpent) refreshUser(); // the header shows the new orb count
   } else { history.pop(); toast(r.data.error || "Forge couldn't answer. Try again."); }
   renderChat(false);
 }
@@ -165,7 +170,11 @@ $("starters").addEventListener("click", e => {
 onUser(async u => {
   if (!u) { $("mentor-usage").textContent = "Sign in with Google to chat with Forge. It's free."; return; }
   const r = await api("/api/tutor/usage");
-  if (r.ok) $("mentor-usage").textContent = `${Math.max(0, r.data.limit - r.data.used)} of ${r.data.limit} messages left today.`;
+  if (!r.ok) return;
+  const left = Math.max(0, r.data.limit - r.data.used);
+  $("mentor-usage").textContent = left || !r.data.aiOrbs
+    ? `${left} of ${r.data.limit} messages left today.`
+    : `No free messages left today. Each message costs ${orbs(r.data.orbsPerAiUnit)}.`;
 });
 
 // ---------- Showcase ----------

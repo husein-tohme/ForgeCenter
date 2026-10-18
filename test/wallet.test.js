@@ -65,7 +65,7 @@ test("top-ups must be whole dollars within the limits, and the wallet has a cap"
   give(user.id, 190000);
   const r = await api("/api/wallet/topup", { method: "POST", cookie, body: { amount: 20000 } });
   assert.equal(r.status, 400);
-  assert.match(r.body.error, /\$100\.00 at most/);
+  assert.match(r.body.error, /buy 10,000 orbs at most/);
 });
 
 test("paying from the wallet makes a paid order and starts it like a card payment", async () => {
@@ -82,7 +82,7 @@ test("paying from the wallet makes a paid order and starts it like a card paymen
 
   const short = await api("/api/wallet/pay", { method: "POST", cookie, body: { product: "ai" } });
   assert.equal(short.status, 402);
-  assert.match(short.body.error, /\$50\.00 short/);
+  assert.match(short.body.error, /You need 5,000 more orbs/);
   assert.equal((await api("/api/wallet/pay", { method: "POST", cookie, body: { product: "mcserver" } })).status, 400);
   assert.equal(await balance(cookie), 5000);
 });
@@ -154,7 +154,7 @@ test("the owner can refund an order or give credit to a wallet, within limits", 
   assert.equal(ok.status, 200);
   assert.equal(ok.body.balance, 6000);
   assert.equal((await api(`/api/admin/orders/${orderId}/wallet-refund`, { method: "POST", cookie: owner.cookie, body: { amount: 4001 } })).status, 400);
-  assert.ok(emails.some(m => m.to.includes("refunded@example.com") && /\$60\.00 added/.test(m.subject)));
+  assert.ok(emails.some(m => m.to.includes("refunded@example.com") && /6,000 orbs added/.test(m.subject)));
 
   // An order the owner marked canceled before anyone paid can't be "refunded" as credit.
   const unpaid = Number(db.prepare(`INSERT INTO orders (user_id, product, amount, status, created_at, updated_at)
@@ -176,5 +176,5 @@ test("an account with wallet credit can't be deleted until it's spent or refunde
   give(user.id, 700);
   const r = await api("/api/me", { method: "DELETE", cookie, body: {} });
   assert.equal(r.status, 409);
-  assert.match(r.body.error, /\$7\.00 in your wallet/);
+  assert.match(r.body.error, /700 orbs/);
 });

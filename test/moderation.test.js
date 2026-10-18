@@ -86,3 +86,20 @@ test("suspending an account takes down its public things, stops its API keys and
   assert.equal(del.status, 409);
   assert.match(del.body.error, /support ticket/);
 });
+
+test("data export downloads your rows and leaves secrets out", async () => {
+  const me = signIn("exporter@example.com");
+  const r = await api("/api/me/export", { cookie: me.cookie });
+  assert.equal(r.status, 200);
+  assert.equal(r.body.account.email, "exporter@example.com");
+  assert.doesNotMatch(JSON.stringify(r.body), /token_hash|value_enc|key_hash/);
+  assert.equal((await api("/api/me/export")).status, 401);
+});
+
+test("account type can be personal, student or business", async () => {
+  const me = signIn("typer@example.com");
+  assert.equal((await api("/api/me", { cookie: me.cookie })).body.user.accountType, "personal");
+  assert.equal((await api("/api/me", { method: "PATCH", body: { accountType: "pirate" }, cookie: me.cookie })).status, 400);
+  await api("/api/me", { method: "PATCH", body: { accountType: "business" }, cookie: me.cookie });
+  assert.equal((await api("/api/me", { cookie: me.cookie })).body.user.accountType, "business");
+});

@@ -18,6 +18,7 @@ import { robloxRouter } from "./roblox.js";
 import { oauthRouter, enabledOAuthProviders } from "./oauth.js";
 import { whatsappRouter, whatsappEnabled } from "./whatsapp.js";
 import { setupRouter, githubDone } from "./setup.js";
+import { emailRouter } from "./email.js";
 import { servicesRouter, adminServicesRouter } from "./services.js";
 import { gamesRouter, adminGamesRouter } from "./launchpad.js";
 import { creatorsRouter, adminCreatorsRouter } from "./creators.js";
@@ -52,6 +53,9 @@ export function createApp() {
 
   // Stripe needs the raw body to verify signatures, so this comes before express.json().
   app.post("/api/stripe/webhook", express.raw({ type: "application/json", limit: "1mb" }), stripeWebhook);
+
+  // Unsubscribe links come from mail apps as plain form posts, so they skip the JSON guard below.
+  app.use("/api/email", emailRouter);
 
   app.use(express.json({ limit: "100kb" }));
   // The developer API signs in only with an API key, so it comes before loadUser: a

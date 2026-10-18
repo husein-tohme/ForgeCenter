@@ -23,8 +23,8 @@ export const isAdmin = user => !!user?.email && adminEmails().has(user.email.toL
 export const publicUser = u => u && ({
   id: u.id, email: u.email, phone: u.phone, name: u.name, picture: u.picture,
   isAdmin: isAdmin(u), hasBilling: !!u.stripe_customer_id,
-  ageGroup: u.age_group, ageMethod: u.age_method, ageConfirmedAt: u.age_confirmed_at,
-  wallet: walletBalance(u.id),
+  ageGroup: isAdmin(u) && u.age_group !== "under13" ? "adult" : u.age_group, ageMethod: isAdmin(u) && u.age_group !== "adult" ? "owner" : u.age_method, ageConfirmedAt: u.age_confirmed_at,
+  wallet: walletBalance(u.id), emailUpdates: !u.email_optout, accountType: u.account_type ?? "personal",
   suspended: u.suspended_at ? { at: u.suspended_at, reason: u.suspended_reason } : null,
 });
 
@@ -127,7 +127,9 @@ export function requireUserOrSuspended(req, res, next) {
 }
 
 // Adults whose age was confirmed by a credit card check or an ID scan.
-export const isAdult = user => user?.age_group === "adult";
+// Owners (ADMIN_EMAILS) run the company, so they skip the age check. Their stored age
+// group is never changed; they're just treated as adults while they're owners.
+export const isAdult = user => user?.age_group === "adult" || isAdmin(user);
 export function requireAdult(req, res, next) {
   if (isAdult(req.user)) return next();
   res.status(403).json({ error: "This is for adults. Confirm your age to continue.", needs: "adult" });
@@ -168,15 +170,27 @@ authRouter.post("/logout", (req, res) => {
   res.json({ ok: true });
 });
 
+export const ACCOUNT_TYPES = ["personal", "student", "business"];
+
 // ---------- The signed-in account ----------
 export const meRouter = express.Router();
 
 meRouter.get("/", (req, res) => res.json({ user: publicUser(req.user) ?? null }));
 
 meRouter.patch("/", requireSignedIn, (req, res) => {
-  const name = String(req.body?.name ?? "").trim().slice(0, 50);
-  if (!name) return res.status(400).json({ error: "Enter a name." });
-  db.prepare("UPDATE users SET name = ? WHERE id = ?").run(name, req.user.id);
+  if (req.body?.accountType !== undefined) {
+    // Business accounts come under the data processing agreement (/dpa).
+    if (!ACCOUNT_TYPES.includes(req.body.accountType)) return res.status(400).json({ error: "Choose personal, student or business." });
+    db.prepare("UPDATE users SET account_type = ? WHERE id = ?").run(req.body.accountType, req.user.id);
+  }
+  if (typeof req.body?.emailUpdates === "boolean") {
+    db.prepare("UPDATE users SET email_optout = ? WHERE id = ?").run(req.body.emailUpdates ? 0 : 1, req.user.id);
+  }
+  if (req.body?.name !== undefined) {
+    const name = String(req.body.name).trim().slice(0, 50);
+    if (!name) return res.status(400).json({ error: "Enter a name." });
+    db.prepare("UPDATE users SET name = ? WHERE id = ?").run(name, req.user.id);
+  }
   res.json({ user: publicUser(db.prepare("SELECT * FROM users WHERE id = ?").get(req.user.id)) });
 });
 
@@ -193,14 +207,32 @@ meRouter.delete("/identities/:provider", requireSignedIn, (req, res) => {
   res.json({ ok: true });
 });
 
+// Download everything stored about you (GDPR access and portability). Every table
+// with a user_id column is included, so new features are covered automatically;
+// secrets (encrypted tokens, key hashes) and file contents are left out.
+const SECRET_COLUMN = /token|secret|hash|_enc$|^data$|^blob$/i;
+meRouter.get("/export", requireSignedIn, rateLimit({ windowMs: 60 * 60_000, max: 5 }), (req, res) => {
+  const out = { exportedAt: now(), account: publicUser(req.user) };
+  const tables = db.prepare("SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%'").all();
+  for (const { name } of tables) {
+    const cols = db.prepare(`PRAGMA table_info("${name}")`).all().map(c => c.name);
+    if (!cols.includes("user_id")) continue;
+    const keep = cols.filter(c => !SECRET_COLUMN.test(c));
+    const rows = db.prepare(`SELECT ${keep.map(c => `"${c}"`).join(", ")} FROM "${name}" WHERE user_id = ?`).all(req.user.id);
+    if (rows.length) out[name] = rows;
+  }
+  res.set("Content-Disposition", `attachment; filename="forgecenter-data-${req.user.id}.json"`);
+  res.json(out);
+});
+
 // Why an account can't be deleted right now, or null if it can.
 function deleteBlocker(userId) {
   const activeSubs = db.prepare(`SELECT COUNT(*) AS n FROM orders WHERE user_id = ?
     AND subscription_status IN ('active', 'past_due')`).get(userId).n;
   if (activeSubs) return "Cancel your subscriptions in Manage billing before deleting your account.";
   const balance = walletBalance(userId);
-  if (balance > 0) return `You have $${(balance / 100).toFixed(2)} in your wallet. Spend it, or open a support ticket to have it refunded, before deleting your account.`;
-  if (balance < 0) return `Your wallet is $${(-balance / 100).toFixed(2)} below zero because a top-up was refunded or disputed after it was spent. Add funds or open a support ticket before deleting your account.`;
+  if (balance > 0) return `You have ${balance.toLocaleString("en-US")} orbs. Spend them, or open a support ticket to have unused orb packs refunded, before deleting your account.`;
+  if (balance < 0) return `Your orb balance is ${(-balance).toLocaleString("en-US")} below zero because a top-up was refunded or disputed after it was spent. Buy orbs or open a support ticket before deleting your account.`;
   return null;
 }
 
@@ -233,6 +265,8 @@ meRouter.delete("/", requireSignedIn, (req, res) => {
 // check or an ID scan (age.js) moves it to adult. Only the group is stored, never
 // the birthday itself.
 const AGE_BLOCK = "fc_age_block";
+// Bump when the terms change in a way people should agree to again.
+export const TERMS_VERSION = "2026-10-18";
 const MIN_AGE = 13;
 
 export function ageOn(today, year, month, day) {
@@ -256,6 +290,7 @@ meRouter.post("/birthday", requireSignedIn, rateLimit({ windowMs: 60_000, max: 1
   const today = new Date();
   const { year, month, day } = req.body ?? {};
   if (!validBirthday(year, month, day, today)) return res.status(400).json({ error: "Choose your full date of birth." });
+  if (req.body?.acceptTerms !== true) return res.status(400).json({ error: "Tick the box to agree to the terms of service and privacy policy." });
 
   if (ageOn(today, year, month, day) < MIN_AGE) {
     res.cookie(AGE_BLOCK, "1", { httpOnly: true, sameSite: "lax", path: "/", maxAge: 24 * 60 * 60 * 1000, secure: process.env.NODE_ENV === "production" });
@@ -270,6 +305,7 @@ meRouter.post("/birthday", requireSignedIn, rateLimit({ windowMs: 60_000, max: 1
     }
     return res.status(403).json({ error: "ForgeCenter accounts are for people 13 and older, so this account wasn't kept. The free creator tools still work without an account.", needs: "closed" });
   }
-  db.prepare("UPDATE users SET age_group = 'teen' WHERE id = ? AND age_group IS NULL").run(req.user.id);
+  db.prepare("UPDATE users SET age_group = 'teen', terms_accepted_at = ?, terms_version = ? WHERE id = ? AND age_group IS NULL")
+    .run(now(), TERMS_VERSION, req.user.id);
   res.json({ user: publicUser(db.prepare("SELECT * FROM users WHERE id = ?").get(req.user.id)) });
 });

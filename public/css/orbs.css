@@ -1,0 +1,99 @@
+/* Orbs: the orbs page (/orbs) and the Orbs section of the account page. */
+:root { --orb: #c6f23d; --orb-deep: #4f8c10; --orb-ink: #2f5208; }
+
+/* ---------- Hero ---------- */
+.orb-hero { display: grid; grid-template-columns: 200px minmax(0, 1fr); gap: 32px; align-items: center; padding: 28px; }
+.orb-hero-art {
+  position: relative; width: 200px; aspect-ratio: 1; display: grid; place-items: center;
+  background: var(--deepslate-2); border: 3px solid var(--outline);
+  box-shadow: inset 4px 4px 0 #4a4e57, inset -4px -4px 0 #17181c;
+}
+.orb-hero-slot { width: 112px; height: 112px; padding: 20px; }
+.orb-hero-slot .px { filter: drop-shadow(0 0 6px rgba(198, 242, 61, .55)); }
+.orb-float { position: absolute; width: 26px; height: 26px; animation: orb-bob 2.4s steps(6) infinite; }
+.orb-float-1 { top: 14px; left: 18px; }
+.orb-float-2 { top: 26px; right: 16px; width: 20px; height: 20px; animation-delay: -.8s; }
+.orb-float-3 { bottom: 16px; left: 34px; width: 18px; height: 18px; animation-delay: -1.6s; }
+@keyframes orb-bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+@media (prefers-reduced-motion: reduce) { .orb-float { animation: none; } }
+.orb-hero-text .page-title { margin-bottom: 8px; }
+.orb-lede { font-size: 1.15rem; margin-bottom: 12px; }
+.orb-rate { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin-bottom: 0; }
+.orb-rate-chip {
+  font: 700 1rem var(--display); color: var(--outline); background: var(--orb);
+  border: 2px solid var(--outline); padding: 3px 10px; white-space: nowrap;
+  box-shadow: inset 2px 2px 0 #f0ffb0, inset -2px -2px 0 #8fbf1f;
+}
+.orb-balance { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 24px; margin-top: 20px; padding-top: 16px; border-top: 3px solid #a9a9a9; }
+.orb-balance-text { display: flex; flex-direction: column; gap: 2px; }
+.orb-balance-text strong { font-size: 1.15rem; }
+
+/* ---------- Sections ---------- */
+.orb-section { margin-top: 48px; }
+.orb-section > h2 { font-size: 1.7rem; }
+.orb-section .section-lede { margin-bottom: 20px; }
+
+/* ---------- Packs ---------- */
+.orb-packs-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 16px; }
+.orb-pack-card { display: grid; justify-items: center; gap: 4px; text-align: center; padding: 18px 16px 16px; }
+.orb-pack-card .btn { width: 100%; margin-top: 8px; }
+.orb-pack-count { margin: 0; font-size: 1.05rem; }
+.orb-pack-count .num { font-size: 1.6rem; line-height: 1.1; display: block; }
+.orb-pack-price { margin: 0; color: var(--ink-soft); font-weight: 700; }
+/* A pile of orbs that grows with the pack. */
+.orb-pile { display: flex; align-items: flex-end; justify-content: center; height: 52px; }
+.orb-pile span { display: block; width: 28px; height: 28px; margin: 0 -3px; }
+.orb-pile span:nth-child(2) { margin-bottom: 14px; }
+.orb-pile span:nth-child(4) { margin-bottom: 18px; width: 22px; height: 22px; }
+.orb-pile span:nth-child(5) { width: 22px; height: 22px; }
+.orb-custom-form { margin-top: 16px; max-width: 620px; }
+.orb-custom-form > label { display: block; font-weight: 700; }
+.orb-custom-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin: 6px 0 8px; }
+.orb-custom-row input { width: 170px; margin: 0; }
+.orb-custom-price { font-weight: 700; color: var(--emerald-text); }
+.orb-custom-form .small { margin: 0; }
+.orb-closed-loop { margin-top: 16px; max-width: 760px; }
+
+/* ---------- What you can get ---------- */
+.orb-price { display: inline-flex; align-items: center; gap: 10px; justify-content: flex-end; min-width: 170px; text-align: right; }
+.orb-price-icon { width: 26px; height: 26px; flex: none; }
+.orb-price .num { font-size: 1.25rem; }
+.orb-price .small { display: block; }
+.orb-short .note { margin: 10px 0 0; }
+.orb-short .ticket-actions { margin-top: 8px; }
+@media (max-width: 640px) {
+  .orb-hero { grid-template-columns: 1fr; gap: 20px; padding: 20px; }
+  .orb-hero-art { width: 140px; }
+  .orb-hero-slot { width: 84px; height: 84px; padding: 14px; }
+  .orb-trade .orb-price { grid-column: 2; justify-content: flex-start; min-width: 0; text-align: left; }
+}
+
+/* ---------- AI messages ---------- */
+.orb-ai-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px; }
+.orb-ai-card { display: grid; grid-template-columns: 56px minmax(0, 1fr); gap: 14px; align-items: start; color: var(--ink); text-decoration: none; }
+.orb-ai-card strong { display: block; font: 700 1.2rem var(--display); }
+.orb-ai-card:hover strong { color: var(--lapis); text-decoration: underline; }
+.orb-ai-cost { display: block; font-weight: 700; color: var(--emerald-text); margin: 2px 0 4px; }
+.orb-ai-card .small { display: block; }
+.orb-ai-setting { margin-top: 16px; max-width: 760px; }
+.orb-ai-setting p { margin: 0; }
+.orb-ai-setting .check-row + .small { margin-top: 6px; }
+.orb-ai-setting .btn { margin-top: 10px; }
+
+/* ---------- Rules ---------- */
+.orb-rules { list-style: none; padding: 0; margin: 0 0 16px; display: grid; gap: 12px; max-width: 760px; }
+.orb-rules li { display: flex; gap: 12px; align-items: flex-start; }
+.orb-rule-icon { width: 22px; height: 22px; flex: none; margin-top: 4px; }
+
+/* ---------- Account page: the Orbs section ---------- */
+.orb-packs { display: flex; flex-wrap: wrap; gap: 8px; }
+.orb-pack { flex-direction: column; gap: 0; min-width: 104px; padding: 6px 14px; line-height: 1.2; }
+.orb-pack .num { font-size: 1.1rem; }
+.pack-price { font: 400 .85rem/1.2 var(--body); text-shadow: none; }
+.orb-custom { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 8px 12px; margin: 12px 0 8px; }
+.orb-custom label { font-weight: 700; }
+.orb-custom input { width: 150px; margin-top: 6px; }
+.orb-custom .small { align-self: center; }
+.ai-orbs { display: flex; gap: 16px; align-items: flex-start; margin-top: 16px; }
+.ai-orbs .slot { width: 52px; height: 52px; flex: none; }
+.ai-orbs .small { margin: 6px 0 0; }

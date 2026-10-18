@@ -1,24 +1,35 @@
-// The ForgeCenter wallet: a balance people can top up and spend, like a game
-// marketplace wallet. It's closed-loop store credit: it can't be withdrawn or sent to
-// someone else, which keeps it simple store credit rather than a money service.
-// Unused top-ups can be refunded to the card they came from (from the Stripe
-// Dashboard), and the owner can refund orders as credit.
+// Orbs, ForgeCenter's own currency (like Minecraft XP orbs), kept in the wallet ledger.
+// 1 orb = 1 US cent, so every amount here is in cents and is also the orb count.
+// People buy orb packs by card and spend orbs on one-time items and on AI messages
+// past the free daily allowance (src/tutor.js). It's closed-loop store credit: orbs
+// can't be withdrawn, sold or sent to someone else, which keeps it store credit rather
+// than a money service. Unused orb packs can be refunded to the card they came from
+// (from the Stripe Dashboard), and the owner can refund orders as orbs.
 import express from "express";
-import { db, now, walletBalance } from "./db.js";
-import { catalog, isAdultOnly, walletPayable } from "./catalog.js";
+import { db, now, walletBalance, addColumn } from "./db.js";
+import { catalog, isAdultOnly, walletPayable, orbs, usd, MAX_ORBS } from "./catalog.js";
 import { isAdult, requireAdmin, requireUser } from "./auth.js";
 import { rateLimit } from "./limit.js";
 import { notify } from "./email.js";
 import { getStripe, ensureCustomer, baseUrl, CHECKOUT_LABELS, checkoutKind } from "./stripe.js";
 import { afterPayment } from "./orders.js";
 
-// Cents. The balance cap keeps this small-purchase credit, not a place to park money.
-export const WALLET_LIMITS = { minTopup: 500, maxTopup: 50000, maxBalance: 200000 };
+// Cents, which are orbs. The balance cap keeps this small-purchase credit, not a place to park money.
+export const WALLET_LIMITS = { minTopup: 500, maxTopup: 50000, maxBalance: MAX_ORBS };
 const MAX_OWNER_CREDIT = 50000;
-const dollars = cents => `$${(cents / 100).toFixed(2)}`;
+
+// "When my free AI messages run out, use orbs": off until the person turns it on in the
+// Orbs section of the account page. Each AI message past the free daily allowance then
+// costs ORBS_PER_AI_UNIT orbs, which spendAllowance in tutor.js takes.
+export const ORBS_PER_AI_UNIT = Math.max(1, Number.parseInt(process.env.AI_ORBS_PER_UNIT, 10) || 5);
+addColumn("users", "ai_orbs", "INTEGER DEFAULT 0");
+export const aiOrbsOn = userId => !!db.prepare("SELECT ai_orbs FROM users WHERE id = ?").get(userId)?.ai_orbs;
 
 // Runs fn inside one write transaction, so balance checks and entries can't interleave.
-function transaction(fn) {
+// Exported for the other place that spends orbs: AI messages (spendAllowance in tutor.js).
+// Called inside a transaction that's already open, fn just joins it.
+export function transaction(fn) {
+  if (db.isTransaction) return fn();
   db.exec("BEGIN IMMEDIATE");
   try { const out = fn(); db.exec("COMMIT"); return out; }
   catch (e) { db.exec("ROLLBACK"); throw e; }
@@ -127,20 +138,33 @@ walletRouter.get("/", requireUser, async (req, res) => {
     WHERE w.user_id = ? ORDER BY w.id DESC LIMIT 50`).all(req.user.id);
   const pending = db.prepare(`SELECT id, amount, status, created_at AS createdAt FROM wallet_topups
     WHERE user_id = ? AND status = 'awaiting_payment' ORDER BY id DESC LIMIT 5`).all(req.user.id);
-  res.json({ balance: walletBalance(req.user.id), entries: entries.map(publicEntry), pending, limits: WALLET_LIMITS, available: !!stripe });
+  res.json({ balance: walletBalance(req.user.id), entries: entries.map(publicEntry), pending, limits: WALLET_LIMITS, available: !!stripe,
+    aiOrbs: aiOrbsOn(req.user.id), orbsPerAiUnit: ORBS_PER_AI_UNIT });
+});
+
+// Public facts for the orbs page, so signed-out visitors see the same numbers.
+walletRouter.get("/info", (_req, res) => {
+  res.json({ limits: WALLET_LIMITS, orbsPerAiUnit: ORBS_PER_AI_UNIT, available: !!getStripe() });
+});
+
+// "When my free AI messages run out, use orbs" (see spendAllowance in tutor.js).
+walletRouter.patch("/ai-orbs", requireUser, (req, res) => {
+  if (typeof req.body?.on !== "boolean") return res.status(400).json({ error: "Send { \"on\": true } to turn it on, or { \"on\": false } to turn it off." });
+  db.prepare("UPDATE users SET ai_orbs = ? WHERE id = ?").run(req.body.on ? 1 : 0, req.user.id);
+  res.json({ aiOrbs: req.body.on, orbsPerAiUnit: ORBS_PER_AI_UNIT });
 });
 
 walletRouter.post("/topup", requireUser, rateLimit({ windowMs: 60_000, max: 5 }), async (req, res) => {
   const amount = Number(req.body?.amount);
   const { minTopup, maxTopup, maxBalance } = WALLET_LIMITS;
   if (!Number.isInteger(amount) || amount % 100 || amount < minTopup || amount > maxTopup) {
-    return res.status(400).json({ error: `Choose a whole-dollar amount from ${dollars(minTopup)} to ${dollars(maxTopup)}.` });
+    return res.status(400).json({ error: `Choose a number of orbs in hundreds, from ${orbs(minTopup)} to ${orbs(maxTopup)} (${usd(minTopup)} to ${usd(maxTopup)}).` });
   }
   const room = maxBalance - walletBalance(req.user.id) - pendingTopups(req.user.id);
   if (amount > room) {
     return res.status(400).json({ error: room >= minTopup
-      ? `Your wallet can hold up to ${dollars(maxBalance)}, so you can add ${dollars(Math.floor(room / 100) * 100)} at most right now.`
-      : `Your wallet is full. It can hold up to ${dollars(maxBalance)}.` });
+      ? `You can hold up to ${orbs(maxBalance)}, so you can buy ${orbs(Math.floor(room / 100) * 100)} at most right now.`
+      : `An account can hold up to ${orbs(maxBalance)}, and yours has no room for another pack right now. Spend some orbs first.` });
   }
   const stripe = getStripe();
   if (!stripe) return res.status(503).json({ error: "Payments aren't set up yet." });
@@ -153,9 +177,13 @@ walletRouter.post("/topup", requireUser, rateLimit({ windowMs: 60_000, max: 5 })
     const session = await stripe.checkout.sessions.create({
       mode: "payment", customer: await ensureCustomer(stripe, req.user),
       line_items: [{ quantity: 1, price_data: { currency: "usd", unit_amount: amount, product_data: {
-        name: "ForgeCenter wallet credit", description: "Store credit to spend on ForgeCenter. It can't be withdrawn or transferred." } } }],
+        name: `${amount.toLocaleString("en-US")} ForgeCenter orbs`,
+        description: "ForgeCenter's own currency, 1 orb for each cent. Orbs never expire, and they can't be withdrawn, sold or sent to other people." } } }],
       metadata, payment_intent_data: { metadata },
-      success_url: `${baseUrl(req)}/account?topup=${id}#wallet`, cancel_url: `${baseUrl(req)}/account#wallet`,
+      // Back to the page the pack was bought on: the orbs page or the account page.
+      ...(req.body?.from === "orbs"
+        ? { success_url: `${baseUrl(req)}/orbs?topup=${id}`, cancel_url: `${baseUrl(req)}/orbs#packs` }
+        : { success_url: `${baseUrl(req)}/account?topup=${id}#wallet`, cancel_url: `${baseUrl(req)}/account#wallet` }),
       // Just over Stripe's 30-minute minimum, so an abandoned checkout clears quickly.
       expires_at: Math.floor(Date.now() / 1000) + 31 * 60,
       integration_identifier: CHECKOUT_LABELS.wallet,
@@ -173,7 +201,7 @@ walletRouter.post("/pay", requireUser, rateLimit({ windowMs: 60_000, max: 10 }),
   const key = req.body?.product;
   const item = catalog[key];
   if (!item) return res.status(400).json({ error: "That product doesn't exist." });
-  if (!walletPayable(item)) return res.status(400).json({ error: "Monthly plans are paid by card so they can renew. Use Go to checkout instead." });
+  if (!walletPayable(item)) return res.status(400).json({ error: "Monthly plans are paid by card so they can renew, so they can't be paid with orbs. Use Go to checkout instead." });
   if (isAdultOnly(key) && !isAdult(req.user)) return res.status(403).json({ error: `Confirm you're an adult to buy a ${item.name.toLowerCase()}.`, needs: "adult" });
 
   const orderId = transaction(() => {
@@ -187,7 +215,7 @@ walletRouter.post("/pay", requireUser, rateLimit({ windowMs: 60_000, max: 10 }),
   });
   if (!orderId) {
     const short = item.price - walletBalance(req.user.id);
-    return res.status(402).json({ error: `Your wallet is ${dollars(short)} short. Add funds or pay by card.` });
+    return res.status(402).json({ error: `You need ${short.toLocaleString("en-US")} more ${short === 1 ? "orb" : "orbs"}. Buy orbs at /orbs, or pay by card.` });
   }
   afterPayment(db.prepare("SELECT * FROM orders WHERE id = ?").get(orderId));
   res.json({ orderId, balance: walletBalance(req.user.id) });
@@ -198,33 +226,33 @@ export const adminWalletRouter = express.Router();
 adminWalletRouter.use(requireUser, requireAdmin);
 
 
-// Refund part or all of an order as wallet credit. Card refunds go through the Stripe Dashboard.
+// Refund part or all of an order as orbs. Card refunds go through the Stripe Dashboard.
 adminWalletRouter.post("/orders/:id/wallet-refund", (req, res) => {
   const order = db.prepare("SELECT * FROM orders WHERE id = ?").get(Number(req.params.id));
   if (!order) return res.status(404).json({ error: "Order not found." });
-  if (!order.user_id) return res.status(409).json({ error: "This customer deleted their account, so there's no wallet to refund to." });
+  if (!order.user_id) return res.status(409).json({ error: "This customer deleted their account, so there's nowhere to refund orbs to. Refund the card in the Stripe Dashboard instead." });
   // paid_at, not the status: the owner can mark any order canceled, paid or not.
   if (!order.paid_at) return res.status(409).json({ error: "This order was never paid, so there's nothing to refund." });
   const amount = Number(req.body?.amount);
   const refunded = db.prepare("SELECT COALESCE(SUM(amount), 0) AS c FROM wallet_entries WHERE order_id = ? AND kind = 'refund'").get(order.id).c;
   const left = order.amount + order.monthly - refunded;
-  if (!Number.isInteger(amount) || amount <= 0) return res.status(400).json({ error: "Enter an amount to refund." });
-  if (amount > left) return res.status(400).json({ error: `At most ${dollars(left)} of this order can still be refunded.` });
+  if (!Number.isInteger(amount) || amount <= 0) return res.status(400).json({ error: "Enter how many orbs to refund." });
+  if (amount > left) return res.status(400).json({ error: `At most ${orbs(left)} (${usd(left)}) of this order can still be refunded.` });
   addEntry({ userId: order.user_id, amount, kind: "refund", orderId: order.id, note: `Refund for order ${order.id}` });
   notify.walletCredited(order.user_id, amount, `a refund for order ${order.id}`);
   res.json({ refunded: refunded + amount, balance: walletBalance(order.user_id) });
 });
 
-// Goodwill credit, for example after downtime.
+// Goodwill orbs, for example after downtime.
 adminWalletRouter.post("/users/:id/wallet-credit", (req, res) => {
   const user = db.prepare("SELECT id FROM users WHERE id = ?").get(Number(req.params.id));
   if (!user) return res.status(404).json({ error: "Account not found." });
   const amount = Number(req.body?.amount);
   const note = String(req.body?.note ?? "").trim().slice(0, 140);
   if (!Number.isInteger(amount) || amount <= 0 || amount > MAX_OWNER_CREDIT) {
-    return res.status(400).json({ error: `Enter an amount up to ${dollars(MAX_OWNER_CREDIT)}.` });
+    return res.status(400).json({ error: `Enter a number of orbs up to ${orbs(MAX_OWNER_CREDIT)}.` });
   }
-  if (!note) return res.status(400).json({ error: "Add a short note so the customer knows what the credit is for." });
+  if (!note) return res.status(400).json({ error: "Add a short note so the customer knows what the orbs are for." });
   addEntry({ userId: user.id, amount, kind: "credit", note });
   notify.walletCredited(user.id, amount, note);
   res.json({ balance: walletBalance(user.id) });
