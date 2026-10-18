@@ -3,7 +3,7 @@ import express from "express";
 import Anthropic from "@anthropic-ai/sdk";
 import { randomUUID } from "node:crypto";
 import { db, now, walletBalance } from "./db.js";
-import { requireUser } from "./auth.js";
+import { isAdult, requireUser } from "./auth.js";
 import { rateLimit } from "./limit.js";
 import { paidOrderCount } from "./orders.js";
 import { orbs } from "./catalog.js";
@@ -132,7 +132,7 @@ tutorRouter.post("/", requireUser, rateLimit({ windowMs: 60_000, max: 10 }), asy
   try {
     const r = await ai().messages.create({
       model: process.env.AI_MODEL || "claude-sonnet-5-5", max_tokens: 1500,
-      system: req.user.age_group === "adult" ? SYSTEM : SYSTEM + TEEN_NOTE, messages,
+      system: isAdult(req.user) ? SYSTEM : SYSTEM + TEEN_NOTE, messages,
     });
     res.json({
       reply: r.content.filter(b => b.type === "text").map(b => b.text).join(""),

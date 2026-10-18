@@ -23,7 +23,7 @@ export const isAdmin = user => !!user?.email && adminEmails().has(user.email.toL
 export const publicUser = u => u && ({
   id: u.id, email: u.email, phone: u.phone, name: u.name, picture: u.picture,
   isAdmin: isAdmin(u), hasBilling: !!u.stripe_customer_id,
-  ageGroup: u.age_group, ageMethod: u.age_method, ageConfirmedAt: u.age_confirmed_at,
+  ageGroup: isAdmin(u) && u.age_group !== "under13" ? "adult" : u.age_group, ageMethod: isAdmin(u) && u.age_group !== "adult" ? "owner" : u.age_method, ageConfirmedAt: u.age_confirmed_at,
   wallet: walletBalance(u.id), emailUpdates: !u.email_optout, accountType: u.account_type ?? "personal",
   suspended: u.suspended_at ? { at: u.suspended_at, reason: u.suspended_reason } : null,
 });
@@ -127,7 +127,9 @@ export function requireUserOrSuspended(req, res, next) {
 }
 
 // Adults whose age was confirmed by a credit card check or an ID scan.
-export const isAdult = user => user?.age_group === "adult";
+// Owners (ADMIN_EMAILS) run the company, so they skip the age check. Their stored age
+// group is never changed; they're just treated as adults while they're owners.
+export const isAdult = user => user?.age_group === "adult" || isAdmin(user);
 export function requireAdult(req, res, next) {
   if (isAdult(req.user)) return next();
   res.status(403).json({ error: "This is for adults. Confirm your age to continue.", needs: "adult" });

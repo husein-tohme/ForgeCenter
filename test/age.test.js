@@ -211,3 +211,10 @@ test("18+ showcase listings are hidden from teens and visitors, like age-restric
   const shown = (await api("/api/showcase", { cookie: adult.cookie })).body.listings.find(l => l.adultOnly);
   assert.equal(shown.url, "https://horror.example");
 });
+
+test("owners skip the age check without their stored age group changing", async () => {
+  const { cookie, user } = signIn("owner@example.com");
+  const me = (await api("/api/me", { cookie })).body.user;
+  assert.equal(me.ageGroup, "adult");
+  assert.equal(db.prepare("SELECT age_group FROM users WHERE id = ?").get(user.id).age_group, "teen");
+});

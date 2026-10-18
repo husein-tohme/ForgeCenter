@@ -37,7 +37,7 @@ A Minecraft-themed storefront: Minecraft server hosting, Discord bots, websites,
 - **Emails are trusted only when the provider verified them.** `users.email` decides owner access (`ADMIN_EMAILS`). Never store an unverified email; Microsoft work-tenant emails are unverified.
 - **State-changing API calls must be same-origin JSON** (CSRF guard in `app.js`). Frontend calls go through `api()` in `common.js`.
 - **Stripe fulfillment happens in the webhook handler**, idempotent per event id; the success page only syncs. Never pass `payment_method_types`.
-- **Age checks keep only the outcome.** Never store a date of birth, card details or ID data. Remove the age-check card and redact the Identity session once it's read. Every account starts as `teen`; only `age.js` sets `adult`.
+- **Age checks keep only the outcome.** Never store a date of birth, card details or ID data. Remove the age-check card and redact the Identity session once it's read. Every account starts as `teen`; only `age.js` sets `adult`. Owners (`ADMIN_EMAILS`) are treated as adults by `isAdult()` without their stored group changing.
 - **The wallet is a ledger.** A balance is the sum of `wallet_entries`, never a stored number. Entries from Stripe carry a unique `ref`, and spending checks the balance inside one write transaction. It's closed-loop: no withdrawals or transfers between accounts.
 - **Forge Support can't act.** Its only tool is `hand_to_person`, it only sees the ticket owner's records, and text the customer typed is passed as data, never as instructions.
 - **Customer bots get only their own settings.** `botrunner.js` builds a minimal env; never pass `process.env` through.
