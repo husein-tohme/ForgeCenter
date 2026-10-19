@@ -4,22 +4,38 @@ import dev.forgecenter.compactor.Compactor;
 import dev.forgecenter.compactor.Settings;
 import it.unimi.dsi.fastutil.ints.IntIterator;
 import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import net.fabricmc.fabric.api.client.gametest.v1.context.ClientGameTestContext;
 import net.minecraft.client.Minecraft;
 import net.minecraft.world.entity.Entity;
 
 /**
- * Looks at a pile cut in half by the edge of the screen. With the mod on, every pile must
- * still draw as many of its on-screen members as its limit allows: entities the game wasn't
- * going to draw anyway (off-screen) must not use up a pile's slots.
+ * Compares one frame of the current view with the mod off and on. With the mod on, every pile
+ * must draw as many of its on-screen members as its limit allows, the mod may only hide
+ * (never add), and its hidden count must match what was really hidden.
  */
-final class EdgeCheck {
+final class ViewCheck {
     /** splitPiles: piles the screen edge cuts through. shortPiles: piles drawing fewer than they should. */
-    record Result(int visibleOff, int drawnOn, int splitPiles, int shortPiles, int extraDrawn, String firstShort) {}
+    record Result(int visibleOff, int drawnOn, int hiddenReported, int repeatsOn, int splitPiles, int shortPiles,
+                  int extraDrawn, String firstShort) {
+        /** What's wrong with this view, if anything. */
+        List<String> problems(String view) {
+            List<String> problems = new ArrayList<>();
+            if (shortPiles > 0) {
+                problems.add(view + ": " + shortPiles + " piles drew fewer on-screen entities than their limit, e.g. " + firstShort);
+            }
+            if (extraDrawn > 0) problems.add(view + ": mod on drew " + extraDrawn + " entities the game itself culled");
+            if (hiddenReported != visibleOff - drawnOn) {
+                problems.add(view + ": hiddenLastFrame says " + hiddenReported + " but " + (visibleOff - drawnOn) + " were hidden");
+            }
+            return problems;
+        }
+    }
 
-    private EdgeCheck() {}
+    private ViewCheck() {}
 
     static Result run(ClientGameTestContext context) {
         IntOpenHashSet visible = drawnIds(context, false);
@@ -61,6 +77,8 @@ final class EdgeCheck {
         for (IntIterator it = drawn.iterator(); it.hasNext(); ) {
             if (!visible.contains(it.nextInt())) extra++;
         }
-        return new Result(visible.size(), drawn.size(), split, shortPiles, extra, firstShort);
+        // Read right after the captured frame, so this is that frame's count.
+        return new Result(visible.size(), drawn.size(), Compactor.hiddenLastFrame, FrameProbe.capturedRepeats(),
+            split, shortPiles, extra, firstShort);
     }
 }

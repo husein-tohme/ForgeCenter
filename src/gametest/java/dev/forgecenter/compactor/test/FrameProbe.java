@@ -40,6 +40,7 @@ public final class FrameProbe {
     private static boolean captureRequested, capturing;
     private static final IntOpenHashSet drawnIds = new IntOpenHashSet();
     private static IntOpenHashSet captured;
+    private static int capturedRepeats;
 
     // Totals over the recorded frames.
     private static long sumCalls, sumEntities, sumItems, sumMobs, sumOrbs;
@@ -69,6 +70,11 @@ public final class FrameProbe {
     /** The ids from {@link #captureNextFrame()}, or null while that frame isn't done yet. */
     public static IntOpenHashSet capturedFrame() {
         return captured;
+    }
+
+    /** How many times the captured frame asked about an entity it had already asked about. */
+    public static int capturedRepeats() {
+        return capturedRepeats;
     }
 
     public static void startRecording() {
@@ -111,6 +117,7 @@ public final class FrameProbe {
         framesSinceReset++;
         if (capturing) {
             captured = new IntOpenHashSet(drawnIds);
+            capturedRepeats = calls - seen.size();
             capturing = captureRequested = false;
         }
         if (!recording) return;

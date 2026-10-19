@@ -15,6 +15,7 @@ import net.fabricmc.fabric.api.client.gametest.v1.context.TestServerContext;
 import net.fabricmc.fabric.api.client.gametest.v1.context.TestSingleplayerContext;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.client.InactivityFpsLimit;
+import net.minecraft.util.Mth;
 import net.minecraft.world.level.levelgen.Heightmap;
 import org.lwjgl.glfw.GLFW;
 import org.lwjgl.opengl.GL11;
@@ -76,9 +77,18 @@ public final class CompactorGameTest implements FabricClientGameTest {
 
             // Turn right until the pile sits on the left edge of the screen, cut in half.
             server.runCommand(String.format(Locale.ROOT, "tp @a 0.5 %d 0.5 %.1f %.1f", ground, EDGE_YAW, EDGE_PITCH));
-            context.waitFor(mc -> Math.abs(mc.player.getYRot() - EDGE_YAW) < 0.5f, 20 * 10);
-            EdgeCheck.Result edge = EdgeCheck.run(context);
+            context.waitFor(mc -> Math.abs(Mth.wrapDegrees(mc.player.getYRot() - EDGE_YAW)) < 0.5f, 20 * 10);
+            ViewCheck.Result edge = ViewCheck.run(context);
             Path edgeShot = context.takeScreenshot("entitycompactor-edge-on");
+
+            // Back to the pile, with hitboxes on (F3+B): the game then asks about each entity twice a frame.
+            server.runCommand(String.format(Locale.ROOT, "tp @a 0.5 %d 0.5 facing %.1f %d %.1f",
+                ground, FarmPile.CENTER_X, ground + 1, FarmPile.CENTER_Z));
+            context.waitFor(mc -> Math.abs(Mth.wrapDegrees(mc.player.getYRot())) < 0.5f, 20 * 10);
+            toggleHitboxes(context);
+            ViewCheck.Result hitboxes = ViewCheck.run(context);
+            Path hitboxShot = context.takeScreenshot("entitycompactor-hitboxes-on");
+            toggleHitboxes(context);
 
             // /compactor and K must each flip the mod; each is used twice to end where it started.
             boolean commandWorks = flips(context, () -> context.runOnClient(mc -> mc.getConnection().sendCommand("compactor")));
@@ -88,12 +98,13 @@ public final class CompactorGameTest implements FabricClientGameTest {
             shots.addProperty("off", "screenshots/" + offShot.getFileName());
             shots.addProperty("on", "screenshots/" + onShot.getFileName());
             shots.addProperty("edgeOn", "screenshots/" + edgeShot.getFileName());
-            JsonObject result = report(census, rounds, edge, renderer, ground, arrivalTicks, playerHidden, namedHidden,
-                commandWorks, keyWorks, shots);
+            shots.addProperty("hitboxesOn", "screenshots/" + hitboxShot.getFileName());
+            JsonObject result = report(census, rounds, edge, hitboxes, renderer, ground, arrivalTicks, playerHidden,
+                namedHidden, commandWorks, keyWorks, shots);
             write(FabricLoader.getInstance().getGameDir().resolve("ec-result.json"), result.toString());
             LOGGER.info("EC_RESULT {}", result);
 
-            List<String> failures = check(census, rounds, edge, playerHidden, namedHidden, commandWorks, keyWorks);
+            List<String> failures = check(census, rounds, edge, hitboxes, playerHidden, namedHidden, commandWorks, keyWorks);
             if (!failures.isEmpty()) throw new AssertionError("Entity Compactor test failed: " + String.join("; ", failures));
         }
     }
@@ -112,6 +123,14 @@ public final class CompactorGameTest implements FabricClientGameTest {
         return round;
     }
 
+    /** Presses F3+B, which shows or hides entity hitboxes. */
+    private static void toggleHitboxes(ClientGameTestContext context) {
+        context.getInput().holdKey(GLFW.GLFW_KEY_F3);
+        context.getInput().pressKey(GLFW.GLFW_KEY_B);
+        context.getInput().releaseKey(GLFW.GLFW_KEY_F3);
+        context.waitTicks(2);
+    }
+
     /** True if the action flips the mod, and doing it again flips it back. */
     private static boolean flips(ClientGameTestContext context, Runnable action) {
         boolean before = context.computeOnClient(mc -> Settings.enabled);
@@ -123,8 +142,9 @@ public final class CompactorGameTest implements FabricClientGameTest {
         return flipped && context.computeOnClient(mc -> Settings.enabled) == before;
     }
 
-    private static List<String> check(FarmPile.Census census, List<FrameProbe.Round> rounds, EdgeCheck.Result edge,
-                                      boolean playerHidden, boolean namedHidden, boolean commandWorks, boolean keyWorks) {
+    private static List<String> check(FarmPile.Census census, List<FrameProbe.Round> rounds, ViewCheck.Result edge,
+                                      ViewCheck.Result hitboxes, boolean playerHidden, boolean namedHidden,
+                                      boolean commandWorks, boolean keyWorks) {
         List<String> failures = new ArrayList<>();
         if (!census.complete()) failures.add("the client did not get the whole pile: " + census);
         for (FrameProbe.Round r : rounds) {
@@ -138,10 +158,9 @@ public final class CompactorGameTest implements FabricClientGameTest {
             if (r.modOn() && r.namedDrawnFrames() != r.namedSeenFrames()) failures.add("the named zombie was hidden in some frames");
         }
         if (edge.splitPiles() == 0) failures.add("the edge view did not cut through any pile: " + edge);
-        if (edge.shortPiles() > 0) {
-            failures.add(edge.shortPiles() + " piles on the screen edge drew fewer on-screen entities than their limit, e.g. " + edge.firstShort());
-        }
-        if (edge.extraDrawn() > 0) failures.add("mod on drew " + edge.extraDrawn() + " entities the game itself culled");
+        failures.addAll(edge.problems("pile on the screen edge"));
+        if (hitboxes.repeatsOn() == 0) failures.add("F3+B did not turn on hitboxes (no repeated questions): " + hitboxes);
+        failures.addAll(hitboxes.problems("hitboxes on (F3+B)"));
         if (playerHidden) failures.add("the player would be hidden");
         if (namedHidden) failures.add("the named zombie would be hidden");
         if (!commandWorks) failures.add("/compactor did not toggle the mod");
@@ -149,8 +168,8 @@ public final class CompactorGameTest implements FabricClientGameTest {
         return failures;
     }
 
-    private static JsonObject report(FarmPile.Census census, List<FrameProbe.Round> rounds, EdgeCheck.Result edge,
-                                     String renderer, int ground, int arrivalTicks, boolean playerHidden, boolean namedHidden,
+    private static JsonObject report(FarmPile.Census census, List<FrameProbe.Round> rounds, ViewCheck.Result edge,
+                                     ViewCheck.Result hitboxes, String renderer, int ground, int arrivalTicks, boolean playerHidden, boolean namedHidden,
                                      boolean commandWorks, boolean keyWorks, JsonObject shots) {
         double offMs = 0, onMs = 0;
         int hiddenOn = Integer.MAX_VALUE, hiddenOnMax = 0, hiddenOff = 0, drawnItems = Integer.MAX_VALUE,
@@ -196,9 +215,8 @@ public final class CompactorGameTest implements FabricClientGameTest {
         json.addProperty("keyToggle", keyWorks);
         json.addProperty("ground", ground);
         json.add("screenshots", shots);
-        JsonObject edgeJson = toJson(edge);
-        edgeJson.addProperty("firstShort", edge.firstShort());
-        json.add("edge", edgeJson);
+        json.add("edge", toJson(edge));
+        json.add("hitboxes", toJson(hitboxes));
         for (int i = 0; i < rounds.size(); i++) json.add("round" + (i + 1), toJson(rounds.get(i)));
         return json;
     }
@@ -211,6 +229,7 @@ public final class CompactorGameTest implements FabricClientGameTest {
                 if (value instanceof Double d) json.addProperty(c.getName(), round(d));
                 else if (value instanceof Number n) json.addProperty(c.getName(), n);
                 else if (value instanceof Boolean b) json.addProperty(c.getName(), b);
+                else if (value instanceof String text) json.addProperty(c.getName(), text);
             } catch (ReflectiveOperationException e) {
                 throw new IllegalStateException(e);
             }
