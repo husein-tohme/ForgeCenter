@@ -128,6 +128,26 @@ Check 'official-fallback-26.2' '1.21.4 Fabric API turned off, not deleted' (@($j
 Check 'official-fallback-26.2' 'other jar kept' ($j -contains 'modmenu-13.0.0.jar')
 Check 'official-fallback-26.2' 'Fabric Loader installed for 26.2' (@($fv -match '^fabric-loader-.+-26\.2$').Count -ge 1)
 
+# ---- Case 6: interactive run (no /quiet), answers typed on stdin ----
+# Enter at the profile prompt (default name), Enter at the closing pause.
+$inFile = Join-Path $env:TEMP 'ec-answers.txt'
+$outFile = Join-Path $env:TEMP 'ec-interactive.txt'
+[IO.File]::WriteAllText($inFile, "`r`n`r`n`r`n")
+Write-Host ""
+Write-Host "===== interactive-default : Install Entity Compactor.bat (Enter, Enter)"
+$proc = Start-Process -FilePath $env:ComSpec -ArgumentList "/c `"`"$bat`"`"" -RedirectStandardInput $inFile -RedirectStandardOutput $outFile -NoNewWindow -PassThru
+$finished = $proc.WaitForExit(180000)
+if (-not $finished) { $proc.Kill() }
+$out = Get-Content -LiteralPath $outFile -Raw
+$out -split "`r?`n" | ForEach-Object { Write-Host "  | $_" }
+Write-Host "===== interactive-default exit code $($proc.ExitCode)"
+$j = Jars "$mr\mods"; Write-Host "  mods: $($j -join ', ')"
+Check 'interactive-default' 'finished without hanging' $finished
+Check 'interactive-default' 'exit code 0' ($finished -and $proc.ExitCode -eq 0)
+Check 'interactive-default' 'used the default profile' ($out -match 'ModrinthApp\\profiles\\allawi habib galbi abou husein')
+Check 'interactive-default' 'kept the existing Fabric API' ($out -match 'Fabric API is already there')
+Check 'interactive-default' 'still exactly one entity-compactor jar' (@($j -match '^entity-compactor-.*\.jar$').Count -eq 1)
+
 $passed = @($results | Where-Object { $_.ok }).Count
 Write-Host ""
 Write-Host ("EC_RESULT " + (@{ passed = $passed; failed = $failed; total = $results.Count } | ConvertTo-Json -Compress))
