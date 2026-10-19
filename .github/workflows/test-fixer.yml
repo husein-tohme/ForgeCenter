@@ -1,0 +1,49 @@
+name: Test fixer on Windows
+on: push
+jobs:
+  test:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Make fake launcher profiles
+        shell: pwsh
+        run: |
+          $p = "$env:APPDATA\ModrinthApp\profiles\allawi habib galbi abou husein\mods"
+          $o = "$env:USERPROFILE\curseforge\minecraft\Instances\Old 1.21\mods"
+          $v = "$env:APPDATA\.minecraft\mods"
+          foreach ($d in $p,$o,$v) { New-Item -ItemType Directory -Force -Path $d | Out-Null }
+          'old' | Set-Content "$p\entity-compactor-1.0.0+26.2.jar"
+          'old' | Set-Content "$p\entity-compactor-1.0.0.jar"
+          'api' | Set-Content "$p\fabric-api-0.161.0+26.2.jar"
+          'keep' | Set-Content "$p\sodium-fabric-0.8.0+mc26.2.jar"
+          'old' | Set-Content "$o\entity-compactor-1.0.0.jar"
+          'api' | Set-Content "$o\fabric-api-0.119.2+1.21.4.jar"
+          'api' | Set-Content "$v\fabric-api-0.161.0+26.2.jar"
+      - name: Run the fixer (no clicks)
+        shell: cmd
+        run: call "Fix Entity Compactor.bat" /quiet
+      - name: Check the results
+        shell: pwsh
+        run: |
+          $fail = 0
+          function Check($ok, $msg) { if ($ok) { "PASS  $msg" } else { "FAIL  $msg"; $script:fail++ } }
+          $p = "$env:APPDATA\ModrinthApp\profiles\allawi habib galbi abou husein\mods"
+          $o = "$env:USERPROFILE\curseforge\minecraft\Instances\Old 1.21\mods"
+          $v = "$env:APPDATA\.minecraft\mods"
+          $fixed = "$p\entity-compactor-FIXED-26.2.jar"
+          Check (Test-Path -LiteralPath $fixed) 'fixed jar added to the named 26.2 profile'
+          Check ((Get-FileHash -LiteralPath $fixed -Algorithm SHA256).Hash -eq '206CF9241D725626971F453ADB5F1E50A3D51C70098D462504E890C30530DC34') 'fixed jar is byte-identical to the build'
+          Check (-not (Test-Path -LiteralPath "$p\entity-compactor-1.0.0+26.2.jar")) 'old 26.2 jar removed'
+          Check (-not (Test-Path -LiteralPath "$p\entity-compactor-1.0.0.jar")) 'wrong 1.21.4 jar removed from the 26.2 profile'
+          Check (Test-Path -LiteralPath "$p\sodium-fabric-0.8.0+mc26.2.jar") 'other mods kept'
+          Check (Test-Path -LiteralPath "$p\fabric-api-0.161.0+26.2.jar") 'fabric api kept'
+          Check (Test-Path -LiteralPath "$o\entity-compactor-1.0.0.jar") '1.21 profile left alone'
+          Check (-not (Test-Path -LiteralPath "$o\entity-compactor-FIXED-26.2.jar")) '1.21 profile did not get the 26.2 jar'
+          Check (-not (Test-Path -LiteralPath "$v\entity-compactor-FIXED-26.2.jar")) 'folder without Entity Compactor untouched'
+          Add-Type -AssemblyName System.IO.Compression.FileSystem
+          $z = [IO.Compression.ZipFile]::OpenRead($fixed)
+          $json = (New-Object IO.StreamReader(($z.Entries | Where-Object FullName -eq 'fabric.mod.json').Open())).ReadToEnd(); $z.Dispose()
+          Check ($json -match '1.0.0-fixed\+26.2') 'jar opens as a zip and says version 1.0.0-fixed+26.2'
+          Check ($json -match '>=0.19.5') 'jar accepts Fabric Loader 0.19.5'
+          "EC_FIX_TEST failures=$fail"
+          exit $fail
