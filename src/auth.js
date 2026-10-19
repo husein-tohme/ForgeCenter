@@ -94,7 +94,7 @@ export const requireAdmin = (req, res, next) => isAdmin(req.user) ? next() : res
 // ---------- Usernames ----------
 export const USERNAME_RE = /^[a-z0-9][a-z0-9-]{0,37}[a-z0-9]$/;
 // Names that are pages of the site, so /<username> can never hide one.
-export const RESERVED = new Set(["about", "account", "admin", "ai", "api", "explore", "help", "library", "login", "logout",
+export const RESERVED = new Set(["about", "account", "admin", "ai", "api", "explore", "help", "inbox", "messages", "library", "login", "logout",
   "new", "p", "pricing", "privacy", "repos", "search", "settings", "signin", "store", "support", "terms", "forgehub",
   "sitemap", "robots", "favicon", "css", "js", "img", "static", "owner", "staff", "official", "dpa", "rules", "cookies", "llms"]);
 export function usernameProblem(name) {

@@ -11,7 +11,7 @@ onUser(async () => {
       ${u.bio ? `<p>${esc(u.bio)}</p>` : ""}
       ${u.website ? `<p><a href="${esc(u.website)}" rel="nofollow noopener" target="_blank">${esc(u.website.replace(/^https?:\/\//, ""))}</a></p>` : ""}
       <p class="small muted">Joined ${new Date(u.joinedAt).toLocaleDateString(undefined, { month: "long", year: "numeric" })}</p>
-      <div class="row">${r.data.self ? `<a class="btn btn-small" href="/settings">Edit profile</a>` : `${u.canSell ? `<button class="btn btn-small btn-primary" id="donate">♥ Donate</button>` : ""}<button class="btn btn-small" id="report">Report</button>`}</div>
+      <div class="row">${r.data.self ? `<a class="btn btn-small" href="/settings">Edit profile</a>` : `<a class="btn btn-small" href="/inbox?to=${esc(u.username)}">✉ Message</a>${u.canSell ? `<button class="btn btn-small btn-primary" id="donate">♥ Donate</button>` : ""}<button class="btn btn-small" id="report">Report</button>`}</div>
     </aside>
     <div>
       ${products.length ? `<h2>For sale</h2><div class="grid" style="margin-bottom:28px">${products.map(productCard).join("")}</div>` : ""}

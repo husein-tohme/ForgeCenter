@@ -57,9 +57,11 @@ function renderHeader() {
   } else {
     const pic = user.picture ? `<img class="avatar" src="${esc(user.picture)}" alt="" referrerpolicy="no-referrer">` : `<span class="avatar" aria-hidden="true"></span>`;
     slot.innerHTML = `${user.isAdmin ? `<a class="btn btn-small" href="/admin">Owner</a>` : ""}
+      <a class="btn btn-small" href="/inbox" aria-label="Inbox">✉<span class="badge" id="unread" hidden></span></a>
       <a class="btn btn-small" href="/new">+ New</a>
       <a class="me-link" href="/${esc(user.username ?? "settings")}" title="Your profile">${pic}<span class="sr-only">Your profile</span></a>`;
   }
+  if (user?.username) api("/api/messages/unread").then(r => { const b = $("unread"); if (b && r.data.unread) { b.textContent = r.data.unread; b.hidden = false; } });
   if (!config.payments && !document.querySelector(".soon") && /^\/(store|library)/.test(location.pathname)) {
     document.querySelector(".top")?.insertAdjacentHTML("afterend", `<div class="soon">Payments open soon. Repos, live sites and Forge AI all work now.</div>`);
   }

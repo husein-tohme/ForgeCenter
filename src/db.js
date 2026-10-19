@@ -126,3 +126,21 @@ CREATE TABLE IF NOT EXISTS reports (
   created_at TEXT NOT NULL
 );
 `);
+
+db.exec(`
+CREATE TABLE IF NOT EXISTS messages (
+  id INTEGER PRIMARY KEY,
+  from_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  to_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  body TEXT NOT NULL,
+  created_at TEXT NOT NULL,
+  read_at TEXT
+);
+CREATE INDEX IF NOT EXISTS messages_pair ON messages (from_id, to_id, id);
+CREATE INDEX IF NOT EXISTS messages_to ON messages (to_id, read_at);
+CREATE TABLE IF NOT EXISTS blocks (
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  blocked_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  PRIMARY KEY (user_id, blocked_id)
+);
+`);

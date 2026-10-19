@@ -150,3 +150,20 @@ dialog::backdrop { background: #000a; }
 .foot a { color: var(--muted); text-decoration: none; } .foot a:hover { color: var(--text); }
 .legal h2 { margin-top: 1.6em; } .legal p, .legal li { color: var(--muted); }
 .legal table { width: 100%; border-collapse: collapse; } .legal td, .legal th { border: 1px solid var(--border); padding: 8px; text-align: left; vertical-align: top; }
+
+/* Inbox */
+.inbox { display: grid; grid-template-columns: 300px 1fr; gap: 16px; min-height: 60vh; }
+.threads { display: grid; align-content: start; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); overflow: hidden; }
+.thread { display: grid; grid-template-columns: 36px 1fr auto; gap: 10px; align-items: center; padding: 10px 12px; border-top: 1px solid var(--border); color: var(--text); text-decoration: none; }
+.thread:first-child { border-top: 0; }
+.thread[aria-current="true"], .thread:hover { background: var(--surface-2); }
+.thread .last { color: var(--muted); font-size: .85rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.convo { display: grid; grid-template-rows: auto 1fr auto; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); min-height: 60vh; }
+.convo-head { display: flex; gap: 10px; align-items: center; padding: 12px 14px; border-bottom: 1px solid var(--border); }
+.convo-log { display: grid; align-content: start; gap: 8px; padding: 14px; overflow-y: auto; max-height: 60vh; }
+.convo-log .msg { max-width: 75%; }
+.convo-form { display: flex; gap: 8px; padding: 12px; border-top: 1px solid var(--border); }
+.badge { display: inline-grid; place-items: center; min-width: 20px; height: 20px; padding: 0 6px; border-radius: 999px; background: var(--accent); color: var(--accent-ink); font-size: .75rem; font-weight: 800; }
+@media (max-width: 760px) { .inbox { grid-template-columns: 1fr; } }
+.thread > span:nth-child(2) { display: grid; min-width: 0; }
+.badge[hidden] { display: none; }

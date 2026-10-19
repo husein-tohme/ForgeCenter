@@ -11,6 +11,7 @@ import { reposRouter, filesRouter, findRepo } from "./repos.js";
 import { storeRouter, downloadRouter, stripeWebhook, stripe } from "./store.js";
 import { aiRouter } from "./forgeai.js";
 import { reportsRouter, adminRouter } from "./reports.js";
+import { messagesRouter } from "./messages.js";
 import { USERNAME_RE, RESERVED } from "./auth.js";
 
 const PUBLIC = "public";
@@ -34,6 +35,7 @@ const PAGES = {
   "/store": ["store", "Store · Forgehub", "Buy and sell digital things: code, game files, mods, art and templates. Pay with card, Apple Pay, Google Pay and more."],
   "/library": ["library", "Your library · Forgehub", "Everything you've bought on Forgehub.", true],
   "/ai": ["ai", "Forge AI · Forgehub", "Ask Forge AI about coding and using Forgehub. Free."],
+  "/inbox": ["inbox", "Inbox · Forgehub", "Your messages on Forgehub.", true],
   "/new": ["new", "New repo · Forgehub", "Make a new repo on Forgehub.", true],
   "/settings": ["settings", "Settings · Forgehub", "Your Forgehub account settings.", true],
   "/admin": ["admin", "Owner panel · Forgehub", "Forgehub moderation.", true],
@@ -82,6 +84,7 @@ export function createApp() {
   app.use("/api/repos", reposRouter);
   app.use("/api/store", storeRouter);
   app.use("/api/ai", aiRouter);
+  app.use("/api/messages", messagesRouter);
   app.use("/api/reports", reportsRouter);
   app.use("/api/admin", adminRouter);
   app.use("/api", (_req, res) => res.status(404).json({ error: "Not found." }));
