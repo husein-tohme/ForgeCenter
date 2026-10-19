@@ -31,6 +31,10 @@ public final class CompactorGameTest implements FabricClientGameTest {
     private static final int WARMUP_FRAMES = 60;
     private static final int MEASURED_FRAMES = 250;
     private static final int TIMEOUT_TICKS = 20 * 60 * 10;
+    // Facing +Z the pile is dead ahead; at yaw 50 it sits on the left edge of the 854x480 view
+    // (default FOV 70 gives a half-width of about 51 degrees). Pitch looks down at the pile's middle.
+    private static final float EDGE_YAW = 50f;
+    private static final float EDGE_PITCH = 6f;
 
     @Override
     public void runTest(ClientGameTestContext context) {
@@ -70,16 +74,26 @@ public final class CompactorGameTest implements FabricClientGameTest {
             boolean playerHidden = context.computeOnClient(mc -> Compactor.shouldHide(mc.player));
             boolean namedHidden = context.computeOnClient(mc -> Compactor.shouldHide(mc.level.getEntity(census.namedZombieId())));
 
+            // Turn right until the pile sits on the left edge of the screen, cut in half.
+            server.runCommand(String.format(Locale.ROOT, "tp @a 0.5 %d 0.5 %.1f %.1f", ground, EDGE_YAW, EDGE_PITCH));
+            context.waitFor(mc -> Math.abs(mc.player.getYRot() - EDGE_YAW) < 0.5f, 20 * 10);
+            EdgeCheck.Result edge = EdgeCheck.run(context);
+            Path edgeShot = context.takeScreenshot("entitycompactor-edge-on");
+
             // /compactor and K must each flip the mod; each is used twice to end where it started.
             boolean commandWorks = flips(context, () -> context.runOnClient(mc -> mc.getConnection().sendCommand("compactor")));
             boolean keyWorks = flips(context, () -> context.getInput().pressKey(GLFW.GLFW_KEY_K));
 
-            JsonObject result = report(census, rounds, renderer, ground, arrivalTicks, playerHidden, namedHidden,
-                commandWorks, keyWorks, "screenshots/" + offShot.getFileName(), "screenshots/" + onShot.getFileName());
+            JsonObject shots = new JsonObject();
+            shots.addProperty("off", "screenshots/" + offShot.getFileName());
+            shots.addProperty("on", "screenshots/" + onShot.getFileName());
+            shots.addProperty("edgeOn", "screenshots/" + edgeShot.getFileName());
+            JsonObject result = report(census, rounds, edge, renderer, ground, arrivalTicks, playerHidden, namedHidden,
+                commandWorks, keyWorks, shots);
             write(FabricLoader.getInstance().getGameDir().resolve("ec-result.json"), result.toString());
             LOGGER.info("EC_RESULT {}", result);
 
-            List<String> failures = check(census, rounds, playerHidden, namedHidden, commandWorks, keyWorks);
+            List<String> failures = check(census, rounds, edge, playerHidden, namedHidden, commandWorks, keyWorks);
             if (!failures.isEmpty()) throw new AssertionError("Entity Compactor test failed: " + String.join("; ", failures));
         }
     }
@@ -109,8 +123,8 @@ public final class CompactorGameTest implements FabricClientGameTest {
         return flipped && context.computeOnClient(mc -> Settings.enabled) == before;
     }
 
-    private static List<String> check(FarmPile.Census census, List<FrameProbe.Round> rounds, boolean playerHidden,
-                                      boolean namedHidden, boolean commandWorks, boolean keyWorks) {
+    private static List<String> check(FarmPile.Census census, List<FrameProbe.Round> rounds, EdgeCheck.Result edge,
+                                      boolean playerHidden, boolean namedHidden, boolean commandWorks, boolean keyWorks) {
         List<String> failures = new ArrayList<>();
         if (!census.complete()) failures.add("the client did not get the whole pile: " + census);
         for (FrameProbe.Round r : rounds) {
@@ -123,6 +137,11 @@ public final class CompactorGameTest implements FabricClientGameTest {
             }
             if (r.modOn() && r.namedDrawnFrames() != r.namedSeenFrames()) failures.add("the named zombie was hidden in some frames");
         }
+        if (edge.splitPiles() == 0) failures.add("the edge view did not cut through any pile: " + edge);
+        if (edge.shortPiles() > 0) {
+            failures.add(edge.shortPiles() + " piles on the screen edge drew fewer on-screen entities than their limit, e.g. " + edge.firstShort());
+        }
+        if (edge.extraDrawn() > 0) failures.add("mod on drew " + edge.extraDrawn() + " entities the game itself culled");
         if (playerHidden) failures.add("the player would be hidden");
         if (namedHidden) failures.add("the named zombie would be hidden");
         if (!commandWorks) failures.add("/compactor did not toggle the mod");
@@ -130,9 +149,9 @@ public final class CompactorGameTest implements FabricClientGameTest {
         return failures;
     }
 
-    private static JsonObject report(FarmPile.Census census, List<FrameProbe.Round> rounds, String renderer, int ground,
-                                     int arrivalTicks, boolean playerHidden, boolean namedHidden, boolean commandWorks,
-                                     boolean keyWorks, String offShot, String onShot) {
+    private static JsonObject report(FarmPile.Census census, List<FrameProbe.Round> rounds, EdgeCheck.Result edge,
+                                     String renderer, int ground, int arrivalTicks, boolean playerHidden, boolean namedHidden,
+                                     boolean commandWorks, boolean keyWorks, JsonObject shots) {
         double offMs = 0, onMs = 0;
         int hiddenOn = Integer.MAX_VALUE, hiddenOnMax = 0, hiddenOff = 0, drawnItems = Integer.MAX_VALUE,
             drawnMobs = Integer.MAX_VALUE, drawnOrbs = Integer.MAX_VALUE;
@@ -176,10 +195,10 @@ public final class CompactorGameTest implements FabricClientGameTest {
         json.addProperty("commandToggle", commandWorks);
         json.addProperty("keyToggle", keyWorks);
         json.addProperty("ground", ground);
-        JsonObject shots = new JsonObject();
-        shots.addProperty("off", offShot);
-        shots.addProperty("on", onShot);
         json.add("screenshots", shots);
+        JsonObject edgeJson = toJson(edge);
+        edgeJson.addProperty("firstShort", edge.firstShort());
+        json.add("edge", edgeJson);
         for (int i = 0; i < rounds.size(); i++) json.add("round" + (i + 1), toJson(rounds.get(i)));
         return json;
     }

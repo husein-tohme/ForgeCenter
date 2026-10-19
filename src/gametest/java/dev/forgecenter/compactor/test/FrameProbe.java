@@ -36,6 +36,11 @@ public final class FrameProbe {
     private static boolean namedSeen, namedDrawn;
     private static final IntOpenHashSet seen = new IntOpenHashSet();
 
+    // One frame's drawn entity ids, on request.
+    private static boolean captureRequested, capturing;
+    private static final IntOpenHashSet drawnIds = new IntOpenHashSet();
+    private static IntOpenHashSet captured;
+
     // Totals over the recorded frames.
     private static long sumCalls, sumEntities, sumItems, sumMobs, sumOrbs;
     private static int repeatsMax, minItems, minMobs, minOrbs, namedSeenFrames, namedDrawnFrames, hiddenMin, hiddenMax;
@@ -53,6 +58,17 @@ public final class FrameProbe {
 
     public static int recordedFrames() {
         return frameNanos.size();
+    }
+
+    /** Asks for the ids of every entity drawn in the next whole frame. */
+    public static void captureNextFrame() {
+        captured = null;
+        captureRequested = true;
+    }
+
+    /** The ids from {@link #captureNextFrame()}, or null while that frame isn't done yet. */
+    public static IntOpenHashSet capturedFrame() {
+        return captured;
     }
 
     public static void startRecording() {
@@ -87,10 +103,16 @@ public final class FrameProbe {
         calls = drawnItems = drawnMobs = drawnOrbs = 0;
         namedSeen = namedDrawn = false;
         seen.clear();
+        capturing = captureRequested;
+        drawnIds.clear();
     }
 
     public static void frameFinished(long start, long end) {
         framesSinceReset++;
+        if (capturing) {
+            captured = new IntOpenHashSet(drawnIds);
+            capturing = captureRequested = false;
+        }
         if (!recording) return;
         frameNanos.add(end - start);
         sumCalls += calls;
@@ -112,6 +134,7 @@ public final class FrameProbe {
     public static void onShouldRender(Entity entity, boolean drawn) {
         calls++;
         seen.add(entity.getId());
+        if (capturing && drawn) drawnIds.add(entity.getId());
         if (entity.getId() == namedZombieId) {
             namedSeen = true;
             namedDrawn |= drawn;

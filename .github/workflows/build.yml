@@ -31,7 +31,7 @@ jobs:
         continue-on-error: true
         run: |
           gradle printSignatures --no-daemon -q
-          bash .github/scripts/inspect.sh
+          bash .github/scripts/inspect.sh 2>&1 | tee inspect.txt
 
       - name: Build
         run: gradle build gametestClasses --no-daemon
@@ -47,7 +47,15 @@ jobs:
         if: always()
         run: |
           f=build/run/clientGameTest/ec-result.json
-          if [ -f "$f" ]; then echo "EC_RESULT $(cat "$f")"; else echo "EC_RESULT missing: the test did not get far enough to write it"; fi
+          if [ ! -f "$f" ]; then echo "EC_RESULT missing: the test did not get far enough to write it"; exit 0; fi
+          if [ "$GITHUB_REF" != "refs/heads/entity-compactor-26.2" ]; then
+            # Where the next step uploads the screenshots.
+            base="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/releases/download/ec26-test-results/run$GITHUB_RUN_NUMBER-"
+            jq -c --arg base "$base" '.screenshotUrls = (.screenshots | map_values($base + (split("/") | last)))' "$f" > ec-result.json
+          else
+            jq -c . "$f" > ec-result.json
+          fi
+          echo "EC_RESULT $(cat ec-result.json)"
 
       - name: Check the game log for mixin problems
         if: always()
@@ -60,8 +68,9 @@ jobs:
           mkdir -p out
           n=run${{ github.run_number }}
           for f in build/run/clientGameTest/screenshots/*.png; do [ -f "$f" ] && cp "$f" "out/$n-$(basename "$f")"; done
-          [ -f build/run/clientGameTest/ec-result.json ] && cp build/run/clientGameTest/ec-result.json "out/$n-ec-result.json"
+          [ -f ec-result.json ] && cp ec-result.json "out/$n-ec-result.json"
           [ -f gametest.log ] && cp gametest.log "out/$n-gametest-log.txt"
+          [ -f inspect.txt ] && cp inspect.txt "out/$n-inspect.txt"
           ls -la out
       - name: Upload screenshots and logs to the test prerelease
         if: always() && github.ref != 'refs/heads/entity-compactor-26.2'

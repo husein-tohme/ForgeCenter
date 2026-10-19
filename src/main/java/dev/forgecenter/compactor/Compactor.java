@@ -16,8 +16,8 @@ import net.minecraft.world.entity.player.Player;
  * still tick, and can still be hit or picked up.
  */
 public final class Compactor {
-    /** One pile: what it is and which cube of space it's in. A record, so keys never collide. */
-    private record Pile(int kind, int x, int y, int z) {}
+    /** One pile: what it is, which cube of space it's in, and how many of it to draw. A record, so keys never collide. */
+    public record Pile(int kind, int x, int y, int z, int limit) {}
 
     private static final Object2IntOpenHashMap<Pile> drawn = new Object2IntOpenHashMap<>();
     private static int hiddenThisFrame;
@@ -37,9 +37,19 @@ public final class Compactor {
 
     /** True if this entity should be skipped this frame. */
     public static boolean shouldHide(Entity entity) {
-        if (!Settings.enabled || entity instanceof Player) return false;
-        // Named mobs (pets, nametagged villagers) are always drawn.
-        if (entity instanceof LivingEntity && entity.hasCustomName()) return false;
+        if (!Settings.enabled) return false;
+        Pile pile = pileOf(entity);
+        if (pile == null) return false;
+        int count = drawn.addTo(pile, 1) + 1;
+        if (count <= pile.limit()) return false;
+        hiddenThisFrame++;
+        return true;
+    }
+
+    /** The pile this entity belongs to, or null if it is always drawn. */
+    public static Pile pileOf(Entity entity) {
+        // Players and named mobs (pets, nametagged villagers) are always drawn.
+        if (entity instanceof Player || entity instanceof LivingEntity && entity.hasCustomName()) return null;
 
         int limit;
         int cell;
@@ -57,16 +67,13 @@ public final class Compactor {
             cell = Settings.mobCellSize;
             kind = 2_000_000 + BuiltInRegistries.ENTITY_TYPE.getId(entity.getType());
         } else {
-            return false;
+            return null;
         }
 
-        Pile pile = new Pile(kind,
+        return new Pile(kind,
             Math.floorDiv((int) Math.floor(entity.getX()), cell),
             Math.floorDiv((int) Math.floor(entity.getY()), cell),
-            Math.floorDiv((int) Math.floor(entity.getZ()), cell));
-        int count = drawn.addTo(pile, 1) + 1;
-        if (count <= limit) return false;
-        hiddenThisFrame++;
-        return true;
+            Math.floorDiv((int) Math.floor(entity.getZ()), cell),
+            limit);
     }
 }
