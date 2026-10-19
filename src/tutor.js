@@ -4,6 +4,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import { randomUUID } from "node:crypto";
 import { db, now, walletBalance } from "./db.js";
 import { isAdult, requireUser } from "./auth.js";
+import { guideReply } from "./forgeguide.js";
 import { rateLimit } from "./limit.js";
 import { paidOrderCount } from "./orders.js";
 import { orbs } from "./catalog.js";
@@ -116,7 +117,13 @@ tutorRouter.get("/usage", requireUser, (req, res) => {
 });
 
 tutorRouter.post("/", requireUser, rateLimit({ windowMs: 60_000, max: 10 }), async (req, res) => {
-  if (!ai()) return res.status(503).json({ error: "Forge isn't set up yet." });
+  // Without an AI key, Forge Guide answers from ForgeCenter's own knowledge base: free,
+  // so it doesn't use the daily allowance.
+  if (!ai()) {
+    const last = [...(req.body?.messages ?? [])].reverse().find(m => m?.role === "user" && typeof m.content === "string");
+    if (!last) return res.status(400).json({ error: "Ask a question first." });
+    return res.json({ reply: guideReply(last.content.slice(0, 2000)), guide: true, remaining: null });
+  }
   const messages = (Array.isArray(req.body?.messages) ? req.body.messages : []).slice(-20)
     .filter(m => ["user", "assistant"].includes(m?.role) && typeof m.content === "string")
     .map(m => ({ role: m.role, content: m.content.slice(0, 8000) }));
