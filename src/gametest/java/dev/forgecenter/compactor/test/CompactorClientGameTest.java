@@ -63,7 +63,6 @@ public class CompactorClientGameTest implements FabricClientGameTest {
                 client.options.getMaxFps().setValue(260); // 260 = unlimited
                 // The default limit drops to 30 FPS after a minute without input, which this test is.
                 client.options.getInactivityFpsLimit().setValue(InactivityFpsLimit.MINIMIZED);
-                client.options.hudHidden = true;
             });
             describeGame(context, result, counts);
 

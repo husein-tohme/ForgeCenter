@@ -44,8 +44,8 @@ jobs:
           echo "== callers of EntityRenderDispatcher.shouldRender"
           for f in $(grep -rl --include=*.class 'shouldRender' /tmp/mc); do
             c=${f#/tmp/mc/}; c=${c%.class}; c=${c//\//.}
-            out=$(javap -c -p -cp "$MC" "$c" 2>/dev/null | grep -E '^  [a-z].*\(.*\);$|EntityRenderDispatcher.shouldRender' | grep -B1 'EntityRenderDispatcher.shouldRender')
-            [ -n "$out" ] && echo "-- $c" && echo "$out"
+            out=$(javap -c -p -cp "$MC" "$c" 2>/dev/null | grep -E '^  [a-z].*\(.*\);$|EntityRenderDispatcher.shouldRender' | grep -B1 'EntityRenderDispatcher.shouldRender' || true)
+            if [ -n "$out" ]; then echo "-- $c"; echo "$out"; fi
           done
           echo "== WorldRenderer entity bits"; javap -c -p -cp "$MC" net.minecraft.client.render.WorldRenderer | grep -n 'renderedEntitiesCount\|getEntitiesDebugString\|WorldRenderEvents' | head -20
           echo "== InactivityFpsLimiter.update"; javap -c -p -cp "$MC" net.minecraft.client.option.InactivityFpsLimiter | sed -n '/int update()/,/^$/p' | head -60

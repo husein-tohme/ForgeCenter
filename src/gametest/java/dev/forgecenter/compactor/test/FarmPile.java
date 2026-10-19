@@ -26,10 +26,10 @@ import net.minecraft.util.math.Vec3d;
  * 3x3x2 blocks, plus one name-tagged zombie in the middle of it.
  */
 final class FarmPile {
-    // The player stands on the superflat surface (y = -60) near the origin, facing south (+z),
-    // looking slightly down at the middle of the pile 6 blocks ahead.
-    static final String PLAYER_TP = "tp @a 0.5 -60 0.5 0 6";
-    static final Vec3d PLAYER = new Vec3d(0.5, -60, 0.5);
+    // The player floats (spectator) 3 blocks above the superflat surface (y = -60), facing south
+    // (+z) and looking down at the middle of the pile, about 6 blocks away.
+    static final String PLAYER_TP = "tp @a 0.5 -57 1.5 0 36";
+    static final Vec3d PLAYER = new Vec3d(0.5, -57, 1.5);
 
     static final Box PILE = new Box(-1, -60, 5, 2, -58, 8);
     private static final Box MOB_FEET = new Box(-1, -60, 5, 2, -59, 8);
