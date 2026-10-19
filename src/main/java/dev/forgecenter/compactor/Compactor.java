@@ -1,5 +1,6 @@
 package dev.forgecenter.compactor;
 
+import it.unimi.dsi.fastutil.ints.Int2BooleanOpenHashMap;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.entity.Entity;
@@ -20,6 +21,8 @@ public final class Compactor {
     public record Pile(int kind, int x, int y, int z, int limit) {}
 
     private static final Object2IntOpenHashMap<Pile> drawn = new Object2IntOpenHashMap<>();
+    /** This frame's answer per entity id: the game can ask twice (F3+B hitboxes ask again). */
+    private static final Int2BooleanOpenHashMap answers = new Int2BooleanOpenHashMap();
     private static int hiddenThisFrame;
     /** How many entities were skipped in the last finished frame (for tests and debugging). */
     public static volatile int hiddenLastFrame;
@@ -30,20 +33,23 @@ public final class Compactor {
 
     public static void startFrame() {
         drawn.clear();
+        answers.clear();
         hiddenLastFrame = hiddenThisFrame;
         hiddenThisFrame = 0;
         frames++;
     }
 
-    /** True if this entity should be skipped this frame. */
+    /** True if this entity should be skipped this frame. Asking again in the same frame gives the same answer. */
     public static boolean shouldHide(Entity entity) {
         if (!Settings.enabled) return false;
         Pile pile = pileOf(entity);
         if (pile == null) return false;
-        int count = drawn.addTo(pile, 1) + 1;
-        if (count <= pile.limit()) return false;
-        hiddenThisFrame++;
-        return true;
+        int id = entity.getId();
+        if (answers.containsKey(id)) return answers.get(id);
+        boolean hide = drawn.addTo(pile, 1) + 1 > pile.limit();
+        if (hide) hiddenThisFrame++;
+        answers.put(id, hide);
+        return hide;
     }
 
     /** The pile this entity belongs to, or null if it is always drawn. */
