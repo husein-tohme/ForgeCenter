@@ -1,0 +1,6 @@
+{
+  "key.entitycompactor.toggle": "Toggle Entity Compactor",
+  "category.entitycompactor": "Entity Compactor",
+  "entitycompactor.on": "Entity Compactor: ON (hiding piled-up items and mobs)",
+  "entitycompactor.off": "Entity Compactor: OFF (drawing everything)"
+}

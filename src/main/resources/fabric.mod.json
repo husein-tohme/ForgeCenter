@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "id": "entitycompactor",
+  "version": "${version}",
+  "name": "Entity Compactor",
+  "description": "Draws only a few of each item or mob per spot, so big farms stop tanking your FPS. Visual only: the server is untouched.",
+  "authors": ["ForgeCenter"],
+  "license": "All-Rights-Reserved",
+  "environment": "client",
+  "entrypoints": { "client": ["dev.forgecenter.compactor.EntityCompactor"] },
+  "mixins": ["entitycompactor.mixins.json"],
+  "depends": { "fabricloader": ">=0.16", "minecraft": "~1.21.4", "fabric-api": "*", "java": ">=21" }
+}
