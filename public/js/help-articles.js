@@ -83,9 +83,9 @@ export const ARTICLES = [
     id: "confirm-age",
     title: "How to confirm you're an adult (and why your account says Teen)",
     tags: "age teen adult confirm verify verification credit card id scan selfie stripe identity 18 debit",
-    summary: "Every account starts in the teen group. Here's how adults confirm their age with a card or an ID scan.",
+    summary: "Your birthday sets your group: 18 and over is adult, 13 to 17 is teen. If you've turned 18 since, here's how to confirm.",
     body: [
-      { p: "Like on Discord, every ForgeCenter account starts in the teen group. Adults confirm their age once to buy big custom projects and to see 18+ showcase listings." },
+      { p: "When you first sign in you give your birthday once: 18 and over gets an adult account, 13 to 17 a teen account. If you've turned 18 since, confirm your age once to buy big custom projects and to see 18+ showcase listings." },
       { steps: [
         "Open [My account](/account) and find **Age group**.",
         "Press **Confirm your age**.",

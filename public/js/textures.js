@@ -18,6 +18,7 @@ let color = "#4ee2ec";
 let mirror = false;
 let cursor = null; // keyboard cursor {x, y}
 let drawing = false;
+let hover = null; // pixel under the mouse {x, y}
 const undoStack = [];
 const pack = new Map(); // target -> pixels
 
@@ -45,6 +46,10 @@ function render() {
   if (mirror) {
     ctx.strokeStyle = "rgba(37,70,168,.6)"; ctx.lineWidth = 2;
     ctx.beginPath(); ctx.moveTo(canvas.width / 2, 0); ctx.lineTo(canvas.width / 2, canvas.height); ctx.stroke();
+  }
+  if (hover && !cursor) {
+    ctx.strokeStyle = "rgba(0,0,0,.55)"; ctx.lineWidth = 2;
+    ctx.strokeRect(hover.x * CELL + 1, hover.y * CELL + 1, CELL - 2, CELL - 2);
   }
   if (cursor) {
     ctx.strokeStyle = "#f2c230"; ctx.lineWidth = 3;
@@ -121,10 +126,15 @@ canvas.addEventListener("pointerdown", e => {
   apply(cell.x, cell.y);
 });
 canvas.addEventListener("pointermove", e => {
-  if (!drawing) return;
   const cell = cellFromEvent(e);
+  if (!drawing) {
+    // Outline the pixel under the mouse so you can see exactly where you'll draw.
+    if (cell && (cell.x !== hover?.x || cell.y !== hover?.y)) { hover = cell; render(); }
+    return;
+  }
   if (cell) apply(cell.x, cell.y);
 });
+canvas.addEventListener("pointerleave", () => { if (hover) { hover = null; render(); } });
 canvas.addEventListener("pointerup", () => { drawing = false; });
 canvas.addEventListener("pointercancel", () => { drawing = false; });
 
@@ -144,6 +154,21 @@ canvas.addEventListener("keydown", e => {
 });
 canvas.addEventListener("focus", () => { cursor ??= { x: 7, y: 7 }; render(); });
 canvas.addEventListener("blur", () => { cursor = null; render(); });
+
+// Shortcuts anywhere on the page, the same letters most pixel editors use. Skipped while
+// typing in a field so the pack name can still contain a "b".
+const KEYS = { b: "pencil", e: "eraser", g: "fill", i: "picker" };
+document.addEventListener("keydown", e => {
+  if (e.target.closest?.("input, select, textarea, [contenteditable]")) return;
+  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "z") {
+    if (e.target !== canvas) { e.preventDefault(); undo(); }
+    return;
+  }
+  if (e.ctrlKey || e.metaKey || e.altKey) return;
+  const k = e.key.toLowerCase();
+  if (KEYS[k]) setTool(KEYS[k]);
+  else if (k === "m") $("mirror").click();
+});
 
 // ---------- Tools and colours ----------
 function setTool(t) {

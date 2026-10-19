@@ -87,7 +87,7 @@ Orbs
 - Orbs can't be withdrawn, sold, swapped for cash or sent to someone else, and they never expire. The team can refund unused orb packs to the card they came from; that needs a person.
 
 Age groups (like Discord)
-- Every account starts in the teen age group. Adults confirm their age on the account page, either with a credit card check (no charge, the card isn't saved, and the bank may show a small temporary hold) or with an ID scan and a selfie through Stripe. ForgeCenter keeps only the result, and the ID images are deleted. Debit and prepaid cards don't count, because only credit cards are limited to adults.
+- The birthday answered at first sign-in sets the age group: 18 and over is adult, 13 to 17 is teen. Someone in the teen group who is now 18 can confirm their age on the account page, either with a credit card check (no charge, the card isn't saved, and the bank may show a small temporary hold) or with an ID scan and a selfie through Stripe. ForgeCenter keeps only the result, and the ID images are deleted. Debit and prepaid cards don't count, because only credit cards are limited to adults.
 - Confirmed adults ${ADULT_PRODUCTS ? `can buy ${ADULT_PRODUCTS} and ` : "can "}see 18+ showcase listings. Accounts are for people 13 and older.
 
 Accounts and sign-in

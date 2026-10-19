@@ -271,13 +271,15 @@ meRouter.delete("/", requireSignedIn, (req, res) => {
 
 // ---------- Birthday (age screen) ----------
 // Asked once, right after the first sign-in, without hinting at the answer that
-// passes. Every account starts in the teen group, as on Discord; only a credit card
-// check or an ID scan (age.js) moves it to adult. Only the group is stored, never
+// passes. People 18 or older (by exact birthday) go straight to the adult group,
+// marked with age_method 'birthday'; everyone 13 to 17 is a teen. A card check or an
+// ID scan (age.js) can still confirm an adult later. Only the group is stored, never
 // the birthday itself.
 const AGE_BLOCK = "fc_age_block";
 // Bump when the terms change in a way people should agree to again.
 export const TERMS_VERSION = "2026-10-18";
 const MIN_AGE = 13;
+const ADULT_AGE = 18;
 
 export function ageOn(today, year, month, day) {
   let age = today.getUTCFullYear() - year;
@@ -315,7 +317,9 @@ meRouter.post("/birthday", requireSignedIn, rateLimit({ windowMs: 60_000, max: 1
     }
     return res.status(403).json({ error: "ForgeCenter accounts are for people 13 and older, so this account wasn't kept. The free creator tools still work without an account.", needs: "closed" });
   }
-  db.prepare("UPDATE users SET age_group = 'teen', terms_accepted_at = ?, terms_version = ? WHERE id = ? AND age_group IS NULL")
-    .run(now(), TERMS_VERSION, req.user.id);
+  const adult = ageOn(today, year, month, day) >= ADULT_AGE;
+  db.prepare(`UPDATE users SET age_group = ?, age_method = ?, age_confirmed_at = ?, terms_accepted_at = ?, terms_version = ?
+    WHERE id = ? AND age_group IS NULL`)
+    .run(adult ? "adult" : "teen", adult ? "birthday" : null, adult ? now() : null, now(), TERMS_VERSION, req.user.id);
   res.json({ user: publicUser(db.prepare("SELECT * FROM users WHERE id = ?").get(req.user.id)) });
 });

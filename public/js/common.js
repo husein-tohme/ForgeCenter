@@ -377,7 +377,7 @@ function choosePayment(item) {
   });
 }
 
-// ---------- Age (like Discord: everyone starts as a teen; adults confirm) ----------
+// ---------- Age (the birthday sets the group; teens who turn 18 confirm) ----------
 const MONTHS = [...Array(12)].map((_, i) => new Date(Date.UTC(2000, i, 1)).toLocaleString(undefined, { month: "long", timeZone: "UTC" }));
 
 function birthdayDialog() {

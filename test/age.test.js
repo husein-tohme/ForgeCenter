@@ -11,7 +11,7 @@ const userRow = id => db.prepare("SELECT * FROM users WHERE id = ?").get(id);
 let eventId = 0;
 const event = (type, object) => sendWebhook({ id: `evt_age_${++eventId}`, type, data: { object } });
 
-test("new accounts answer a birthday question first, and start in the teen group", async () => {
+test("new accounts answer a birthday question first; 18 and over are adults, 13 to 17 teens", async () => {
   const { user, cookie } = signIn("newbie@example.com", "newbie", { age: null });
   const blocked = await api("/api/orders", { cookie });
   assert.equal(blocked.status, 403);
@@ -23,18 +23,30 @@ test("new accounts answer a birthday question first, and start in the teen group
   const future = await api("/api/me/birthday", { method: "POST", cookie, body: { ...yearsAgo(-1), acceptTerms: true } });
   assert.equal(future.status, 400);
 
-  // Even a 40-year-old starts as a teen, like Discord, until they confirm their age.
+  // A 40-year-old is an adult straight away.
   const noTick = await api("/api/me/birthday", { method: "POST", cookie, body: yearsAgo(40) });
   assert.equal(noTick.status, 400);
   assert.match(noTick.body.error, /terms/);
   const r = await api("/api/me/birthday", { method: "POST", cookie, body: { ...yearsAgo(40), acceptTerms: true } });
   assert.equal(r.status, 200);
-  assert.equal(r.body.user.ageGroup, "teen");
+  assert.equal(r.body.user.ageGroup, "adult");
+  assert.equal(userRow(user.id).age_method, "birthday");
   assert.equal((await api("/api/orders", { cookie })).status, 200);
   // The answer can't be changed afterwards, and the birthday itself isn't stored.
   await api("/api/me/birthday", { method: "POST", cookie, body: { ...yearsAgo(5), acceptTerms: true } });
-  assert.equal(userRow(user.id).age_group, "teen");
+  assert.equal(userRow(user.id).age_group, "adult");
   assert.ok(!Object.keys(userRow(user.id)).some(k => /birth|dob/.test(k)));
+});
+
+test("the adult line is the exact 18th birthday", async () => {
+  const d = new Date(Date.now() + 86_400_000); // 18 years ago tomorrow: still 17 today
+  const almost = signIn("almost18@example.com", "almost18", { age: null });
+  const a = await api("/api/me/birthday", { method: "POST", cookie: almost.cookie,
+    body: { year: d.getUTCFullYear() - 18, month: d.getUTCMonth() + 1, day: d.getUTCDate(), acceptTerms: true } });
+  assert.equal(a.body.user.ageGroup, "teen");
+  const today18 = signIn("today18@example.com", "today18", { age: null });
+  const b = await api("/api/me/birthday", { method: "POST", cookie: today18.cookie, body: { ...yearsAgo(18), acceptTerms: true } });
+  assert.equal(b.body.user.ageGroup, "adult");
 });
 
 test("people under 13 are turned away and their new account isn't kept", async () => {

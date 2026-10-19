@@ -127,7 +127,7 @@ export const GUIDE = [
   { keys: "lua roblox script studio", title: "Starting with Roblox scripting",
     answer: "Roblox uses Luau, a version of Lua. In Roblox Studio, add a Script to ServerScriptService and try print(\"Hello\"). Learn variables, functions and events like Touched and PlayerAdded. Roblox Forge makes starter scripts for coins, shops and leaderboards." },
   { keys: "age teen adult group account why", title: "Why your account says Teen",
-    answer: "Like on Discord, every ForgeCenter account starts in the teen group, whatever age you are. You answer your birthday once when you first sign in; ForgeCenter keeps only the group (under 13, teen or adult), never the date. People under 13 can't have an account." },
+    answer: "You answer your birthday once when you first sign in. If you're 18 or older on that day, your account is an adult account straight away; if you're 13 to 17, it's a teen account. ForgeCenter keeps only the group (under 13, teen or adult), never the date. People under 13 can't have an account. If you turned 18 since, you can confirm your age on the account page." },
   { keys: "confirm age adult verify verification check 18", title: "Confirming you're an adult",
     answer: "Adults confirm their age once to unlock 18+ purchases and listings: either a quick card check (nothing is charged) or a photo ID scan with a selfie, both through Stripe. ForgeCenter only learns whether you're 18 or over and never sees or keeps your card or ID. Age checks open together with the shop." },
   { keys: "age data privacy keep birthday id card store", title: "What ForgeCenter keeps about your age",
