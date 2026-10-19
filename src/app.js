@@ -1,5 +1,6 @@
 import express from "express";
 import helmet from "helmet";
+import compression from "compression";
 import { publicCatalog } from "./catalog.js";
 import { authRouter, meRouter, loadUser } from "./auth.js";
 import { ordersRouter, adminOrdersRouter } from "./orders.js";
@@ -53,6 +54,10 @@ export function createApp() {
     referrerPolicy: { policy: "strict-origin-when-cross-origin" },
   }));
 
+  // Gzip/Brotli text responses (pages, scripts, styles, JSON): a fraction of the bytes on
+  // slow connections. Zips and images are already compressed and are left alone.
+  app.use(compression());
+
   // Stripe needs the raw body to verify signatures, so this comes before express.json().
   app.post("/api/stripe/webhook", express.raw({ type: "application/json", limit: "1mb" }), stripeWebhook);
 
@@ -93,6 +98,8 @@ export function createApp() {
     // Without Stripe keys the shop shows "Coming soon" instead of failing at checkout.
     payments: !!process.env.STRIPE_SECRET_KEY,
   }));
+  // For uptime checkers: answers instantly without touching the database.
+  app.get("/healthz", (_req, res) => res.type("text/plain").send("ok"));
   app.get("/api/catalog", (_req, res) => res.json(publicCatalog()));
 
   app.use("/api/auth", authRouter);
@@ -125,7 +132,14 @@ export function createApp() {
 
   app.use("/api", (_req, res) => res.status(404).json({ error: "Not found." }));
   app.use(pagesRouter);
-  app.use(express.static("public", { index: false }));
+  // Browsers keep scripts and styles for an hour and check back cheaply (ETag) after that,
+  // so updates still show up quickly; images and fonts change rarely, so they keep a week.
+  app.use(express.static("public", {
+    index: false,
+    setHeaders(res, path) {
+      res.setHeader("Cache-Control", /\.(png|svg|ico|webp|jpg|woff2?)$/.test(path) ? "public, max-age=604800" : "public, max-age=3600");
+    },
+  }));
   app.use(notFound);
 
   app.use((err, _req, res, _next) => {
