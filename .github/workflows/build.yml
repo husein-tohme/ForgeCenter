@@ -6,7 +6,8 @@ permissions:
   contents: write
 concurrency:
   group: build-${{ github.ref }}
-  cancel-in-progress: true
+  # Never cancel a release halfway through uploading.
+  cancel-in-progress: ${{ github.ref != 'refs/heads/entity-compactor' }}
 env:
   JAR: entity-compactor-1.0.1+1.21.4.jar
 jobs:
@@ -15,7 +16,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 45
     env:
-      EC_SCREENSHOT_URL_BASE: https://github.com/${{ github.repository }}/releases/download/ec1214-test-results/
+      EC_SCREENSHOT_URL_BASE: ${{ github.ref != 'refs/heads/entity-compactor' && format('https://github.com/{0}/releases/download/ec1214-test-results/', github.repository) || '' }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
@@ -63,7 +64,8 @@ jobs:
           logs=build/gametest-console.log
           [ -f build/run/clientGameTest/logs/latest.log ] && logs="$logs build/run/clientGameTest/logs/latest.log"
           bad=""
-          for p in 'Mixin apply failed' 'InvalidInjectionException' 'MixinTargetAlreadyLoadedException' 'Could not find any targets'; do
+          for p in 'Mixin apply failed' 'Mixin apply for mod' 'MixinApplyError' 'MixinTransformerError' 'FAILED during APPLY' \
+                   'InvalidInjectionException' 'MixinTargetAlreadyLoadedException' 'Could not find any targets'; do
             n=$(cat $logs | grep -c -- "$p" || true)
             echo "  '$p': $n"
             [ "$n" != 0 ] && bad="$bad$(grep -h -- "$p" $logs)"$'\n'
@@ -92,8 +94,9 @@ jobs:
         with:
           name: test-results
           path: test-results
+      # Test runs only: the release branch publishes the real release instead.
       - name: Publish screenshots to the test prerelease
-        if: always()
+        if: always() && github.ref != 'refs/heads/entity-compactor'
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ec1214-test-results
@@ -113,6 +116,13 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
+      - name: Stop if this version was already released from another commit
+        run: |
+          tagged=$(git ls-remote --tags origin refs/tags/entity-compactor-v1.0.1-1.21.4 | cut -f1)
+          if [ -n "$tagged" ] && [ "$tagged" != "$GITHUB_SHA" ]; then
+            echo "entity-compactor-v1.0.1-1.21.4 already points at $tagged. Bump mod_version to release this commit."
+            exit 1
+          fi
       - uses: actions/download-artifact@v4
         with:
           name: entity-compactor

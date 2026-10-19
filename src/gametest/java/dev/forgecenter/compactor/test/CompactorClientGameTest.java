@@ -52,7 +52,8 @@ public class CompactorClientGameTest implements FabricClientGameTest {
         try (TestSingleplayerContext game = context.worldBuilder().create()) {
             game.getClientWorld().waitForChunksRender();
             for (String command : SETUP) game.getServer().runCommand(command);
-            UUID zombieId = game.getServer().computeOnServer(FarmPile::spawn);
+            FarmPile.Marked marked = game.getServer().computeOnServer(FarmPile::spawn);
+            UUID zombieId = marked.namedZombie();
 
             FarmPile.Counts counts = waitForPile(context, zombieId);
             context.waitFor(client -> client.player.isSpectator()
@@ -77,7 +78,7 @@ public class CompactorClientGameTest implements FabricClientGameTest {
             List<FrameMeter.Window> windows = List.of(off1, on1, off2, on2);
 
             // The mod is on again here. Players and named mobs must never be hidden.
-            JsonObject checks = context.computeOnClient(client -> neverHiddenChecks(client, zombieId));
+            JsonObject checks = context.computeOnClient(client -> neverHiddenChecks(client, marked));
             FarmPile.Counts after = context.computeOnClient(client -> FarmPile.count(client.world, zombieId));
 
             report(result, counts, after, windows, checks, offShot, onShot);
@@ -130,28 +131,64 @@ public class CompactorClientGameTest implements FabricClientGameTest {
     }
 
     /**
-     * Asks the mod directly about the named zombie and the player. Then, as a control, asks about the
-     * unnamed zombies in the named one's 2x2x2 spot: that spot is over its limit, so they must be
-     * hidden, which shows the named zombie really would have been hidden without its name.
+     * Asks the mod directly about every entity that must stay visible. Each one comes with a
+     * control: the unmarked mobs of its type in its 2x2x2 spot. That spot is over its limit, so
+     * they must be hidden, which shows the marked one really would have been hidden otherwise.
      */
-    private static JsonObject neverHiddenChecks(MinecraftClient client, UUID zombieId) {
+    private static JsonObject neverHiddenChecks(MinecraftClient client, FarmPile.Marked marked) {
         JsonObject json = new JsonObject();
-        Entity zombie = FarmPile.find(client.world, zombieId);
+        Entity zombie = FarmPile.find(client.world, marked.namedZombie());
         json.addProperty("namedZombieFound", zombie != null);
         json.addProperty("namedZombieHidden", zombie == null || Compactor.shouldHide(zombie));
         json.addProperty("playerHidden", Compactor.shouldHide(client.player));
+        json.add("namedZombie", markedCheck(client, zombie, marked));
+        json.add("mount", markedCheck(client, FarmPile.find(client.world, marked.mount()), marked));
+        json.add("rider", markedCheck(client, FarmPile.find(client.world, marked.rider()), marked));
+        json.add("leashedCow", markedCheck(client, FarmPile.find(client.world, marked.leashedCow()), marked));
+        json.add("glowingCow", markedCheck(client, FarmPile.find(client.world, marked.glowingCow()), marked));
+
+        // The mob under the crosshair: borrow an unmarked zombie that is hidden right now.
+        Entity aimed = zombie == null ? null : firstHiddenNeighbour(client, zombie, marked);
+        Entity previous = client.targetedEntity;
+        client.targetedEntity = aimed;
+        JsonObject target = markedCheck(client, aimed, marked);
+        client.targetedEntity = previous;
+        json.add("crosshairTarget", target);
+        return json;
+    }
+
+    /** found, hidden, and how many unmarked same-type neighbours in its spot are hidden. */
+    private static JsonObject markedCheck(MinecraftClient client, Entity entity, FarmPile.Marked marked) {
+        JsonObject json = new JsonObject();
+        json.addProperty("found", entity != null);
+        json.addProperty("hidden", entity == null || Compactor.shouldHide(entity));
         int control = 0, controlHidden = 0;
-        if (zombie != null) {
-            for (Entity entity : client.world.getEntities()) {
-                if (entity.getType() == EntityType.ZOMBIE && entity != zombie && sameMobSpot(entity, zombie)) {
+        if (entity != null) {
+            for (Entity other : client.world.getEntities()) {
+                if (other.getType() == entity.getType() && other != entity && other != client.targetedEntity
+                    && !isMarked(other, marked) && sameMobSpot(other, entity)) {
                     control++;
-                    if (Compactor.shouldHide(entity)) controlHidden++;
+                    if (Compactor.shouldHide(other)) controlHidden++;
                 }
             }
         }
-        json.addProperty("controlZombiesInSpot", control);
-        json.addProperty("controlZombiesHidden", controlHidden);
+        json.addProperty("neighbours", control);
+        json.addProperty("neighboursHidden", controlHidden);
         return json;
+    }
+
+    private static Entity firstHiddenNeighbour(MinecraftClient client, Entity zombie, FarmPile.Marked marked) {
+        for (Entity other : client.world.getEntities()) {
+            if (other.getType() == EntityType.ZOMBIE && !isMarked(other, marked) && sameMobSpot(other, zombie)
+                && Compactor.shouldHide(other)) return other;
+        }
+        return null;
+    }
+
+    private static boolean isMarked(Entity entity, FarmPile.Marked marked) {
+        UUID id = entity.getUuid();
+        return id.equals(marked.namedZombie()) || id.equals(marked.mount()) || id.equals(marked.rider())
+            || id.equals(marked.leashedCow()) || id.equals(marked.glowingCow());
     }
 
     private static boolean sameMobSpot(Entity a, Entity b) {
@@ -236,7 +273,15 @@ public class CompactorClientGameTest implements FabricClientGameTest {
         if (!checks.get("namedZombieFound").getAsBoolean()) failures.add("the named zombie is missing on the client");
         if (checks.get("namedZombieHidden").getAsBoolean()) failures.add("the named zombie was hidden");
         if (checks.get("playerHidden").getAsBoolean()) failures.add("the player was hidden");
-        if (checks.get("controlZombiesHidden").getAsInt() == 0) failures.add("control zombies next to the named one weren't hidden");
+        // The rider sits higher up and may be alone in its spot, so only the others need neighbours.
+        for (String name : List.of("namedZombie", "mount", "rider", "leashedCow", "glowingCow", "crosshairTarget")) {
+            JsonObject check = checks.getAsJsonObject(name);
+            if (!check.get("found").getAsBoolean()) failures.add(name + " is missing on the client");
+            else if (check.get("hidden").getAsBoolean()) failures.add(name + " was hidden");
+            if (!name.equals("rider") && check.get("neighboursHidden").getAsInt() == 0) {
+                failures.add("no hidden neighbours next to " + name + ", so the check proves nothing");
+            }
+        }
         if (after.pile() != counts.pile() || after.behind() != counts.behind()) failures.add("the pile changed while measuring: " + after);
     }
 }

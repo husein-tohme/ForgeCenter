@@ -8,9 +8,10 @@ import java.util.regex.Pattern;
 import net.fabricmc.fabric.api.client.gametest.v1.context.ClientGameTestContext;
 
 /**
- * Measures frames while the game renders freely. The test thread only steps ticks, so between
- * ticks the client draws as many frames as it can; wall-clock time over the frame count is the
- * real time per frame, the same thing an FPS counter shows.
+ * Measures frames with the mod off or on. Under the client gametest, frames step in lockstep with
+ * ticks (about one frame per tick, whatever the FPS setting), so frameMs is the wall time of one
+ * tick plus one frame, including the integrated server ticking the pile. drawMs, the time inside
+ * GameRenderer.render, is the rendering cost on its own.
  */
 final class FrameMeter {
     static final int WARMUP_FRAMES = 60;

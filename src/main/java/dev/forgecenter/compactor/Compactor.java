@@ -1,10 +1,13 @@
 package dev.forgecenter.compactor;
 
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
+import net.minecraft.client.MinecraftClient;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.ExperienceOrbEntity;
 import net.minecraft.entity.ItemEntity;
+import net.minecraft.entity.Leashable;
 import net.minecraft.entity.LivingEntity;
+import net.minecraft.entity.passive.TameableEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.registry.Registries;
 
@@ -40,6 +43,7 @@ public final class Compactor {
         if (!Settings.enabled || entity instanceof PlayerEntity) return false;
         // Named mobs (pets, nametagged villagers) are always drawn.
         if (entity instanceof LivingEntity && entity.hasCustomName()) return false;
+        if (isSpecial(entity)) return false;
 
         int limit;
         int cell;
@@ -68,5 +72,19 @@ public final class Compactor {
         if (count <= limit) return false;
         hiddenThisFrame++;
         return true;
+    }
+
+    /**
+     * Entities someone is paying attention to, which must never vanish from a crowd: whatever the
+     * player rides or looks at, mounts and riders (a hidden horse leaves its rider floating),
+     * leashed mobs (the lead is drawn by the mob), tamed pets and glowing entities.
+     */
+    private static boolean isSpecial(Entity entity) {
+        MinecraftClient client = MinecraftClient.getInstance();
+        if (entity == client.getCameraEntity() || entity == client.targetedEntity) return true;
+        if (entity.hasPassengers() || entity.hasVehicle() || entity.isGlowing()) return true;
+        // getLeashHolder, not isLeashed: on the client only it resolves the holder from the packet.
+        if (entity instanceof Leashable leashable && leashable.getLeashHolder() != null) return true;
+        return entity instanceof TameableEntity pet && pet.isTamed();
     }
 }

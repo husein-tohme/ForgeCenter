@@ -1,6 +1,9 @@
 package dev.forgecenter.compactor.test;
 
 import com.google.gson.JsonObject;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
 import java.util.Random;
 import java.util.UUID;
 import net.minecraft.client.world.ClientWorld;
@@ -12,6 +15,8 @@ import net.minecraft.entity.ItemEntity;
 import net.minecraft.entity.SpawnReason;
 import net.minecraft.entity.mob.MobEntity;
 import net.minecraft.entity.mob.ZombieEntity;
+import net.minecraft.entity.passive.CowEntity;
+import net.minecraft.entity.passive.PigEntity;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
@@ -45,8 +50,15 @@ final class FarmPile {
 
     private FarmPile() {}
 
-    /** Spawns everything on the server; returns the named zombie's id. */
-    static UUID spawn(MinecraftServer server) {
+    /**
+     * Pile members that must always be drawn although they have no name: a pig with a zombie
+     * riding it, a cow on a lead held by the named zombie, and a glowing cow. They're ordinary
+     * members of the counts above, so the pile's totals don't change.
+     */
+    record Marked(UUID namedZombie, UUID mount, UUID rider, UUID leashedCow, UUID glowingCow) {}
+
+    /** Spawns everything on the server; returns the ids of the entities that must stay visible. */
+    static Marked spawn(MinecraftServer server) {
         ServerWorld world = server.getOverworld();
         Random random = new Random(1214);
 
@@ -67,16 +79,31 @@ final class FarmPile {
             orb.setNoGravity(true);
             world.spawnEntity(orb);
         }
-        for (int i = 0; i < COWS; i++) world.spawnEntity(mob(world, EntityType.COW, pointIn(MOB_FEET, random)));
-        for (int i = 0; i < PIGS; i++) world.spawnEntity(mob(world, EntityType.PIG, pointIn(MOB_FEET, random)));
-        for (int i = 0; i < ZOMBIES; i++) world.spawnEntity(mob(world, EntityType.ZOMBIE, pointIn(MOB_FEET, random)));
+        List<CowEntity> cows = new ArrayList<>();
+        List<PigEntity> pigs = new ArrayList<>();
+        List<ZombieEntity> zombies = new ArrayList<>();
+        for (int i = 0; i < COWS; i++) cows.add(mob(world, EntityType.COW, pointIn(MOB_FEET, random)));
+        for (int i = 0; i < PIGS; i++) pigs.add(mob(world, EntityType.PIG, pointIn(MOB_FEET, random)));
+        for (int i = 0; i < ZOMBIES; i++) zombies.add(mob(world, EntityType.ZOMBIE, pointIn(MOB_FEET, random)));
+        cows.forEach(world::spawnEntity);
+        pigs.forEach(world::spawnEntity);
+        zombies.forEach(world::spawnEntity);
         for (int i = 0; i < BEHIND_COWS; i++) world.spawnEntity(mob(world, EntityType.COW, pointIn(BEHIND, random)));
 
         ZombieEntity named = mob(world, EntityType.ZOMBIE, MIDDLE);
         named.setCustomName(Text.literal("Named Zombie"));
         named.setCustomNameVisible(true);
         world.spawnEntity(named);
-        return named.getUuid();
+
+        // The lowest pig, so its rider stays inside the pile's height.
+        PigEntity mount = pigs.stream().min(Comparator.comparingDouble(Entity::getY)).orElseThrow();
+        ZombieEntity rider = zombies.get(0);
+        rider.startRiding(mount, true);
+        CowEntity leashed = cows.get(0);
+        leashed.attachLeash(named, true);
+        CowEntity glowing = cows.get(1);
+        glowing.setGlowing(true);
+        return new Marked(named.getUuid(), mount.getUuid(), rider.getUuid(), leashed.getUuid(), glowing.getUuid());
     }
 
     private static <T extends MobEntity> T mob(ServerWorld world, EntityType<T> type, Vec3d p) {
