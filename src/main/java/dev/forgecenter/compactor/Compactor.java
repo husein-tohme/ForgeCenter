@@ -2,12 +2,12 @@ package dev.forgecenter.compactor;
 
 import java.util.HashMap;
 import java.util.Map;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.ExperienceOrbEntity;
-import net.minecraft.entity.ItemEntity;
-import net.minecraft.entity.LivingEntity;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.registry.Registries;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.ExperienceOrb;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.world.entity.player.Player;
 
 /**
  * Decides which entities get drawn. Entities are grouped by kind and by a small cube of
@@ -20,13 +20,13 @@ public final class Compactor {
 
     private Compactor() {}
 
-    static void startFrame() {
+    public static void startFrame() {
         drawn.clear();
     }
 
     /** True if this entity should be skipped this frame. */
     public static boolean shouldHide(Entity entity) {
-        if (!Settings.enabled || entity instanceof PlayerEntity) return false;
+        if (!Settings.enabled || entity instanceof Player) return false;
         // Named mobs (pets, nametagged villagers) are always drawn.
         if (entity instanceof LivingEntity && entity.hasCustomName()) return false;
 
@@ -36,15 +36,15 @@ public final class Compactor {
         if (entity instanceof ItemEntity item) {
             limit = Settings.itemsPerSpot;
             cell = Settings.itemCellSize;
-            kind = Registries.ITEM.getRawId(item.getStack().getItem()) * 31 + 1;
-        } else if (entity instanceof ExperienceOrbEntity) {
+            kind = BuiltInRegistries.ITEM.getId(item.getItem().getItem()) * 31 + 1;
+        } else if (entity instanceof ExperienceOrb) {
             limit = Settings.orbsPerSpot;
             cell = Settings.itemCellSize;
             kind = 2;
         } else if (entity instanceof LivingEntity) {
             limit = Settings.mobsPerSpot;
             cell = Settings.mobCellSize;
-            kind = Registries.ENTITY_TYPE.getRawId(entity.getType()) * 31 + 3;
+            kind = BuiltInRegistries.ENTITY_TYPE.getId(entity.getType()) * 31 + 3;
         } else {
             return false;
         }

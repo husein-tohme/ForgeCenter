@@ -1,6 +1,6 @@
 # Entity Compactor
 
-A client-side Fabric mod for Minecraft 1.21.4 that stops big farms from tanking your FPS.
+A client-side Fabric mod for Minecraft 26.2 that stops big farms from tanking your FPS.
 
 When hundreds of the same item, XP orb or mob are piled in one spot, your game draws every
 single one. Entity Compactor draws only a few per spot (2 items of each kind per block, 4 mobs
@@ -10,9 +10,9 @@ always drawn.
 It's visual only: nothing changes on the server, and the entities still exist and work.
 
 ## Install
-1. Install Fabric Loader for 1.21.4 (fabricmc.net) and Fabric API.
-2. Put `entity-compactor-1.0.0.jar` in `.minecraft/mods`.
-3. Press **K** in game to turn it on or off.
+1. Install Fabric Loader for 26.2 (fabricmc.net) and Fabric API.
+2. Put `entity-compactor-1.0.0+26.2.jar` in `.minecraft/mods`.
+3. Type **/compactor** in chat to turn it on or off.
 
 Settings: `.minecraft/config/entitycompactor.properties` (restart after editing).
 
