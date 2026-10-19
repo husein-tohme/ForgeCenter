@@ -23,8 +23,12 @@ jobs:
           JAR=$(find ~/.gradle -name 'minecraft-*26.2*.jar' -size +5M | grep -v sources | head -3 | tr '\n' ':')
           echo "jars: $JAR"
           javap -cp "$JAR" net.minecraft.client.renderer.entity.EntityRenderDispatcher | grep -i shouldRender || true
-          javap -cp "$JAR" net.minecraft.client.renderer.LevelRenderer | grep -i renderLevel || true
+          echo "== LevelRenderer render methods"; javap -cp "$JAR" net.minecraft.client.renderer.LevelRenderer | grep -iE "render|extract" || true
+          echo "== GameRenderer render methods"; javap -cp "$JAR" net.minecraft.client.renderer.GameRenderer | grep -iE " render" || true
+          FAPI=$(find ~/.gradle -name 'fabric-command-api-v2*.jar' | grep -v sources | head -1); echo "fapi: $FAPI"; unzip -l "$FAPI" | grep -o 'net/fabricmc/fabric/api/client/command/v2/[A-Za-z]*.class' || true
+          FR=$(find ~/.gradle -name 'fabric-rendering-v1*.jar' | grep -v sources | head -1); unzip -l "$FR" | grep -o 'net/fabricmc/fabric/api/client/rendering/v1/[A-Za-z/]*Events*.class' || true
       - run: gradle build --no-daemon
+        continue-on-error: false
       - uses: softprops/action-gh-release@v2
         with:
           tag_name: entity-compactor-v1.0.0-26.2
