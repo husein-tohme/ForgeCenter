@@ -5,10 +5,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - run: |
-          echo "== game versions (latest 15) =="; curl -s https://meta.fabricmc.net/v2/versions/game | jq -r '.[:15][] | "\(.version) stable=\(.stable)"'
-          echo "== loader =="; curl -s https://meta.fabricmc.net/v2/versions/loader | jq -r '.[:3][].version'
-          echo "== yarn for 26.2 =="; curl -s https://meta.fabricmc.net/v2/versions/yarn/26.2 | jq -r '.[:3][].version'
-          echo "== fabric-api versions mentioning 26 =="; curl -s https://maven.fabricmc.net/net/fabricmc/fabric-api/fabric-api/maven-metadata.xml | grep -o '<version>[^<]*26[^<]*</version>' | tail -8
-          echo "== loom versions =="; curl -s https://maven.fabricmc.net/net/fabricmc/fabric-loom/maven-metadata.xml | grep -o '<version>[^<]*</version>' | tail -6
-          echo "== loom no-remap plugin =="; curl -s -o /dev/null -w "%{http_code}\n" https://maven.fabricmc.net/net/fabricmc/fabric-loom-remap/maven-metadata.xml
-          curl -s https://maven.fabricmc.net/net/fabricmc/fabric-loom-remap/maven-metadata.xml | grep -o '<version>[^<]*</version>' | tail -4
+          echo "== fabric-api for 26.2 =="; curl -s https://maven.fabricmc.net/net/fabricmc/fabric-api/fabric-api/maven-metadata.xml | grep -o '<version>[^<]*+26\.2</version>' | tail -3
+          echo "== loader game 26.2 =="; curl -s https://meta.fabricmc.net/v2/versions/loader/26.2 | jq -r '.[:1][].loader.version'
+          git clone -q --depth 1 https://github.com/FabricMC/fabric-example-mod ex
+          cd ex; echo "== branch: $(git rev-parse --abbrev-ref HEAD)"; for f in build.gradle settings.gradle gradle.properties gradle/wrapper/gradle-wrapper.properties src/main/resources/fabric.mod.json src/main/resources/*.mixins.json; do echo "===== $f"; cat $f; done
+          echo "===== java files"; find src -name '*.java' | head; for f in $(find src -name '*Mixin*.java' | head -2); do echo "== $f"; cat $f; done
