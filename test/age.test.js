@@ -38,6 +38,16 @@ test("new accounts answer a birthday question first; 18 and over are adults, 13 
   assert.ok(!Object.keys(userRow(user.id)).some(k => /birth|dob/.test(k)));
 });
 
+test("owners skip the birthday question and count as adults", async () => {
+  const before = process.env.ADMIN_EMAILS;
+  process.env.ADMIN_EMAILS = "boss-age@example.com";
+  try {
+    const { cookie } = signIn("boss-age@example.com", "bossage", { age: null });
+    assert.equal((await api("/api/orders", { cookie })).status, 200);
+    assert.equal((await api("/api/me", { cookie })).body.user.ageGroup, "adult");
+  } finally { process.env.ADMIN_EMAILS = before ?? ""; }
+});
+
 test("the adult line is the exact 18th birthday", async () => {
   const d = new Date(Date.now() + 86_400_000); // 18 years ago tomorrow: still 17 today
   const almost = signIn("almost18@example.com", "almost18", { age: null });

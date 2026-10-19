@@ -117,7 +117,8 @@ export const requireSignedIn = (req, res, next) =>
 function accountBlock(user) {
   if (!user) return [401, { error: "Sign in to continue." }];
   if (user.age_group === "under13") return [403, { error: "This account is closed because ForgeCenter is for people 13 and older.", needs: "closed" }];
-  if (!user.age_group) return [403, { error: "Tell us your birthday first.", needs: "birthday" }];
+  // Owners are treated as adults, so they're never asked.
+  if (!user.age_group && !isAdmin(user)) return [403, { error: "Tell us your birthday first.", needs: "birthday" }];
   return null;
 }
 export function requireUser(req, res, next) {
