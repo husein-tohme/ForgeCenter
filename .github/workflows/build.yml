@@ -2,6 +2,8 @@ name: Build mod
 on:
   push:
   workflow_dispatch:
+permissions:
+  contents: write
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -19,3 +21,10 @@ jobs:
         with:
           name: entity-compactor
           path: build/libs/entity-compactor-*.jar
+      - uses: softprops/action-gh-release@v2
+        with:
+          tag_name: entity-compactor-v1.0.0
+          name: Entity Compactor 1.0.0 (Minecraft 1.21.4)
+          target_commitish: ${{ github.sha }}
+          body_path: README.md
+          files: build/libs/entity-compactor-1.0.0.jar
