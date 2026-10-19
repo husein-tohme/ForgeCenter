@@ -4,7 +4,6 @@ import java.util.Locale;
 import net.fabricmc.fabric.api.client.gametest.v1.context.TestServerContext;
 import net.minecraft.client.Minecraft;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.ExperienceOrb;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.item.ItemEntity;
@@ -65,7 +64,7 @@ final class FarmPile {
             all++;
             if (entity instanceof ItemEntity) items++;
             else if (entity instanceof ExperienceOrb) orbs++;
-            else if (entity.getType() == EntityType.ZOMBIE && entity.hasCustomName()) named = entity.getId();
+            else if (entity instanceof Mob && entity.hasCustomName()) named = entity.getId(); // only the zombie is named
             else if (entity instanceof Mob) mobs++;
         }
         return new Census(items, mobs, orbs, named, all);

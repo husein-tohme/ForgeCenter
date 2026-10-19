@@ -38,7 +38,6 @@ public final class CompactorGameTest implements FabricClientGameTest {
             mc.options.enableVsync().set(false);
             mc.options.framerateLimit().set(260); // the top of the slider means unlimited
             mc.options.inactivityFpsLimit().set(InactivityFpsLimit.MINIMIZED); // no 30 fps cap after a minute idle
-            mc.options.hideGui = true; // like F1, so screenshots show just the world
         });
 
         try (TestSingleplayerContext world = context.worldBuilder().create()) {

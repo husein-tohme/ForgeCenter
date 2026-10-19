@@ -42,7 +42,17 @@ calls_in() { # class method-name-regex
   echo "== calls made by $1 $2"
   javap -c -p -cp "$MC" "$1" | awk -v pat="$2" '/^  [^ ].*\(/ {on = ($0 ~ pat)} on && /invoke/ {sub(/^ *[0-9]+: /, ""); print "   " $0}' | grep -vE 'java/lang|Profiler|ProfilerFiller' | head -80
 }
-calls_in net.minecraft.client.Minecraft ' renderFrame\('
-calls_in net.minecraft.client.renderer.GameRenderer ' extract\(net'
-calls_in net.minecraft.client.renderer.GameRenderer ' renderLevel\('
-calls_in net.minecraft.client.renderer.LevelRenderer 'xtract.*ntit'
+calls_in net.minecraft.client.Minecraft ' renderFrame[(]'
+calls_in net.minecraft.client.renderer.GameRenderer ' extract[(]net'
+calls_in net.minecraft.client.renderer.GameRenderer ' renderLevel[(]'
+calls_in net.minecraft.client.renderer.LevelRenderer ' render[(]'
+echo "== callers of LevelExtractor.isEntityVisible"
+for f in $(grep -rl --include='*.class' 'isEntityVisible' "$work/net"); do
+  cls=$(echo "${f#$work/}" | sed 's/\.class$//; s#/#.#g')
+  javap -c -p -cp "$MC" "$cls" | awk -v c="$cls" '/^  [^ ].*[(]/ {m=$0} /isEntityVisible/ {print c ":" m}' | sort -u
+done
+calls_in net.minecraft.client.renderer.extract.LevelExtractor 'ntit'
+show net.minecraft.client.Options 'hide|Gui'
+show net.minecraft.client.gui.Gui 'hide|Chat|chat'
+show net.minecraft.world.level.gamerules.GameRules 'CRAMMING|FEEDBACK|COMMAND'
+show net.minecraft.world.entity.EntityType 'ZOMBIE|COW;'
