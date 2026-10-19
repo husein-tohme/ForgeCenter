@@ -98,6 +98,8 @@ export function createApp() {
     // Without Stripe keys the shop shows "Coming soon" instead of failing at checkout.
     payments: !!process.env.STRIPE_SECRET_KEY,
   }));
+  // For uptime checkers: answers instantly without touching the database.
+  app.get("/healthz", (_req, res) => res.type("text/plain").send("ok"));
   app.get("/api/catalog", (_req, res) => res.json(publicCatalog()));
 
   app.use("/api/auth", authRouter);
