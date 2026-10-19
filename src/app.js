@@ -132,12 +132,12 @@ export function createApp() {
 
   app.use("/api", (_req, res) => res.status(404).json({ error: "Not found." }));
   app.use(pagesRouter);
-  // Browsers keep scripts and styles for an hour and check back cheaply (ETag) after that,
-  // so updates still show up quickly; images and fonts change rarely, so they keep a week.
+  // Browsers check scripts and styles on every visit (a cheap ETag check, 304 when
+  // unchanged), so a deploy shows up at once; images and fonts keep a week.
   app.use(express.static("public", {
     index: false,
     setHeaders(res, path) {
-      res.setHeader("Cache-Control", /\.(png|svg|ico|webp|jpg|woff2?)$/.test(path) ? "public, max-age=604800" : "public, max-age=3600");
+      res.setHeader("Cache-Control", /\.(png|svg|ico|webp|jpg|woff2?)$/.test(path) ? "public, max-age=604800" : "no-cache");
     },
   }));
   app.use(notFound);
