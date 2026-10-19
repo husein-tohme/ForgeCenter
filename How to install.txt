@@ -1,0 +1,40 @@
+How to install Entity Compactor
+===============================
+
+Entity Compactor makes big piles of mobs and items easier to see. It works
+with Fabric on Minecraft 26.2 and 1.21.4.
+
+1. Close Minecraft and your launcher (Modrinth App, CurseForge, Prism or the
+   normal Minecraft Launcher).
+
+2. Double-click "Install Entity Compactor.bat".
+   If Windows shows a blue box saying "Windows protected your PC", click
+   "More info" and then "Run anyway".
+
+3. When it asks which profile, just press Enter. It looks for the profile
+   called "allawi habib galbi abou husein". To use a different profile,
+   type its name and press Enter.
+
+4. If it asks which Minecraft version you play, press Enter for 26.2, or
+   type 1.21.4 and press Enter.
+
+5. Wait while it downloads. It puts Entity Compactor and Fabric API in that
+   profile's mods folder, and removes older copies of Entity Compactor only.
+   Nothing else is deleted.
+
+6. Read the summary at the end, then press Enter to close the window.
+
+7. Open your launcher, start the profile and play. Press K in game to turn
+   Entity Compactor on or off (you can change the key in Options > Controls).
+   On 26.2 you can also type /compactor in chat.
+
+If something goes wrong
+-----------------------
+- "uses forge" or "uses neoforge": the mod needs Fabric. The installer
+  tells you how to switch your profile to Fabric. Do that, then run it again.
+- "Fabric Loader is still needed" (normal Minecraft Launcher only): go to
+  https://fabricmc.net/use/installer/ , download the installer, choose
+  Client and your Minecraft version, click Install, then run this again.
+- "Could not remove": Minecraft was still open. Close it and run this again.
+- Anything else: take a screenshot of the window and send it to whoever gave
+  you this installer.

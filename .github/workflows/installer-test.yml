@@ -1,0 +1,23 @@
+name: Installer test
+
+on:
+  push:
+    branches: [ec-installer-test]
+  workflow_dispatch:
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run the installer against fake launcher profiles
+        shell: powershell
+        env:
+          # Only to avoid the shared runner IP hitting GitHub's anonymous rate limit.
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          $PSVersionTable.PSVersion | Out-String | Write-Host
+          & .\tests\run-tests.ps1
+          exit $LASTEXITCODE
