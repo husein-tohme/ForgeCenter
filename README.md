@@ -19,7 +19,20 @@ Settings: `.minecraft/config/entitycompactor.properties` (restart after editing)
 
 Works great alongside Sodium, Entity Culling and ImmediatelyFast.
 
+## What's new in 1.0.1
+- Piles at the edge of the screen, or partly behind you, no longer disappear. Only entities
+  the game would actually draw count toward a pile now.
+- Hitboxes (F3+B) work with piles. The game asks about each entity twice when they're on, and
+  the second answer used to hide every pile entity's hitbox.
+- New **K** key to toggle the mod.
+
 ## Tested in the real game
-Every build starts Minecraft 26.2 with the mod in CI, builds a farm pile in a superflat world
-(600 item stacks, 250 mobs, 100 XP orbs and a name-tagged zombie), and compares frame times
-with the mod off and on. A release is only published when that test passes.
+Every build starts Minecraft 26.2 with the mod in CI, both from the build and from the exact
+jar that gets released. It builds a farm pile in a superflat world (600 item stacks, 252 mobs,
+100 XP orbs and a name-tagged zombie) and compares frame times with the mod off and on. It also
+checks that some of every pile is still drawn, that players and named mobs are never hidden,
+that piles cut by the screen edge still show, that hitboxes still work, and that /compactor and
+K toggle the mod. A release is only published when all of that passes.
+
+On GitHub's GPU-less runners (Mesa software OpenGL), frames took about 2.2 to 2.3 times less
+time with the mod on in that test. Your numbers will depend on your PC and your farm.

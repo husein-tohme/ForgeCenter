@@ -58,6 +58,7 @@ tasks.register('runJarGameTest', net.fabricmc.loom.task.prod.ClientProductionRun
     runDir = file('build/run/jarGameTest')
     useXVFB = true
     doFirst {
+        mods.files.each { println "Mod jar: ${it}" }
         def dir = file('build/run/jarGameTest')
         dir.deleteDir()
         dir.mkdirs()

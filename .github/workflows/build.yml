@@ -8,10 +8,10 @@ jobs:
   build:
     runs-on: ubuntu-24.04
     timeout-minutes: 45
-    env:
-      MOD_VERSION: 1.0.1
     steps:
       - uses: actions/checkout@v4
+      - name: Read the mod version
+        run: echo "MOD_VERSION=$(grep '^mod_version=' gradle.properties | cut -d= -f2)" >> "$GITHUB_ENV"
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -34,7 +34,9 @@ jobs:
           bash .github/scripts/inspect.sh 2>&1 | tee inspect.txt
 
       - name: Build
-        run: gradle build gametestClasses --no-daemon
+        run: |
+          gradle build gametestClasses --no-daemon
+          sha256sum build/libs/*.jar
 
       - name: Play the game with the mod (client gametest)
         env:
