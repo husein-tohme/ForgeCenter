@@ -36,7 +36,7 @@ A Minecraft-themed storefront: Minecraft server hosting, Discord bots, websites,
 
 ## Rules that must not break
 
-- **Emails are trusted only when the provider verified them.** `users.email` decides owner access (`ADMIN_EMAILS`). Never store an unverified email; Microsoft work-tenant emails are unverified.
+- **Emails are trusted only when the provider verified them.** `users.email` decides owner access (`ADMIN_EMAILS`, or the one account that claimed the site with the owner setup code printed at startup; `site_owner` holds at most one row and the claim closes for good once used). Never store an unverified email; Microsoft work-tenant emails are unverified.
 - **State-changing API calls must be same-origin JSON** (CSRF guard in `app.js`). Frontend calls go through `api()` in `common.js`.
 - **Stripe fulfillment happens in the webhook handler**, idempotent per event id; the success page only syncs. Never pass `payment_method_types`.
 - **Age checks keep only the outcome.** Never store a date of birth, card details or ID data. Remove the age-check card and redact the Identity session once it's read. The birthday question in `auth.js` sets `adult` (method `birthday`) for 18+ by exact date and `teen` for 13–17, and only once; after that only `age.js` sets `adult`. Owners (`ADMIN_EMAILS`) are treated as adults by `isAdult()` without their stored group changing.

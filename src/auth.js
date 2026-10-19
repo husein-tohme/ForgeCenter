@@ -3,8 +3,8 @@
 // identity from one of those providers; there are no passwords.
 import express from "express";
 import { OAuth2Client } from "google-auth-library";
-import { createHash, randomBytes } from "node:crypto";
-import { db, now, walletBalance } from "./db.js";
+import { createHash, randomBytes, timingSafeEqual } from "node:crypto";
+import { db, now, walletBalance, claimedOwnerEmail } from "./db.js";
 import { rateLimit } from "./limit.js";
 import { panelUserId } from "./pterodactyl.js";
 import { notify } from "./email.js";
@@ -21,7 +21,21 @@ export const PROVIDER_NAMES = { google: "Google", github: "GitHub", microsoft: "
 
 const adminEmails = () => new Set((process.env.ADMIN_EMAILS || "")
   .split(",").map(s => s.trim().toLowerCase()).filter(Boolean));
-export const isAdmin = user => !!user?.email && adminEmails().has(user.email.toLowerCase());
+export const isAdmin = user => !!user?.email && (adminEmails().has(user.email.toLowerCase())
+  || db.prepare("SELECT 1 FROM site_owner WHERE user_id = ?").get(user.id) !== undefined);
+
+// ---------- One-time owner claim ----------
+// A fresh site with no owner prints a setup code to the server log (only the person
+// running the server can read it). Whoever signs in with a verified email and enters
+// it becomes the owner; after that the claim is closed for good. A bare "type your
+// email" box would let any visitor take the site.
+const ownerClaimOpen = () => !claimedOwnerEmail();
+let setupCode = null;
+export function ownerSetupCode() {
+  if (!ownerClaimOpen()) return null;
+  if (!setupCode) { const raw = randomBytes(6).toString("hex").toUpperCase(); setupCode = `${raw.slice(0, 6)}-${raw.slice(6)}`; }
+  return setupCode;
+}
 
 export const publicUser = u => u && ({
   id: u.id, email: u.email, phone: u.phone, name: u.name, picture: u.picture,
@@ -202,6 +216,21 @@ meRouter.patch("/", requireSignedIn, (req, res) => {
     if (!name) return res.status(400).json({ error: "Enter a name." });
     db.prepare("UPDATE users SET name = ? WHERE id = ?").run(name, req.user.id);
   }
+  res.json({ user: publicUser(db.prepare("SELECT * FROM users WHERE id = ?").get(req.user.id)) });
+});
+
+meRouter.get("/owner-claim", requireSignedIn, (req, res) => res.json({ open: ownerClaimOpen() }));
+
+meRouter.post("/owner-claim", requireSignedIn, rateLimit({ windowMs: 60 * 60_000, max: 5 }), (req, res) => {
+  if (!ownerClaimOpen()) return res.status(410).json({ error: "This site already has an owner." });
+  if (!req.user.email) return res.status(400).json({ error: "Sign in with a method that has a verified email (Google, GitHub, Discord or Microsoft) first." });
+  const given = Buffer.from(String(req.body?.code ?? "").trim().toUpperCase());
+  const want = Buffer.from(ownerSetupCode());
+  if (given.length !== want.length || !timingSafeEqual(given, want)) {
+    return res.status(403).json({ error: "That code isn't right. Copy it from the server log (on Render: your service, then Logs)." });
+  }
+  db.prepare("INSERT OR IGNORE INTO site_owner (id, user_id, claimed_at) VALUES (1, ?, ?)").run(req.user.id, now());
+  setupCode = null;
   res.json({ user: publicUser(db.prepare("SELECT * FROM users WHERE id = ?").get(req.user.id)) });
 });
 

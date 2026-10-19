@@ -296,3 +296,12 @@ if (!columns("orders").includes("paid_at")) {
   db.exec("UPDATE orders SET paid_at = updated_at WHERE status IN ('paid', 'in_progress', 'delivered')");
 }
 addColumn("showcase", "adult_only", "INTEGER NOT NULL DEFAULT 0");
+
+// The site owner claimed through the one-time setup code (auth.js). At most one row, ever.
+db.exec(`CREATE TABLE IF NOT EXISTS site_owner (
+  id INTEGER PRIMARY KEY CHECK (id = 1),
+  user_id INTEGER NOT NULL,
+  claimed_at TEXT NOT NULL
+)`);
+export const claimedOwnerEmail = () =>
+  db.prepare("SELECT u.email FROM site_owner o JOIN users u ON u.id = o.user_id").get()?.email ?? null;

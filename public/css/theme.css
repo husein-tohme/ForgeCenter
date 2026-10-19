@@ -220,3 +220,8 @@ main.page { background: radial-gradient(1200px 320px at 20% -60px, var(--accent-
 
 kbd { font-family: var(--mono); font-size: .82em; padding: 1px 6px; border-radius: 6px; border: 1px solid var(--border); border-bottom-width: 2px; background: var(--surface-2); color: var(--text); }
 .shortcut-hint { margin: 4px 0 10px; }
+
+/* Header account link: the old style was white for the dark header only. */
+.account-link { color: var(--text); }
+.account-link img { border-color: var(--border); border-radius: 50%; }
+.top-link { color: var(--accent); font-weight: 600; }
