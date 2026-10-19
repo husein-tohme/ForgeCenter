@@ -208,3 +208,12 @@ main.page { background: radial-gradient(1200px 320px at 20% -60px, var(--accent-
 /* Before payments are switched on. */
 .soon-bar { background: var(--accent-soft); color: var(--text); text-align: center; padding: 8px 16px; font-size: .92rem; border-bottom: 1px solid var(--border); }
 .soon-bar a { font-weight: 700; margin-left: 4px; }
+
+/* Phones: one row of links that scrolls sideways, and the tools menu as a full-width sheet
+   (a scrolling row would clip a dropdown hanging off it). */
+@media (max-width: 640px) {
+  .top nav { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; max-width: 100%; }
+  .top nav::-webkit-scrollbar { display: none; }
+  .top nav a, .top nav summary { white-space: nowrap; flex: none; }
+  .nav-menu { position: fixed; top: 112px; left: 12px; right: 12px; min-width: 0; max-height: 70vh; overflow-y: auto; }
+}
