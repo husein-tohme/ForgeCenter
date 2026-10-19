@@ -1,0 +1,14 @@
+name: Check versions
+on: push
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          echo "== game versions (latest 15) =="; curl -s https://meta.fabricmc.net/v2/versions/game | jq -r '.[:15][] | "\(.version) stable=\(.stable)"'
+          echo "== loader =="; curl -s https://meta.fabricmc.net/v2/versions/loader | jq -r '.[:3][].version'
+          echo "== yarn for 26.2 =="; curl -s https://meta.fabricmc.net/v2/versions/yarn/26.2 | jq -r '.[:3][].version'
+          echo "== fabric-api versions mentioning 26 =="; curl -s https://maven.fabricmc.net/net/fabricmc/fabric-api/fabric-api/maven-metadata.xml | grep -o '<version>[^<]*26[^<]*</version>' | tail -8
+          echo "== loom versions =="; curl -s https://maven.fabricmc.net/net/fabricmc/fabric-loom/maven-metadata.xml | grep -o '<version>[^<]*</version>' | tail -6
+          echo "== loom no-remap plugin =="; curl -s -o /dev/null -w "%{http_code}\n" https://maven.fabricmc.net/net/fabricmc/fabric-loom-remap/maven-metadata.xml
+          curl -s https://maven.fabricmc.net/net/fabricmc/fabric-loom-remap/maven-metadata.xml | grep -o '<version>[^<]*</version>' | tail -4
