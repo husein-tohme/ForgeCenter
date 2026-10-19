@@ -43,18 +43,19 @@
       <section class="panel editor" aria-labelledby="editor-title">
         <h2 class="panel-title" id="editor-title">Drawing</h2>
         <div class="toolbar" role="toolbar" aria-label="Drawing tools">
-          <button type="button" class="tool" data-tool="pencil" aria-pressed="true">Pencil</button>
-          <button type="button" class="tool" data-tool="eraser" aria-pressed="false">Eraser</button>
-          <button type="button" class="tool" data-tool="fill" aria-pressed="false">Fill</button>
-          <button type="button" class="tool" data-tool="picker" aria-pressed="false">Pick colour</button>
-          <button type="button" class="tool" id="mirror" aria-pressed="false">Mirror</button>
-          <button type="button" class="tool" id="undo">Undo</button>
+          <button type="button" class="tool" data-tool="pencil" aria-pressed="true" title="Pencil (B)" aria-keyshortcuts="B">Pencil</button>
+          <button type="button" class="tool" data-tool="eraser" aria-pressed="false" title="Eraser (E)" aria-keyshortcuts="E">Eraser</button>
+          <button type="button" class="tool" data-tool="fill" aria-pressed="false" title="Fill an area (G)" aria-keyshortcuts="G">Fill</button>
+          <button type="button" class="tool" data-tool="picker" aria-pressed="false" title="Pick a colour from the drawing (I)" aria-keyshortcuts="I">Pick colour</button>
+          <button type="button" class="tool" id="mirror" aria-pressed="false" title="Mirror left and right halves (M)" aria-keyshortcuts="M">Mirror</button>
+          <button type="button" class="tool" id="undo" title="Undo (Ctrl+Z)" aria-keyshortcuts="Control+Z">Undo</button>
           <button type="button" class="tool" id="clear">Clear</button>
           <button type="button" class="tool" id="flip-h" title="Flip left to right">Flip ↔</button>
           <button type="button" class="tool" id="flip-v" title="Flip top to bottom">Flip ↕</button>
           <label class="tool tool-file">Import image<input type="file" id="import" accept="image/png,image/jpeg,image/gif,image/webp" hidden></label>
         </div>
 
+        <p class="small shortcut-hint">Shortcuts: <kbd>B</kbd> pencil, <kbd>E</kbd> eraser, <kbd>G</kbd> fill, <kbd>I</kbd> pick colour, <kbd>M</kbd> mirror, <kbd>Ctrl</kbd>+<kbd>Z</kbd> undo.</p>
         <div class="canvas-row">
           <canvas id="canvas" width="384" height="384" tabindex="0"
             aria-label="16 by 16 drawing grid. Use arrow keys to move and Space to draw."></canvas>

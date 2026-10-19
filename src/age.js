@@ -1,4 +1,4 @@
-// Discord-style adult confirmation. Every account starts in the teen group. Adults
+// Adult confirmation for teen accounts. The birthday question (auth.js) makes 18+ people adults; teens who turn 18
 // confirm with a credit card check (Stripe Checkout in setup mode: card issuers only
 // give credit cards to adults) or an ID scan with a selfie (Stripe Identity).
 // ForgeCenter keeps only the outcome: never card details, a date of birth or ID
