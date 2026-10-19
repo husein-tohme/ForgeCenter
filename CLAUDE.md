@@ -28,6 +28,7 @@ A Minecraft-themed storefront: Minecraft server hosting, Discord bots, websites,
 - `src/payouts.js` creator payouts (Stripe Connect Express) and pay links (`/pay?l=`), shown on creator pages
 - `src/donations.js` donations (`/donate`): Checkout Sessions with kind `donation` and monthly donation subscriptions
 - `src/reports.js` reports (the `registerReportTarget` registry), owner moderation and suspensions; rules at `/rules`
+- `src/forgeguide.js` Forge Guide, ForgeCenter's own Minecraft helper (a hand-written knowledge base, no outside AI): the mentor answers with it, free, when no AI key is set
 - `src/tutor.js` the Forge mentor and the daily AI allowance it shares with AI Maker and Site Maker; `src/ai.js` the shared Claude client
 - `public/js/help-articles.js` help articles on `/support`, also listed in Forge Support's prompt
 - `public/js/common.js` shared UI (icons, sign-in, checkout); one script per page

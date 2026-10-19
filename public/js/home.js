@@ -119,8 +119,8 @@ async function ask(text) {
   const r = await api("/api/tutor", { method: "POST", body: { messages: history } });
   if (r.data.reply) {
     history.push({ role: "assistant", content: r.data.reply });
-    $("mentor-usage").textContent = r.data.orbsSpent
-      ? `No free messages left today, so that one cost ${orbs(r.data.orbsSpent)}.`
+    $("mentor-usage").textContent = r.data.guide ? "Answered by Forge Guide, ForgeCenter's own built-in helper. Free and unlimited."
+      : r.data.orbsSpent ? `No free messages left today, so that one cost ${orbs(r.data.orbsSpent)}.`
       : `${r.data.remaining} messages left today.`;
     if (r.data.orbsSpent) refreshUser(); // the header shows the new orb count
   } else { history.pop(); toast(r.data.error || "Forge couldn't answer. Try again."); }
