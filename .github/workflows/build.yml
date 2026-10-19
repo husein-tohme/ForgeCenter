@@ -27,31 +27,17 @@ jobs:
           gradle-version: "8.12"
       - name: Build
         run: gradle build --no-daemon
+      - name: Check the release jar
+        run: |
+          unzip -l build/libs/$JAR
+          # Mixins find the game's real method names through the refmap; test code must not ship.
+          unzip -p build/libs/$JAR entitycompactor.mixins.json | grep '"refmap"'
+          if unzip -l build/libs/$JAR | grep -q 'compactor/test/'; then echo "Test classes in the release jar"; exit 1; fi
       - uses: actions/upload-artifact@v4
         with:
           name: entity-compactor
           path: build/libs/${{ env.JAR }}
           if-no-files-found: error
-      - name: Inspect versions and game classes (temporary)
-        continue-on-error: true
-        run: |
-          echo "== fabric-api 1.21.4"; curl -s https://maven.fabricmc.net/net/fabricmc/fabric-api/fabric-api/maven-metadata.xml | grep -o '<version>[^<]*+1\.21\.4</version>' | tail -3
-          echo "== loom"; curl -s https://maven.fabricmc.net/fabric-loom/fabric-loom.gradle.plugin/maven-metadata.xml | grep -o '<version>1\.1[0-9][^<]*' | tail -12
-          find ~/.gradle .gradle -name 'minecraft-*.jar' -size +5M 2>/dev/null | grep -v sources | head -10
-          MC=$(realpath "$(find ~/.gradle .gradle -name 'minecraft-merged*.jar' -size +5M 2>/dev/null | grep -v sources | grep yarn | head -1)")
-          echo "MC jar: $MC"
-          mkdir -p /tmp/mc && unzip -q -o "$MC" 'net/minecraft/client/*' -d /tmp/mc
-          echo "== callers of EntityRenderDispatcher.shouldRender"
-          for f in $(grep -rl --include=*.class 'shouldRender' /tmp/mc); do
-            c=${f#/tmp/mc/}; c=${c%.class}; c=${c//\//.}
-            out=$(javap -c -p -cp "$MC" "$c" 2>/dev/null | grep -E '^  [a-z].*\(.*\);$|EntityRenderDispatcher.shouldRender' | grep -B1 'EntityRenderDispatcher.shouldRender' || true)
-            if [ -n "$out" ]; then echo "-- $c"; echo "$out"; fi
-          done
-          echo "== WorldRenderer entity bits"; javap -c -p -cp "$MC" net.minecraft.client.render.WorldRenderer | grep -n 'renderedEntitiesCount\|getEntitiesDebugString\|WorldRenderEvents' | head -20
-          echo "== InactivityFpsLimiter.update"; javap -c -p -cp "$MC" net.minecraft.client.option.InactivityFpsLimiter | sed -n '/int update()/,/^$/p' | head -60
-          javap -p -cp "$MC" net.minecraft.client.option.InactivityFpsLimit | head
-          echo "== MinecraftClient/GameRenderer render"; javap -p -cp "$MC" net.minecraft.client.MinecraftClient | grep ' render('; javap -p -cp "$MC" net.minecraft.client.render.GameRenderer | grep ' render('
-          echo "== jars"; ls -la build/libs build/gametest-libs 2>/dev/null; unzip -l build/libs/$JAR
       - name: Install a virtual display and software OpenGL
         run: |
           sudo apt-get update -qq
