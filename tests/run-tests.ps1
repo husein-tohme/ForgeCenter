@@ -136,6 +136,7 @@ $outFile = Join-Path $env:TEMP 'ec-interactive.txt'
 Write-Host ""
 Write-Host "===== interactive-default : Install Entity Compactor.bat (Enter, Enter)"
 $proc = Start-Process -FilePath $env:ComSpec -ArgumentList "/c `"`"$bat`"`"" -RedirectStandardInput $inFile -RedirectStandardOutput $outFile -NoNewWindow -PassThru
+$null = $proc.Handle   # without this, ExitCode stays empty for -PassThru processes
 $finished = $proc.WaitForExit(180000)
 if (-not $finished) { $proc.Kill() }
 $out = Get-Content -LiteralPath $outFile -Raw
