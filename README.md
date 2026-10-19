@@ -11,9 +11,15 @@ It's visual only: nothing changes on the server, and the entities still exist an
 
 ## Install
 1. Install Fabric Loader for 26.2 (fabricmc.net) and Fabric API.
-2. Put `entity-compactor-1.0.0+26.2.jar` in `.minecraft/mods`.
-3. Type **/compactor** in chat to turn it on or off.
+2. Put `entity-compactor-1.0.1+26.2.jar` in `.minecraft/mods`.
+3. Press **K** (or type **/compactor** in chat) to turn it on or off. You can change the key in
+   Options > Controls > Key Binds, under "Entity Compactor".
 
 Settings: `.minecraft/config/entitycompactor.properties` (restart after editing).
 
 Works great alongside Sodium, Entity Culling and ImmediatelyFast.
+
+## Tested in the real game
+Every build starts Minecraft 26.2 with the mod in CI, builds a farm pile in a superflat world
+(600 item stacks, 250 mobs, 100 XP orbs and a name-tagged zombie), and compares frame times
+with the mod off and on. A release is only published when that test passes.

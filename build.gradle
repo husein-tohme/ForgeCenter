@@ -12,6 +12,34 @@ dependencies {
     implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
 }
 
+loom {
+    mods {
+        entitycompactor { sourceSet sourceSets.main }
+    }
+}
+
+// The in-game test lives in src/gametest, its own source set, so it never ships in the mod jar.
+// Run it with: gradle runClientGameTest
+fabricApi {
+    configureTests {
+        createSourceSet = true
+        modId = 'entitycompactor-test'
+        enableGameTests = false
+        enableClientGameTests = true
+        eula = true
+    }
+}
+
+// Starts the test game on OpenGL: CI runners have no GPU, and Mesa's software OpenGL
+// (llvmpipe) is what we install there. Written after Loom clears the run folder.
+tasks.matching { it.name == 'runClientGameTest' }.configureEach {
+    doFirst {
+        def dir = file('build/run/clientGameTest')
+        dir.mkdirs()
+        new File(dir, 'options.txt').text = 'version:4896\npreferredGraphicsBackend:"opengl"\n'
+    }
+}
+
 processResources {
     def version = project.version
     inputs.property 'version', version
@@ -24,8 +52,7 @@ java {
     targetCompatibility = JavaVersion.VERSION_25
 }
 
-// Prints the real signatures of the game methods the mod hooks into, so the build log
-// shows they match.
+// Prints where the game jar is, so CI can show the real signatures of the methods the mod hooks into.
 tasks.register('printSignatures') {
     doLast {
         def jar = configurations.compileClasspath.files.find { it.name.contains('minecraft') && it.name.contains('26.2') }

@@ -6,7 +6,10 @@ permissions:
   contents: write
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    env:
+      MOD_VERSION: 1.0.1
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
@@ -16,23 +19,71 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: "9.7.1"
-      - name: Show the game methods the mod hooks into
+
+      # The runner has no GPU or screen: a virtual screen plus Mesa's software OpenGL (llvmpipe).
+      - name: Install a virtual screen and software OpenGL
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y -q xvfb mesa-utils libgl1-mesa-dri libglx-mesa0
+          xvfb-run -a glxinfo -B | grep -E "renderer|version" || true
+
+      - name: Show the game and test API methods the code uses
         continue-on-error: true
         run: |
-          gradle printSignatures --no-daemon -q || true
-          JAR=$(find ~/.gradle -name 'minecraft-*26.2*.jar' -size +5M | grep -v sources | head -3 | tr '\n' ':')
-          echo "jars: $JAR"
-          javap -cp "$JAR" net.minecraft.client.renderer.entity.EntityRenderDispatcher | grep -i shouldRender || true
-          echo "== LevelRenderer render methods"; javap -cp "$JAR" net.minecraft.client.renderer.LevelRenderer | grep -iE "render|extract" || true
-          echo "== GameRenderer render methods"; javap -cp "$JAR" net.minecraft.client.renderer.GameRenderer | grep -iE " render" || true
-          FAPI=$(find ~/.gradle -name 'fabric-command-api-v2*.jar' | grep -v sources | head -1); echo "fapi: $FAPI"; unzip -l "$FAPI" | grep -o 'net/fabricmc/fabric/api/client/command/v2/[A-Za-z]*.class' || true
-          FR=$(find ~/.gradle -name 'fabric-rendering-v1*.jar' | grep -v sources | head -1); unzip -l "$FR" | grep -o 'net/fabricmc/fabric/api/client/rendering/v1/[A-Za-z/]*Events*.class' || true
-      - run: gradle build --no-daemon
-        continue-on-error: false
-      - uses: softprops/action-gh-release@v2
+          gradle printSignatures --no-daemon -q
+          bash .github/scripts/inspect.sh
+
+      - name: Build
+        run: gradle build gametestClasses --no-daemon
+
+      - name: Play the game with the mod (client gametest)
+        env:
+          LIBGL_ALWAYS_SOFTWARE: "1"
+        run: |
+          set -o pipefail
+          gradle runClientGameTest --no-daemon --stacktrace 2>&1 | tee gametest.log
+
+      - name: Test result
+        if: always()
+        run: |
+          f=build/run/clientGameTest/ec-result.json
+          if [ -f "$f" ]; then echo "EC_RESULT $(cat "$f")"; else echo "EC_RESULT missing: the test did not get far enough to write it"; fi
+
+      - name: Check the game log for mixin problems
+        if: always()
+        run: bash .github/scripts/check-game-log.sh gametest.log build/run/clientGameTest/logs/latest.log
+
+      # Test runs on other branches keep their screenshots and logs on a prerelease.
+      - name: Collect screenshots and logs
+        if: always() && github.ref != 'refs/heads/entity-compactor-26.2'
+        run: |
+          mkdir -p out
+          n=run${{ github.run_number }}
+          for f in build/run/clientGameTest/screenshots/*.png; do [ -f "$f" ] && cp "$f" "out/$n-$(basename "$f")"; done
+          [ -f build/run/clientGameTest/ec-result.json ] && cp build/run/clientGameTest/ec-result.json "out/$n-ec-result.json"
+          [ -f gametest.log ] && cp gametest.log "out/$n-gametest-log.txt"
+          ls -la out
+      - name: Upload screenshots and logs to the test prerelease
+        if: always() && github.ref != 'refs/heads/entity-compactor-26.2'
+        uses: softprops/action-gh-release@v2
         with:
-          tag_name: entity-compactor-v1.0.0-26.2
-          name: Entity Compactor 1.0.0 (Minecraft 26.2)
+          tag_name: ec26-test-results
+          name: Entity Compactor test results (not a release)
+          body: Screenshots, results and logs from the in-game test runs. Files start with the run number.
+          prerelease: true
+          make_latest: false
+          target_commitish: ${{ github.sha }}
+          files: out/*
+
+      # Only the release branch publishes, and only when the build, the in-game test and the
+      # log check above all passed.
+      - name: Publish the release
+        if: success() && github.ref == 'refs/heads/entity-compactor-26.2'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: entity-compactor-v${{ env.MOD_VERSION }}-26.2
+          name: Entity Compactor ${{ env.MOD_VERSION }} (Minecraft 26.2)
           target_commitish: ${{ github.sha }}
           body_path: README.md
-          files: build/libs/entity-compactor-1.0.0+26.2.jar
+          files: build/libs/entity-compactor-${{ env.MOD_VERSION }}+26.2.jar
+          fail_on_unmatched_files: true
