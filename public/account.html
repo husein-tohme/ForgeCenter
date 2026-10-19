@@ -53,6 +53,16 @@
         </div>
       </section>
 
+      <section class="acct-section" id="owner-claim" hidden>
+        <h2>Become the owner</h2>
+        <p class="section-lede">This site doesn't have an owner yet. If you run it, copy the owner setup code from the server log (on Render: your service, then Logs) and enter it here. This box disappears for everyone once the site has an owner.</p>
+        <form id="owner-claim-form" class="rename-form">
+          <label class="sr-only" for="owner-code">Owner setup code</label>
+          <input id="owner-code" name="code" placeholder="ABC123-DEF456" autocomplete="off" maxlength="20" required>
+          <button class="btn btn-small btn-buy" type="submit">Make me the owner</button>
+        </form>
+      </section>
+
       <section class="acct-section">
         <h2>Sign-in methods</h2>
         <p class="section-lede">Connect more ways to sign in, so you can always get back into your account.</p>

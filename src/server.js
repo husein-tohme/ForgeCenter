@@ -4,9 +4,15 @@ import { startServiceWorker } from "./services.js";
 import { enabledOAuthProviders } from "./oauth.js";
 import { whatsappEnabled } from "./whatsapp.js";
 import { announceSetupCode } from "./setup.js";
+import { ownerSetupCode } from "./auth.js";
 
 const port = process.env.PORT || 3000;
-createApp().listen(port, () => console.log(`ForgeCenter running on ${process.env.BASE_URL || `http://localhost:${port}`}`));
+createApp().listen(port, () => {
+  console.log(`ForgeCenter running on ${process.env.BASE_URL || `http://localhost:${port}`}`);
+  // Until someone claims the site, print the one-time owner code (see auth.js).
+  const code = ownerSetupCode();
+  if (code) console.log(`Owner setup code: ${code} (sign in, open My account, and enter it to become the owner)`);
+});
 
 // While nobody can sign in yet, print a code that unlocks /setup-signin.
 announceSetupCode(enabledOAuthProviders().length > 0 || !!process.env.GOOGLE_CLIENT_ID || whatsappEnabled());

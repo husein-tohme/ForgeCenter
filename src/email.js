@@ -2,7 +2,7 @@
 // isn't set, emails are skipped and the site works the same without them.
 import express from "express";
 import { randomBytes } from "node:crypto";
-import { db, addColumn } from "./db.js";
+import { db, addColumn, claimedOwnerEmail } from "./db.js";
 import { catalog, orbs, usd } from "./catalog.js";
 
 async function resend(message) {
@@ -70,7 +70,11 @@ emailRouter.post("/unsubscribe", express.urlencoded({ extended: false, limit: "2
 });
 
 const site = () => process.env.BASE_URL || "http://localhost:3000";
-const owners = () => (process.env.ADMIN_EMAILS || "").split(",").map(s => s.trim()).filter(Boolean);
+const owners = () => {
+  const list = (process.env.ADMIN_EMAILS || "").split(",").map(s => s.trim()).filter(Boolean);
+  const claimed = claimedOwnerEmail();
+  return claimed && !list.includes(claimed) ? [...list, claimed] : list;
+};
 const productName = order => catalog[order.product]?.name ?? order.product;
 const customerOf = order => order.user_id ? db.prepare("SELECT email, name FROM users WHERE id = ?").get(order.user_id) : null;
 const orderLink = order => `${site()}/account?order=${order.id}`;

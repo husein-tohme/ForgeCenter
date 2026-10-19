@@ -39,7 +39,7 @@ onUser(user => {
   // same account is refreshed (for example after a top-up).
   if (!user.ageGroup || loadedFor === user.id) return;
   loadedFor = user.id;
-  loadIdentities(); loadOrders(); loadWallet(); loadAge(); loadShowcase(); loadMods(); loadCreator();
+  loadOwnerClaim(); loadIdentities(); loadOrders(); loadWallet(); loadAge(); loadShowcase(); loadMods(); loadCreator();
 });
 let loadedFor = null;
 
@@ -264,6 +264,19 @@ function renderAiOrbs(on, perUnit) {
 
 // ---------- Age group ----------
 const METHOD_TEXT = { credit_card: "a credit card check", id_scan: "an ID scan", birthday: "your birthday", owner: "owner access" };
+
+// Shown only while the site has no owner (see auth.js).
+async function loadOwnerClaim() {
+  const r = await api("/api/me/owner-claim");
+  $("owner-claim").hidden = !r.ok || !r.data.open;
+}
+$("owner-claim-form").addEventListener("submit", async e => {
+  e.preventDefault();
+  const r = await api("/api/me/owner-claim", { method: "POST", body: { code: $("owner-code").value } });
+  if (!r.ok) return toast(r.data.error);
+  toast("You're the owner now.");
+  setTimeout(() => location.reload(), 800);
+});
 
 async function loadAge(polls = 0) {
   const r = await api(`/api/age${ageCheck ? `?check=${ageCheck}` : ""}`);
