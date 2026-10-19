@@ -30,7 +30,8 @@ show net.fabricmc.fabric.api.client.gametest.v1.context.TestServerContext
 show net.fabricmc.fabric.api.client.gametest.v1.context.TestServerConnection 'waitForChunksRender'
 show net.fabricmc.fabric.api.client.gametest.v1.TestInput 'pressKey'
 
-# Which game methods ask EntityRenderDispatcher.shouldRender, and what a frame calls in order.
+# Who asks EntityRenderDispatcher.shouldRender (once per entity per frame, plus the F3+B
+# hitbox view), and what a frame calls in order (extract, then render, then present).
 work=$(mktemp -d)
 (cd "$work" && unzip -q -o "$MC" 'net/minecraft/client/renderer/*' 'net/minecraft/client/Minecraft.class')
 echo "== callers of EntityRenderDispatcher.shouldRender"
@@ -44,16 +45,9 @@ calls_in() { # class method-name-regex
 }
 calls_in net.minecraft.client.Minecraft ' renderFrame[(]'
 calls_in net.minecraft.client.renderer.GameRenderer ' extract[(]net'
-calls_in net.minecraft.client.renderer.GameRenderer ' renderLevel[(]'
-calls_in net.minecraft.client.renderer.LevelRenderer ' render[(]'
 echo "== callers of LevelExtractor.isEntityVisible"
 for f in $(grep -rl --include='*.class' 'isEntityVisible' "$work/net"); do
   cls=$(echo "${f#$work/}" | sed 's/\.class$//; s#/#.#g')
   javap -c -p -cp "$MC" "$cls" | awk -v c="$cls" '/^  [^ ].*[(]/ {m=$0} /isEntityVisible/ {print c ":" m}' | sort -u
 done
 calls_in net.minecraft.client.renderer.extract.LevelExtractor 'ntit'
-show net.minecraft.client.Options 'hide|Gui'
-show net.minecraft.client.gui.Gui 'hide|Chat|chat'
-show net.minecraft.world.level.gamerules.GameRules 'CRAMMING|FEEDBACK|COMMAND'
-show net.minecraft.client.gui.components.debug.DebugScreenEntryList 'public'
-show net.minecraft.client.gui.components.debug.DebugScreenEntries 'HITBOX'

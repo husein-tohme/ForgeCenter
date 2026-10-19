@@ -43,23 +43,26 @@ jobs:
           set -o pipefail
           gradle runClientGameTest --no-daemon --stacktrace 2>&1 | tee gametest.log
 
-      - name: Test result
+      # Again with the exact jar we release, through Fabric's production launcher.
+      - name: Play the game with the released jar
+        env:
+          LIBGL_ALWAYS_SOFTWARE: "1"
+        run: |
+          set -o pipefail
+          gradle runJarGameTest --no-daemon --stacktrace 2>&1 | tee jar-gametest.log
+
+      - name: Test results
         if: always()
         run: |
-          f=build/run/clientGameTest/ec-result.json
-          if [ ! -f "$f" ]; then echo "EC_RESULT missing: the test did not get far enough to write it"; exit 0; fi
-          if [ "$GITHUB_REF" != "refs/heads/entity-compactor-26.2" ]; then
-            # Where the next step uploads the screenshots.
-            base="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/releases/download/ec26-test-results/run$GITHUB_RUN_NUMBER-"
-            jq -c --arg base "$base" '.screenshotUrls = (.screenshots | map_values($base + (split("/") | last)))' "$f" > ec-result.json
-          else
-            jq -c . "$f" > ec-result.json
-          fi
-          echo "EC_RESULT $(cat ec-result.json)"
+          bash .github/scripts/print-result.sh EC_RESULT build/run/clientGameTest/ec-result.json "" ec-result.json
+          bash .github/scripts/print-result.sh EC_RESULT_JAR build/run/jarGameTest/ec-result.json jar- ec-result-jar.json
 
-      - name: Check the game log for mixin problems
+      - name: Check the game logs for mixin problems
         if: always()
-        run: bash .github/scripts/check-game-log.sh gametest.log build/run/clientGameTest/logs/latest.log
+        run: |
+          logs="gametest.log build/run/clientGameTest/logs/latest.log"
+          if [ -f jar-gametest.log ]; then logs="$logs jar-gametest.log build/run/jarGameTest/logs/latest.log"; fi
+          bash .github/scripts/check-game-log.sh $logs
 
       # Test runs on other branches keep their screenshots and logs on a prerelease.
       - name: Collect screenshots and logs
@@ -68,8 +71,11 @@ jobs:
           mkdir -p out
           n=run${{ github.run_number }}
           for f in build/run/clientGameTest/screenshots/*.png; do [ -f "$f" ] && cp "$f" "out/$n-$(basename "$f")"; done
+          for f in build/run/jarGameTest/screenshots/*.png; do [ -f "$f" ] && cp "$f" "out/$n-jar-$(basename "$f")"; done
           [ -f ec-result.json ] && cp ec-result.json "out/$n-ec-result.json"
+          [ -f ec-result-jar.json ] && cp ec-result-jar.json "out/$n-jar-ec-result.json"
           [ -f gametest.log ] && cp gametest.log "out/$n-gametest-log.txt"
+          [ -f jar-gametest.log ] && cp jar-gametest.log "out/$n-jar-gametest-log.txt"
           [ -f inspect.txt ] && cp inspect.txt "out/$n-inspect.txt"
           ls -la out
       - name: Upload screenshots and logs to the test prerelease
@@ -84,7 +90,7 @@ jobs:
           target_commitish: ${{ github.sha }}
           files: out/*
 
-      # Only the release branch publishes, and only when the build, the in-game test and the
+      # Only the release branch publishes, and only when the build, both in-game tests and the
       # log check above all passed.
       - name: Publish the release
         if: success() && github.ref == 'refs/heads/entity-compactor-26.2'

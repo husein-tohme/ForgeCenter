@@ -32,11 +32,36 @@ fabricApi {
 
 // Starts the test game on OpenGL: CI runners have no GPU, and Mesa's software OpenGL
 // (llvmpipe) is what we install there. Written after Loom clears the run folder.
+def openGlOptions = 'version:4896\npreferredGraphicsBackend:"opengl"\n'
 tasks.matching { it.name == 'runClientGameTest' }.configureEach {
     doFirst {
         def dir = file('build/run/clientGameTest')
         dir.mkdirs()
-        new File(dir, 'options.txt').text = 'version:4896\npreferredGraphicsBackend:"opengl"\n'
+        new File(dir, 'options.txt').text = openGlOptions
+    }
+}
+
+// The same test against the built mod jar (the file we release), launched the way the real
+// game launches mods: Fabric's production launcher, no dev classpath. gradle runJarGameTest
+def gametestJar = tasks.register('gametestJar', Jar) {
+    from sourceSets.gametest.output
+    archiveClassifier = 'gametest'
+    destinationDirectory = layout.buildDirectory.dir('gametest-libs')
+}
+dependencies {
+    productionRuntimeMods "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
+    productionRuntimeMods fabricApi.module('fabric-client-gametest-api-v1', project.fabric_api_version)
+}
+tasks.register('runJarGameTest', net.fabricmc.loom.task.prod.ClientProductionRunTask) {
+    mods.from(gametestJar)
+    jvmArgs.add('-Dfabric.client.gametest')
+    runDir = file('build/run/jarGameTest')
+    useXVFB = true
+    doFirst {
+        def dir = file('build/run/jarGameTest')
+        dir.deleteDir()
+        dir.mkdirs()
+        new File(dir, 'options.txt').text = openGlOptions
     }
 }
 
