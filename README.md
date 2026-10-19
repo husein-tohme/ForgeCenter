@@ -11,9 +11,14 @@ It's visual only: nothing changes on the server, and the entities still exist an
 
 ## Install
 1. Install Fabric Loader for 1.21.4 (fabricmc.net) and Fabric API.
-2. Put `entity-compactor-1.0.0.jar` in `.minecraft/mods`.
+2. Put `entity-compactor-1.0.1+1.21.4.jar` in `.minecraft/mods`.
 3. Press **K** in game to turn it on or off.
 
 Settings: `.minecraft/config/entitycompactor.properties` (restart after editing).
 
 Works great alongside Sodium, Entity Culling and ImmediatelyFast.
+
+## Tested in the real game
+Every build starts Minecraft 1.21.4 with this exact jar and Fabric API, builds a farm pile of
+600 item stacks, 250 mobs and 100 XP orbs with one name-tagged zombie in it, and measures frames
+with the mod off and on. A release is only published when that test passes.

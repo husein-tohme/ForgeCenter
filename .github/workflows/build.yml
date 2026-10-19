@@ -4,9 +4,18 @@ on:
   workflow_dispatch:
 permissions:
   contents: write
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: true
+env:
+  JAR: entity-compactor-1.0.1+1.21.4.jar
 jobs:
-  build:
-    runs-on: ubuntu-latest
+  test:
+    name: Build and run the in-game test
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    env:
+      EC_SCREENSHOT_URL_BASE: https://github.com/${{ github.repository }}/releases/download/ec1214-test-results/
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
@@ -16,15 +25,116 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: "8.12"
-      - run: gradle build --no-daemon
+      - name: Build
+        run: gradle build --no-daemon
       - uses: actions/upload-artifact@v4
         with:
           name: entity-compactor
-          path: build/libs/entity-compactor-*.jar
+          path: build/libs/${{ env.JAR }}
+          if-no-files-found: error
+      - name: Inspect versions and game classes (temporary)
+        continue-on-error: true
+        run: |
+          echo "== fabric-api 1.21.4"; curl -s https://maven.fabricmc.net/net/fabricmc/fabric-api/fabric-api/maven-metadata.xml | grep -o '<version>[^<]*+1\.21\.4</version>' | tail -3
+          echo "== loom"; curl -s https://maven.fabricmc.net/fabric-loom/fabric-loom.gradle.plugin/maven-metadata.xml | grep -o '<version>1\.1[0-9][^<]*' | tail -12
+          find ~/.gradle .gradle -name 'minecraft-*.jar' -size +5M 2>/dev/null | grep -v sources | head -10
+          MC=$(realpath "$(find ~/.gradle .gradle -name 'minecraft-merged*.jar' -size +5M 2>/dev/null | grep -v sources | grep yarn | head -1)")
+          echo "MC jar: $MC"
+          mkdir -p /tmp/mc && unzip -q -o "$MC" 'net/minecraft/client/*' -d /tmp/mc
+          echo "== callers of EntityRenderDispatcher.shouldRender"
+          for f in $(grep -rl --include=*.class 'shouldRender' /tmp/mc); do
+            c=${f#/tmp/mc/}; c=${c%.class}; c=${c//\//.}
+            out=$(javap -c -p -cp "$MC" "$c" 2>/dev/null | grep -E '^  [a-z].*\(.*\);$|EntityRenderDispatcher.shouldRender' | grep -B1 'EntityRenderDispatcher.shouldRender')
+            [ -n "$out" ] && echo "-- $c" && echo "$out"
+          done
+          echo "== WorldRenderer entity bits"; javap -c -p -cp "$MC" net.minecraft.client.render.WorldRenderer | grep -n 'renderedEntitiesCount\|getEntitiesDebugString\|WorldRenderEvents' | head -20
+          echo "== InactivityFpsLimiter.update"; javap -c -p -cp "$MC" net.minecraft.client.option.InactivityFpsLimiter | sed -n '/int update()/,/^$/p' | head -60
+          javap -p -cp "$MC" net.minecraft.client.option.InactivityFpsLimit | head
+          echo "== MinecraftClient/GameRenderer render"; javap -p -cp "$MC" net.minecraft.client.MinecraftClient | grep ' render('; javap -p -cp "$MC" net.minecraft.client.render.GameRenderer | grep ' render('
+          echo "== jars"; ls -la build/libs build/gametest-libs 2>/dev/null; unzip -l build/libs/$JAR
+      - name: Install a virtual display and software OpenGL
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq xvfb mesa-utils libgl1-mesa-dri > /dev/null
+          xvfb-run -a -s "-screen 0 1280x720x24" glxinfo -B
+      - name: Run the client gametest (real game, software rendering)
+        env:
+          LIBGL_ALWAYS_SOFTWARE: "1"
+        run: |
+          set -o pipefail
+          xvfb-run -a -s "-screen 0 1280x720x24" gradle runProductionClientGameTest --no-daemon --stacktrace 2>&1 | tee build/gametest-console.log
+      - name: Show the result
+        if: always()
+        run: |
+          line=$(grep -h -m1 -o 'EC_RESULT {.*' build/gametest-console.log || true)
+          if [ -z "$line" ]; then echo "No EC_RESULT line: the test did not finish."; exit 1; fi
+          echo "$line"
+          { echo '```'; echo "$line"; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+          echo "$line" | grep -q '"pass":true'
+      - name: Check the game log for mixin problems
+        if: always()
+        run: |
+          logs=build/gametest-console.log
+          [ -f build/run/clientGameTest/logs/latest.log ] && logs="$logs build/run/clientGameTest/logs/latest.log"
+          bad=""
+          for p in 'Mixin apply failed' 'InvalidInjectionException' 'MixinTargetAlreadyLoadedException' 'Could not find any targets'; do
+            n=$(cat $logs | grep -c -- "$p" || true)
+            echo "  '$p': $n"
+            [ "$n" != 0 ] && bad="$bad$(grep -h -- "$p" $logs)"$'\n'
+          done
+          # Errors, exceptions or stack frames that name the mod. A failing test assertion is
+          # reported by the steps above, so the test's own frames don't count here.
+          named=$(grep -hiE 'entitycompactor|dev\.forgecenter' $logs | grep -E '/(ERROR|FATAL)\]|Exception|^\s+at ' \
+            | grep -vE 'EC_RESULT|dev\.forgecenter\.compactor\.test\.|in-game test failed' || true)
+          echo "  errors naming entitycompactor: $(printf '%s' "$named" | grep -c . || true)"
+          bad="$bad$named"
+          if [ -n "$(printf '%s' "$bad" | tr -d '[:space:]')" ]; then
+            echo "MIXIN_CHECK: FAIL"; printf '%s\n' "$bad" | sort -u | head -50; exit 1
+          fi
+          echo "MIXIN_CHECK: PASS (no mixin failures or entitycompactor errors in $logs)"
+          echo "MIXIN_CHECK: PASS" >> "$GITHUB_STEP_SUMMARY"
+      - name: Collect test files
+        if: always()
+        run: |
+          mkdir -p test-results
+          cp build/run/clientGameTest/screenshots/*.png test-results/ 2>/dev/null || true
+          cp build/run/clientGameTest/ec_result.json test-results/ 2>/dev/null || true
+          cp build/run/clientGameTest/logs/latest.log test-results/game-latest.log 2>/dev/null || true
+          ls -la test-results
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-results
+          path: test-results
+      - name: Publish screenshots to the test prerelease
+        if: always()
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ec1214-test-results
+          name: Entity Compactor 1.21.4 in-game test results
+          prerelease: true
+          target_commitish: ${{ github.sha }}
+          body: |
+            Screenshots and results from the latest in-game test run (not a mod release).
+            Commit ${{ github.sha }} on ${{ github.ref_name }}, run ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          files: test-results/*
+          fail_on_unmatched_files: false
+
+  release:
+    name: Publish the release
+    needs: test
+    if: github.ref == 'refs/heads/entity-compactor'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: entity-compactor
       - uses: softprops/action-gh-release@v2
         with:
-          tag_name: entity-compactor-v1.0.0
-          name: Entity Compactor 1.0.0 (Minecraft 1.21.4)
+          tag_name: entity-compactor-v1.0.1-1.21.4
+          name: Entity Compactor 1.0.1 (Minecraft 1.21.4)
           target_commitish: ${{ github.sha }}
           body_path: README.md
-          files: build/libs/entity-compactor-1.0.0.jar
+          files: ${{ env.JAR }}
+          fail_on_unmatched_files: true

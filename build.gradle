@@ -1,8 +1,8 @@
 plugins {
-    id 'fabric-loom' version '1.9-SNAPSHOT'
+    id 'fabric-loom' version "${loom_version}"
 }
 
-version = project.mod_version
+version = "${project.mod_version}+${project.minecraft_version}"
 group = 'dev.forgecenter'
 base { archivesName = 'entity-compactor' }
 
@@ -11,6 +11,8 @@ dependencies {
     mappings "net.fabricmc:yarn:${project.yarn_mappings}:v2"
     modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
     modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
+    // The in-game test runs the released jar next to Fabric API, like a player's mods folder.
+    productionRuntimeMods "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
 }
 
 processResources {
@@ -22,3 +24,36 @@ java {
     toolchain { languageVersion = JavaLanguageVersion.of(21) }
 }
 tasks.withType(JavaCompile).configureEach { it.options.release = 21 }
+
+// In-game test: a small test mod in src/gametest, started by Fabric API's client gametest runner.
+fabricApi {
+    configureTests {
+        createSourceSet = true
+        modId = 'entitycompactor-test'
+        enableGameTests = false
+        enableClientGameTests = true
+        eula = true
+    }
+}
+
+// The test mod gets remapped like the main jar, so it can run in a production-style game.
+def gametestJar = tasks.register('gametestJar', Jar) {
+    from sourceSets.gametest.output
+    archiveClassifier = 'gametest-dev'
+    destinationDirectory = layout.buildDirectory.dir('gametest-libs')
+}
+def remapGametestJar = tasks.register('remapGametestJar', net.fabricmc.loom.task.RemapJarTask) {
+    inputFile = gametestJar.flatMap { it.archiveFile }
+    archiveClassifier = 'gametest'
+    destinationDirectory = layout.buildDirectory.dir('gametest-libs')
+    addNestedDependencies = false
+}
+
+// Starts the real game the way the vanilla launcher does (intermediary names) with the released
+// jar, Fabric API and the test mod, runs the in-game test, then quits. CI wraps it in xvfb-run.
+tasks.register('runProductionClientGameTest', net.fabricmc.loom.task.prod.ClientProductionRunTask) {
+    mods.from remapGametestJar
+    jvmArgs.addAll '-Xmx3G', '-Dfabric.client.gametest', '-Dfabric.client.gametest.disableNetworkSynchronizer=true'
+    runDir = layout.buildDirectory.dir('run/clientGameTest')
+    useXVFB = false
+}

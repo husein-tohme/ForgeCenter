@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "id": "entitycompactor-test",
+  "version": "1.0.0",
+  "name": "Entity Compactor in-game test",
+  "description": "Starts a world with a big farm pile and checks Entity Compactor in the real game. Test only, never shipped.",
+  "license": "All-Rights-Reserved",
+  "environment": "client",
+  "entrypoints": {
+    "fabric-client-gametest": ["dev.forgecenter.compactor.test.CompactorClientGameTest"]
+  },
+  "mixins": ["entitycompactor-test.mixins.json"],
+  "depends": { "entitycompactor": "*", "fabric-client-gametest-api-v1": "*" }
+}
