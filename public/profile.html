@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>%TITLE%</title>
+<meta name="description" content="%DESCRIPTION%">
+<!--ROBOTS-->
+<link rel="canonical" href="%URL%">
+<meta property="og:site_name" content="Forgehub">
+<meta property="og:title" content="%TITLE%">
+<meta property="og:description" content="%DESCRIPTION%">
+<meta property="og:type" content="website">
+<meta property="og:url" content="%URL%">
+<meta property="og:image" content="%BASE%/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#0f1115">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;family=JetBrains+Mono:wght@400;600&amp;display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/app.css">
+<script src="/js/theme.js"></script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="top">
+  <div class="wrap top-inner">
+    <a class="logo" href="/" aria-label="Forgehub home"><svg viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="8" fill="var(--surface-2)"/><path d="M8 9h16v4H13v3h9v4h-9v5H8z" fill="var(--accent)"/><rect x="20" y="20" width="5" height="5" rx="1" fill="var(--text)"/></svg>Forgehub</a>
+    <nav aria-label="Main"><a href="/explore">Explore</a><a href="/store">Store</a><a href="/ai">Forge AI</a><a href="/library">Library</a></nav>
+    <form class="top-search" action="/explore" role="search"><label class="sr-only" for="q-top">Search repos</label><input id="q-top" name="q" placeholder="Search repos"></form>
+    <button class="btn btn-small" type="button" id="theme-btn" aria-label="Switch theme">☀</button>
+    <div class="auth" id="auth-slot"></div>
+  </div>
+</header>
+<main id="main" class="page">
+<div class="wrap"><div class="profile" id="profile"><p class="hint">Loading…</p></div></div>
+</main>
+<footer class="foot">
+  <div class="wrap">
+    <span>© Forgehub</span>
+    <nav aria-label="Site"><a href="/explore">Explore</a><a href="/store">Store</a><a href="/ai">Forge AI</a><a href="/settings">Settings</a><a href="/privacy">Privacy</a><a href="/terms">Terms</a></nav>
+  </div>
+</footer>
+<script type="module" src="/js/profile.js"></script>
+</body>
+</html>

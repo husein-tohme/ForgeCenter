@@ -1,0 +1,21 @@
+{
+  "name": "forgehub",
+  "version": "0.1.0",
+  "description": "Forgehub: code repos, a digital-goods store and an AI helper in one place",
+  "main": "src/server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node --disable-warning=ExperimentalWarning src/server.js",
+    "dev": "node --disable-warning=ExperimentalWarning --env-file-if-exists=.env --watch-path=src src/server.js",
+    "test": "node --disable-warning=ExperimentalWarning --test test/*.test.js",
+    "check": "node scripts/check.mjs"
+  },
+  "dependencies": {
+    "archiver": "^7.0.1",
+    "compression": "^1.8.1",
+    "express": "^4.21.0",
+    "helmet": "^8.3.0",
+    "stripe": "^22.6.2"
+  },
+  "engines": { "node": ">=22.13" }
+}

@@ -1,0 +1,8 @@
+# Forgehub
+
+> Forgehub hosts code repos, runs websites from them, and lets creators sell digital goods (code, game files, mods, art, templates). Digital goods only.
+
+- [Explore repos](/explore): public repos, searchable
+- [Store](/store): digital items for sale
+- [Forge AI](/ai): help with coding and using Forgehub
+- [Terms](/terms) and [Privacy](/privacy)

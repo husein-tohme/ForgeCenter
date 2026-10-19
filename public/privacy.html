@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>%TITLE%</title>
+<meta name="description" content="%DESCRIPTION%">
+<!--ROBOTS-->
+<link rel="canonical" href="%URL%">
+<meta property="og:site_name" content="Forgehub">
+<meta property="og:title" content="%TITLE%">
+<meta property="og:description" content="%DESCRIPTION%">
+<meta property="og:type" content="website">
+<meta property="og:url" content="%URL%">
+<meta property="og:image" content="%BASE%/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#0f1115">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;family=JetBrains+Mono:wght@400;600&amp;display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/app.css">
+<script src="/js/theme.js"></script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="top">
+  <div class="wrap top-inner">
+    <a class="logo" href="/" aria-label="Forgehub home"><svg viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="8" fill="var(--surface-2)"/><path d="M8 9h16v4H13v3h9v4h-9v5H8z" fill="var(--accent)"/><rect x="20" y="20" width="5" height="5" rx="1" fill="var(--text)"/></svg>Forgehub</a>
+    <nav aria-label="Main"><a href="/explore">Explore</a><a href="/store">Store</a><a href="/ai">Forge AI</a><a href="/library">Library</a></nav>
+    <form class="top-search" action="/explore" role="search"><label class="sr-only" for="q-top">Search repos</label><input id="q-top" name="q" placeholder="Search repos"></form>
+    <button class="btn btn-small" type="button" id="theme-btn" aria-label="Switch theme">☀</button>
+    <div class="auth" id="auth-slot"></div>
+  </div>
+</header>
+<main id="main" class="page">
+<div class="wrap narrow legal">
+<h1>Privacy policy</h1>
+<p>Last updated 19 October 2026. This explains what Forgehub stores about you, why, who helps us run the site, and how to download or delete your data.</p>
+<h2>What we store</h2>
+<ul>
+<li><b>Your account:</b> your name, profile picture and verified email from the sign-in you use (GitHub, Discord or Microsoft), your username, bio and website, and your account type.</li>
+<li><b>Your age group:</b> you give your birthday once. We keep only whether you're a teen or an adult, never the date.</li>
+<li><b>What you upload:</b> your repos, their files and their history. Public repos can be seen by anyone.</li>
+<li><b>Store activity:</b> what you buy or sell, amounts and dates. Card and bank details go straight to Stripe; Forgehub never sees or stores them.</li>
+<li><b>Reports</b> you send, and questions you ask Forge AI while they're being answered (we don't keep a chat log).</li>
+<li><b>Technical logs:</b> our host keeps short server logs (like IP addresses and errors) to keep the site running and safe.</li>
+</ul>
+<h2 id="cookies">Cookies</h2>
+<p>We only use cookies that are needed for the site to work: one to keep you signed in, and a short-lived one during sign-in. There are no advertising, analytics or tracking cookies, so rejecting optional cookies changes nothing. Your theme and cookie-notice choice are saved in your browser's local storage, not sent to us.</p>
+<h2>Who helps us run Forgehub (subprocessors)</h2>
+<table><tr><th>Company</th><th>What for</th></tr>
+<tr><td>Render</td><td>Hosting the website and database</td></tr>
+<tr><td>Stripe</td><td>Payments, seller payouts and seller identity checks</td></tr>
+<tr><td>GitHub, Discord, Microsoft</td><td>Signing in (only the ones you use)</td></tr>
+<tr><td>Google Fonts</td><td>Loading the site's fonts</td></tr>
+<tr><td>Anthropic</td><td>Answering Forge AI questions our own knowledge base can't, only if turned on</td></tr>
+</table>
+<h2>Your rights: download and delete</h2>
+<p>In <a href="/settings">Settings</a> you can download everything we store about you as a JSON file, and delete your account. Deleting removes your profile, repos and files straight away. Records of past purchases are kept without your name, because tax law requires it. You can also ask us to correct anything.</p>
+<h2>Young people</h2>
+<p>Forgehub is for people 13 and older. If someone tells us they're under 13, their new account is deleted at once. Selling needs an adult account, because Stripe only pays out to adults.</p>
+<h2>Business accounts</h2>
+<p>If you use Forgehub for a business, we process personal data in your repos only to host and show it as you choose, follow this policy for it, keep it secure, use only the subprocessors listed above, help with your customers' data requests, and delete it when you delete your account. Contact us if you need this as a signed data processing agreement.</p>
+<h2>Security and keeping data</h2>
+<p>Connections are encrypted (HTTPS). We keep your data while your account exists. Server logs are kept for a short time by our host.</p>
+<h2>Contact</h2>
+<p>Questions or requests: open Forge AI and ask how to reach the team, or report through any Report button.</p>
+</div>
+</main>
+<footer class="foot">
+  <div class="wrap">
+    <span>© Forgehub</span>
+    <nav aria-label="Site"><a href="/explore">Explore</a><a href="/store">Store</a><a href="/ai">Forge AI</a><a href="/settings">Settings</a><a href="/privacy">Privacy</a><a href="/terms">Terms</a></nav>
+  </div>
+</footer>
+<script type="module" src="/js/common.js"></script>
+</body>
+</html>

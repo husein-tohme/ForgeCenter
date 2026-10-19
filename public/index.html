@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>%TITLE%</title>
+<meta name="description" content="%DESCRIPTION%">
+<!--ROBOTS-->
+<link rel="canonical" href="%URL%">
+<meta property="og:site_name" content="Forgehub">
+<meta property="og:title" content="%TITLE%">
+<meta property="og:description" content="%DESCRIPTION%">
+<meta property="og:type" content="website">
+<meta property="og:url" content="%URL%">
+<meta property="og:image" content="%BASE%/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#0f1115">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;family=JetBrains+Mono:wght@400;600&amp;display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/app.css">
+<script src="/js/theme.js"></script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="top">
+  <div class="wrap top-inner">
+    <a class="logo" href="/" aria-label="Forgehub home"><svg viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="8" fill="var(--surface-2)"/><path d="M8 9h16v4H13v3h9v4h-9v5H8z" fill="var(--accent)"/><rect x="20" y="20" width="5" height="5" rx="1" fill="var(--text)"/></svg>Forgehub</a>
+    <nav aria-label="Main"><a href="/explore">Explore</a><a href="/store">Store</a><a href="/ai">Forge AI</a><a href="/library">Library</a></nav>
+    <form class="top-search" action="/explore" role="search"><label class="sr-only" for="q-top">Search repos</label><input id="q-top" name="q" placeholder="Search repos"></form>
+    <button class="btn btn-small" type="button" id="theme-btn" aria-label="Switch theme">☀</button>
+    <div class="auth" id="auth-slot"></div>
+  </div>
+</header>
+<main id="main" class="page">
+<div class="wrap">
+  <section class="hero">
+    <div>
+      <h1>Build it. Host it. <em>Sell it.</em></h1>
+      <p>Forgehub is your home for code and digital work: keep any files in repos, run websites straight from them, and sell what you make. Forge AI helps when you're stuck.</p>
+      <div class="row"><a class="btn btn-primary" href="/new">Make a repo</a><a class="btn" href="/explore">Explore</a></div>
+    </div>
+    <div class="hero-art" aria-hidden="true"><div class="dots"><i></i><i></i><i></i></div>
+<span class="c">// my-game/app.js</span>
+<span class="k">const</span> player = { x: 40, y: 120 };
+document.<span class="k">addEventListener</span>(<span class="s">"keydown"</span>, e =&gt; {
+  <span class="k">if</span> (e.key === <span class="s">"ArrowRight"</span>) player.x += 8;
+});
+<span class="c">// live at /p/you/my-game/</span></div>
+  </section>
+  <section class="features" aria-label="What you can do">
+    <div class="feature"><b>Repos for anything</b><p>Code, games, mods, art, sounds. Drag in files or whole folders.</p></div>
+    <div class="feature"><b>Edit and test in the browser</b><p>Change code, save with a note, and keep the full history.</p></div>
+    <div class="feature"><b>Live websites</b><p>Add an index.html and your repo runs as a site, sandboxed and safe.</p></div>
+    <div class="feature"><b>Sell and get donations</b><p>Cards, Apple Pay, Google Pay and more through Stripe. Money goes to you.</p></div>
+    <div class="feature"><b>Forge AI</b><p>Our own helper for coding and Forgehub questions. Free.</p></div>
+    <div class="feature"><b>Install as an app</b><p>Add Forgehub to your phone or desktop like any app.</p></div>
+  </section>
+  <section><div class="row spread"><h2>Recently updated</h2><a href="/explore">See all</a></div><div class="grid" id="recent"><p class="hint">Loading…</p></div></section>
+</div>
+</main>
+<footer class="foot">
+  <div class="wrap">
+    <span>© Forgehub</span>
+    <nav aria-label="Site"><a href="/explore">Explore</a><a href="/store">Store</a><a href="/ai">Forge AI</a><a href="/settings">Settings</a><a href="/privacy">Privacy</a><a href="/terms">Terms</a></nav>
+  </div>
+</footer>
+<script type="module" src="/js/home.js"></script>
+</body>
+</html>
