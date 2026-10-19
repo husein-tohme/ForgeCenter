@@ -217,21 +217,39 @@ const TYPES = { html: "text/html", htm: "text/html", css: "text/css", js: "text/
   png: "image/png", jpg: "image/jpeg", jpeg: "image/jpeg", gif: "image/gif", webp: "image/webp", svg: "image/svg+xml", ico: "image/x-icon",
   txt: "text/plain", md: "text/plain", wasm: "application/wasm", mp3: "audio/mpeg", ogg: "audio/ogg", wav: "audio/wav", mp4: "video/mp4",
   woff: "font/woff", woff2: "font/woff2", ttf: "font/ttf" };
-// Live preview of a public repo's website. The sandbox header without allow-same-origin
-// gives the page an opaque origin, so its scripts run but can never read Forgehub's
-// cookies or call its API as the visitor.
+// Sends one file of a public repo's website. On Forgehub's own domain the page is
+// sandboxed without allow-same-origin, so it gets an opaque origin: its scripts run but
+// can never read Forgehub's cookies or call its API as the visitor. On a site's own
+// subdomain or custom domain there are no Forgehub cookies to protect, so it runs as a
+// normal site (localStorage and all).
+export function serveSite(res, repo, rawPath, { sandbox }) {
+  let path = rawPath || "index.html";
+  if (path.endsWith("/")) path += "index.html";
+  path = cleanPath(path);
+  let f = path && db.prepare("SELECT data FROM repo_files WHERE repo_id = ? AND path = ?").get(repo.id, path);
+  // "/about" finds about.html or about/index.html, like most static hosts.
+  if (!f && path && !/\.[a-z0-9]+$/i.test(path)) {
+    for (const alt of [`${path}.html`, `${path}/index.html`]) {
+      f = db.prepare("SELECT data FROM repo_files WHERE repo_id = ? AND path = ?").get(repo.id, alt);
+      if (f) { path = alt; break; }
+    }
+  }
+  if (!f) {
+    const custom = db.prepare("SELECT data FROM repo_files WHERE repo_id = ? AND path = '404.html'").get(repo.id);
+    res.status(404);
+    if (!custom) return res.type("text/plain").send("Not found in this site.");
+    f = custom; path = "404.html";
+  }
+  res.set({ "Content-Type": TYPES[path.split(".").pop().toLowerCase()] ?? "application/octet-stream", "X-Content-Type-Options": "nosniff",
+    "Cache-Control": "no-cache", "Cross-Origin-Resource-Policy": "cross-origin" });
+  if (sandbox) res.set("Content-Security-Policy", "sandbox allow-scripts allow-forms allow-popups allow-modals allow-pointer-lock");
+  else { res.removeHeader("Content-Security-Policy"); res.removeHeader("X-Frame-Options"); }
+  res.send(Buffer.from(f.data));
+}
+
 filesRouter.get(["/p/:owner/:name", "/p/:owner/:name/*"], (req, res, next) => {
   if (!req.params[0] && !req.path.endsWith("/")) return res.redirect(301, `${req.originalUrl.split("?")[0]}/`);
   const r = findRepo(req.params.owner, req.params.name, null);
   if (!r) return next();
-  let path = req.params[0] || "index.html";
-  if (path.endsWith("/")) path += "index.html";
-  path = cleanPath(path);
-  const f = path && db.prepare("SELECT data FROM repo_files WHERE repo_id = ? AND path = ?").get(r.id, path);
-  if (!f) return res.status(404).type("text/plain").send("Not found in this repo.");
-  res.set({ "Content-Type": TYPES[path.split(".").pop().toLowerCase()] ?? "application/octet-stream", "X-Content-Type-Options": "nosniff",
-    "Content-Security-Policy": "sandbox allow-scripts allow-forms allow-popups allow-modals allow-pointer-lock", "Cache-Control": "no-cache",
-    // The sandboxed page has its own opaque origin, so its CSS and scripts load cross-origin.
-    "Cross-Origin-Resource-Policy": "cross-origin" });
-  res.send(Buffer.from(f.data));
+  serveSite(res, r, req.params[0], { sandbox: true });
 });

@@ -167,3 +167,5 @@ dialog::backdrop { background: #000a; }
 @media (max-width: 760px) { .inbox { grid-template-columns: 1fr; } }
 .thread > span:nth-child(2) { display: grid; min-width: 0; }
 .badge[hidden] { display: none; }
+.form > p, .form > h2 { margin: 0; }
+.form > .btn, .form > button { justify-self: start; }

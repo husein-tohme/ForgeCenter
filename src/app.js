@@ -12,6 +12,7 @@ import { storeRouter, downloadRouter, stripeWebhook, stripe } from "./store.js";
 import { aiRouter } from "./forgeai.js";
 import { reportsRouter, adminRouter } from "./reports.js";
 import { messagesRouter } from "./messages.js";
+import { siteHosts, domainsRouter } from "./domains.js";
 import { USERNAME_RE, RESERVED } from "./auth.js";
 
 const PUBLIC = "public";
@@ -47,6 +48,8 @@ const LISTED = ["/", "/explore", "/store", "/ai", "/privacy", "/terms"];
 export function createApp() {
   const app = express();
   app.set("trust proxy", 1);
+  // A live site's own subdomain or custom domain is answered before anything else.
+  app.use(siteHosts);
   app.use(compression());
   app.use(helmet({
     contentSecurityPolicy: { directives: {
@@ -85,6 +88,7 @@ export function createApp() {
   app.use("/api/store", storeRouter);
   app.use("/api/ai", aiRouter);
   app.use("/api/messages", messagesRouter);
+  app.use("/api/domains", domainsRouter);
   app.use("/api/reports", reportsRouter);
   app.use("/api/admin", adminRouter);
   app.use("/api", (_req, res) => res.status(404).json({ error: "Not found." }));

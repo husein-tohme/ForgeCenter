@@ -4,6 +4,8 @@ Code repos, live websites and a store for digital things, in one place.
 
 - **Repos** at `/<username>/<repo>`: upload any files or whole folders, browse them, edit text files in the browser, and keep a commit history. Stars, explore and search.
 - **Live sites**: a public repo with an `index.html` runs at `/p/<username>/<repo>/`, sandboxed so its scripts can't touch Forgehub accounts.
+- **Own addresses**: live sites can also run on `<user>.SITES_DOMAIN/<repo>/` and on a custom domain the owner verifies with a TXT record. A reverse proxy that issues HTTPS on demand (like Caddy's `on_demand_tls`) can ask `GET /api/domains/allowed?domain=` first.
+- **Messages**: an inbox with blocking and an automatic scam filter.
 - **Store**: sell a repo's files as a download, take donations. Stripe Checkout direct charges on each seller's own connected account (Stripe Connect Express), with a fee (`FEE_PERCENT`, default 5). Buyers get a library with downloads. Digital goods only.
 - **Forge AI**: Forgehub's own helper, answering from a hand-written knowledge base for free. With `ANTHROPIC_API_KEY` set, questions it can't answer go to Claude.
 - **Accounts**: sign in with GitHub, Discord or Microsoft. Birthday asked once (13+, only the group is kept). Usernames, profiles, data export, account deletion, reports and moderation.
@@ -31,6 +33,7 @@ npm run check             # syntax-checks every JS file
 | `DISCORD_CLIENT_ID` / `DISCORD_CLIENT_SECRET` | Discord sign-in; callback `BASE_URL/api/auth/discord/callback` |
 | `MICROSOFT_CLIENT_ID` / `MICROSOFT_CLIENT_SECRET` | Microsoft sign-in; callback `BASE_URL/api/auth/microsoft/callback` |
 | `STRIPE_SECRET_KEY` / `STRIPE_WEBHOOK_SECRET` | Payments. Without them the store says "Payments open soon". Webhook: `BASE_URL/api/stripe/webhook`, listening to Connect events (`checkout.session.completed`, `checkout.session.async_payment_succeeded`, `charge.refunded`, `account.updated`) |
+| `SITES_DOMAIN` | Optional: a domain for live sites, like `forgehub.site`. Point `*.forgehub.site` (wildcard DNS) at the server and `<user>.forgehub.site/<repo>/` serves that repo; a repo named `<user>.forgehub.site` is the home page |
 | `FEE_PERCENT` | Forgehub's fee per sale (default 5) |
 | `ANTHROPIC_API_KEY` | Optional: Claude for Forge AI questions the knowledge base can't answer |
 | `NODE_ENV=production` | In production |

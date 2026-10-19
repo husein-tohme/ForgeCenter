@@ -204,8 +204,10 @@ function renderSettings(body) {
     <form class="panel form" id="about"><h2>About</h2><label>Description<input name="description" maxlength="200" value="${esc(r.description)}"></label>
       <label class="check"><input type="checkbox" name="private" ${r.private ? "checked" : ""}> Private: only you can see it</label>
       <button class="btn btn-primary">Save</button></form>
+    <section class="panel form" id="site-address"><h2>Website address</h2><p class="hint">Loading…</p></section>
     <form class="panel form" id="danger"><h2>Delete this repo</h2><p class="muted">This deletes every file and its history. It can't be undone.</p>
-      <label>Type <b>${esc(r.name)}</b> to confirm<input name="confirm" autocomplete="off"></label><button class="btn btn-danger">Delete repo</button></form></div>`;
+      <label><span>Type <b>${esc(r.name)}</b> to confirm</span><input name="confirm" autocomplete="off"></label><button class="btn btn-danger">Delete repo</button></form></div>`;
+  loadDomain();
   $("about").onsubmit = async e => {
     e.preventDefault();
     const x = await api(`/api/repos/${encodeURIComponent(owner)}/${encodeURIComponent(name)}`, { method: "PATCH", body: { description: e.target.description.value, private: e.target.private.checked } });
@@ -218,6 +220,34 @@ function renderSettings(body) {
     if (!x.ok) return toast(x.data.error);
     location.assign(`/${owner}`);
   };
+}
+
+// Live-site addresses: the built-in one, a subdomain, and an optional custom domain.
+async function loadDomain() {
+  const box = $("site-address");
+  if (!box) return;
+  const base = `/api/domains/${encodeURIComponent(owner)}/${encodeURIComponent(name)}`;
+  const r = await api(base);
+  const d = r.data.domain;
+  const live = `${location.origin}/p/${encodeURIComponent(owner)}/${encodeURIComponent(name)}/`;
+  box.innerHTML = `<h2>Website address</h2>
+    ${!data.hasSite ? `<p class="muted">Add an index.html to this repo to turn it into a website.</p>` : data.repo.private ? `<p class="muted">Make the repo public to put its website online.</p>` : ""}
+    <p>Built-in: <a href="${live}" target="_blank" rel="noopener">${esc(live)}</a></p>
+    ${r.data.subdomainUrl ? `<p>Subdomain: <a href="${esc(r.data.subdomainUrl)}" target="_blank" rel="noopener">${esc(r.data.subdomainUrl)}</a></p>` : ""}
+    <form class="row" id="domain-form"><label style="flex:1">Your own domain<input name="domain" placeholder="mygame.com" value="${esc(d?.domain ?? "")}"></label><button class="btn">${d ? "Change" : "Add domain"}</button></form>
+    ${d ? `<div class="panel" style="background:var(--surface-2)">
+      ${d.verified ? `<p class="pill pill-accent">Verified</p><p>Now point <b>${esc(d.domain)}</b> at Forgehub: add a <b>CNAME</b> record for <code>www</code> (or an ALIAS/ANAME for the root) with the value <code>${esc(d.target)}</code>. Once it's live, visitors see your site at <b>${esc(d.domain)}</b>.</p>`
+        : `<p><b>Step 1: prove it's yours.</b> In your domain's DNS settings (where you bought it), add a <b>TXT</b> record:</p>
+           <p>Name: <code>${esc(d.txtName)}</code><br>Value: <code>${esc(d.txtValue)}</code></p>
+           <p class="small muted">DNS changes can take a few minutes to an hour.</p><button class="btn btn-primary" id="verify">Check now</button>`}
+      <button class="link-btn" id="remove-domain" style="margin-left:12px">Remove domain</button></div>` : ""}`;
+  $("domain-form").onsubmit = async e => {
+    e.preventDefault();
+    const x = await api(base, { method: "PUT", body: { domain: e.target.elements.domain.value } });
+    x.ok ? loadDomain() : toast(x.data.error);
+  };
+  $("verify")?.addEventListener("click", async () => { const x = await api(`${base}/verify`, { method: "POST" }); x.ok ? (toast("Verified!"), loadDomain()) : toast(x.data.error); });
+  $("remove-domain")?.addEventListener("click", async () => { await api(base, { method: "DELETE" }); loadDomain(); });
 }
 
 async function star() {

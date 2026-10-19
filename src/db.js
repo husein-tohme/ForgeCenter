@@ -144,3 +144,13 @@ CREATE TABLE IF NOT EXISTS blocks (
   PRIMARY KEY (user_id, blocked_id)
 );
 `);
+
+db.exec(`
+CREATE TABLE IF NOT EXISTS domains (
+  domain TEXT PRIMARY KEY,
+  repo_id INTEGER NOT NULL UNIQUE REFERENCES repos(id) ON DELETE CASCADE,
+  token TEXT NOT NULL,
+  verified_at TEXT,
+  created_at TEXT NOT NULL
+);
+`);
