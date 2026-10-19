@@ -268,7 +268,10 @@ const METHOD_TEXT = { credit_card: "a credit card check", id_scan: "an ID scan",
 // Shown only while the site has no owner (see auth.js).
 async function loadOwnerClaim() {
   const r = await api("/api/me/owner-claim");
-  $("owner-claim").hidden = !r.ok || !r.data.open;
+  const closed = !r.ok || !r.data.open;
+  $("owner-claim").hidden = closed;
+  const link = document.querySelector('.acct-nav a[href="#owner-claim"]');
+  if (link) link.hidden = closed;
 }
 $("owner-claim-form").addEventListener("submit", async e => {
   e.preventDefault();
@@ -482,7 +485,7 @@ async function loadCreator() {
     if (!h) return "";
     sec.id ||= `sec-${h.textContent.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-")}`;
     sec.style.setProperty("--sec", sec.classList.contains("danger") ? "#e5483b" : COLORS[i % COLORS.length]);
-    return `<a href="#${sec.id}" style="--sec:${sec.style.getPropertyValue("--sec")}">${esc(h.textContent.trim())}</a>`;
+    return `<a href="#${sec.id}"${sec.hidden ? " hidden" : ""} style="--sec:${sec.style.getPropertyValue("--sec")}">${esc(h.textContent.trim())}</a>`;
   }).join("");
   const body = document.createElement("div");
   body.className = "acct-body";
