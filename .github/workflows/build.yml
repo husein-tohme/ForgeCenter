@@ -31,8 +31,8 @@ jobs:
         continue-on-error: false
       - uses: softprops/action-gh-release@v2
         with:
-          tag_name: entity-compactor-v1.0.0-26.2
-          name: Entity Compactor 1.0.0 (Minecraft 26.2)
+          tag_name: entity-compactor-v1.0.1-26.2
+          name: Entity Compactor 1.0.1 (Minecraft 26.2)
           target_commitish: ${{ github.sha }}
           body_path: README.md
-          files: build/libs/entity-compactor-1.0.0+26.2.jar
+          files: build/libs/entity-compactor-1.0.1+26.2.jar

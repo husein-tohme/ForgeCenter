@@ -12,8 +12,10 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 /** The game asks this before drawing each entity; extra copies in a pile get "no". */
 @Mixin(EntityRenderDispatcher.class)
 public abstract class EntityRenderDispatcherMixin {
-    @Inject(method = "shouldRender", at = @At("HEAD"), cancellable = true)
+    // At RETURN, after the game's own off-screen and distance checks: only entities it was really
+    // about to draw take up a pile's slots, so copies off screen can't hide the ones in view.
+    @Inject(method = "shouldRender", at = @At("RETURN"), cancellable = true)
     private <E extends Entity> void entitycompactor$skipPiles(E entity, Frustum frustum, double x, double y, double z, CallbackInfoReturnable<Boolean> cir) {
-        if (Compactor.shouldHide(entity)) cir.setReturnValue(false);
+        if (cir.getReturnValueZ() && Compactor.shouldHide(entity)) cir.setReturnValue(false);
     }
 }
