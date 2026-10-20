@@ -1,0 +1,6 @@
+{
+  "name": "agent-swarm",
+  "version": "0.1.0",
+  "description": "A crew of specialist subagents for ForgeCenter, a /swarm command that fans a task out to many of them in parallel, and a skill for adding sign-in providers (Google, Microsoft, GitHub, Discord) safely",
+  "author": { "name": "ForgeCenter" }
+}
