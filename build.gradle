@@ -2,7 +2,7 @@ plugins {
     id 'net.fabricmc.fabric-loom' version "${loom_version}"
 }
 
-version = "${project.mod_version}+26.2"
+version = "${project.mod_version}+26.3"
 group = 'dev.forgecenter'
 base { archivesName = 'entity-compactor' }
 
