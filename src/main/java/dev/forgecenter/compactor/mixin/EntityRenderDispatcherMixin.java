@@ -15,7 +15,7 @@ public abstract class EntityRenderDispatcherMixin {
     // At RETURN, after the game's own off-screen and distance checks: only entities it was really
     // about to draw take up a pile's slots, so copies off screen can't hide the ones in view.
     @Inject(method = "shouldRender", at = @At("RETURN"), cancellable = true)
-    private <E extends Entity> void entitycompactor$skipPiles(E entity, Frustum frustum, double x, double y, double z, CallbackInfoReturnable<Boolean> cir) {
+    private <E extends Entity> void entitycompactor$skipPiles(E entity, Frustum frustum, double x, double y, double z, float partialTick, CallbackInfoReturnable<Boolean> cir) {
         if (cir.getReturnValueZ() && Compactor.shouldHide(entity)) cir.setReturnValue(false);
     }
 }
