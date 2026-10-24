@@ -31,3 +31,12 @@ The first 20–30 beginner videos (Python, websites, Discord bots) are picked fr
 Hosting **students' own code** on ForgeCenter waits for the micro-VM sandboxes in [Block 3](04-block3-sandboxes.md) (Phase 4). If it's wanted sooner, a hosted micro-VM service (for example Fly Machines, which run on Firecracker) can be used, once paying for it is possible.
 
 Never change the bot runner to run student-written code.
+
+## 5. The launch code viewer is a plain line list, not CodeMirror
+
+Block 2 planned CodeMirror 6 for big files. Launch lesson files are small (each under 90,000 characters), so the lesson page draws them as a simple numbered list with no library to load, which keeps the page light on slow connections. CodeMirror arrives with the playground (build step 7), where students type code.
+
+## 6. Only lesson pages allow YouTube's player
+
+The site's content security policy normally blocks outside scripts and frames. `/learn/lesson` alone adds YouTube's player script (`www.youtube.com`) and its frames (`www.youtube-nocookie.com`, which doesn't set tracking cookies before someone presses play). Every other page keeps the stricter policy.
+

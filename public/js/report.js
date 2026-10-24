@@ -10,7 +10,7 @@ const REASONS = [
   ["spam", "Spam", "Ads, repeated posts or links that go somewhere else."],
   ["other", "Something else", "Malware, cheats, impersonation or another rule."],
 ];
-const NOUN = { listing: "listing", creator: "creator page", game: "game", assistant: "assistant" };
+const NOUN = { listing: "listing", creator: "creator page", game: "game", assistant: "assistant", clip: "video clip" };
 
 // The dialog's own styles, added once to whichever page uses it.
 if (!document.querySelector('link[href="/css/reports.css"]')) {

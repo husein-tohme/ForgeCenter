@@ -7,7 +7,7 @@ import { creatorPreview } from "./creators.js";
 
 const PUBLIC = resolve("public");
 // Pages search engines may list. Account and owner pages stay out.
-const LISTED = ["/", "/textures", "/modpacks", "/plugins", "/games", "/creators", "/roblox", "/ai-maker", "/site-maker", "/developers", "/donate", "/orbs", "/rules", "/privacy", "/terms", "/subprocessors", "/dpa", "/support"];
+const LISTED = ["/", "/textures", "/modpacks", "/plugins", "/games", "/creators", "/roblox", "/ai-maker", "/site-maker", "/developers", "/donate", "/orbs", "/rules", "/privacy", "/terms", "/subprocessors", "/dpa", "/support", "/learn"];
 
 const cache = new Map();
 const baseUrl = req => (process.env.BASE_URL || `${req.protocol}://${req.get("host")}`).replace(/\/+$/, "");
@@ -66,12 +66,26 @@ pagesRouter.get("/c/:handle", (req, res, next) => {
     .replaceAll("%CREATOR_TITLE%", () => preview.title).replaceAll("%CREATOR_DESCRIPTION%", () => preview.description));
 });
 
+// CodeHub (src/learn.js). Lesson pages embed YouTube's player, so only they let in
+// YouTube's player script and frames; every other page keeps the stricter policy.
+const withYouTube = res => {
+  const csp = String(res.getHeader("Content-Security-Policy") ?? "");
+  res.setHeader("Content-Security-Policy", csp
+    .replace("script-src 'self'", "script-src 'self' https://www.youtube.com")
+    .replace("frame-src ", "frame-src https://www.youtube-nocookie.com https://www.youtube.com "));
+};
+pagesRouter.get("/learn", (req, res) => res.type("html").send(render(join(PUBLIC, "learn.html"), req, "/learn")));
+pagesRouter.get("/learn/lesson", (req, res) => {
+  withYouTube(res);
+  res.type("html").send(render(join(PUBLIC, "learn-lesson.html"), req, "/learn/lesson"));
+});
+
 // "/", "/textures" and "/textures.html" all serve public/<name>.html. The pattern
 // allows only plain names, so nothing outside public/ can be reached.
 pagesRouter.get(/^\/([a-z0-9-]*)(\.html)?$/, (req, res, next) => {
   const name = req.params[0] || "index";
   const file = join(PUBLIC, `${name}.html`);
-  if (name === "404" || name === "creator" || !existsSync(file)) return next();
+  if (["404", "creator", "learn-lesson"].includes(name) || !existsSync(file)) return next();
   res.type("html").send(render(file, req, name === "index" ? "/" : `/${name}`));
 });
 

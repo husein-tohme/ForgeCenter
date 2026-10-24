@@ -30,7 +30,7 @@ When the owner says **continue**, do the first unchecked step below, update the 
   - [x] 1. Check whether ForgeCenter's bot runner isolates code from strangers well enough for student bots, and choose the launch approach (it doesn't; see [decision 4](decisions.md#4-student-discord-bots-at-launch-no-student-code-runs-on-forgecenters-server))
   - [x] 2. The `/learn` section: tables for tracks, lessons, code files, clips, video-to-code links, ratings and marks, and the owner API to add them (`src/learn.js`, tested in `test/learn.test.js`)
   - [x] 2b. Owner panel pages for adding tracks, lessons, code files, clips and links (`/learn-admin`, linked from the owner panel)
-  - [ ] 3. The lesson page: YouTube clip with start and end times, the code viewer, and video-to-code sync
+  - [x] 3. The lesson page: YouTube clip with start and end times, the code viewer, and video-to-code sync (`/learn/lesson?id=`, plus the CodeHub home at `/learn`)
   - [ ] 4. The starting quiz and personal paths
   - [ ] 5. Ratings, "helped" and "skip" marks, ranking, and the quick clips feed
   - [ ] 6. Docs pages in beginner, hobby and pro versions
