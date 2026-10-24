@@ -26,6 +26,7 @@ A Minecraft-themed storefront: Minecraft server hosting, Discord bots, websites,
 - `src/sitemaker.js` Site Maker (AI one-page sites) and its HTML sanitiser
 - `src/launchpad.js` Game Launchpad (`/games`, `/game`, `/my-games`): $1/month per game, a `launch` order per game
 - `src/payouts.js` creator payouts (Stripe Connect Express) and pay links (`/pay?l=`), shown on creator pages
+- `src/learn.js` CodeHub, the learning section (`/learn`): tracks, lessons, code files, YouTube clips (embedded only, never downloaded) and the links from clip moments to code lines; plan in `docs/academy`
 - `src/donations.js` donations (`/donate`): Checkout Sessions with kind `donation` and monthly donation subscriptions
 - `src/reports.js` reports (the `registerReportTarget` registry), owner moderation and suspensions; rules at `/rules`
 - `src/forgeguide.js` Forge Guide, ForgeCenter's own Minecraft helper (a hand-written knowledge base, no outside AI): the mentor answers with it, free, when no AI key is set

@@ -28,7 +28,8 @@ When the owner says **continue**, do the first unchecked step below, update the 
 - [x] Final check: read every document for gaps and contradictions, and ask the owner about anything still open
 - [ ] Start building Phase 1 ([roadmap](06-roadmap.md)), once the owner has answered the open questions below, in this order:
   - [x] 1. Check whether ForgeCenter's bot runner isolates code from strangers well enough for student bots, and choose the launch approach (it doesn't; see [decision 4](decisions.md#4-student-discord-bots-at-launch-no-student-code-runs-on-forgecenters-server))
-  - [ ] 2. The `/learn` section: tables for tracks, lessons, clips, video-to-code links, ratings and marks, and owner panel pages to add them
+  - [x] 2. The `/learn` section: tables for tracks, lessons, code files, clips, video-to-code links, ratings and marks, and the owner API to add them (`src/learn.js`, tested in `test/learn.test.js`)
+  - [ ] 2b. Owner panel pages for adding tracks, lessons, code files, clips and links
   - [ ] 3. The lesson page: YouTube clip with start and end times, the code viewer, and video-to-code sync
   - [ ] 4. The starting quiz and personal paths
   - [ ] 5. Ratings, "helped" and "skip" marks, ranking, and the quick clips feed
