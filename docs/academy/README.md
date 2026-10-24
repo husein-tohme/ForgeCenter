@@ -1,8 +1,8 @@
-# The coding academy plan
+# The CodeHub plan
 
-The plan for ForgeCenter's learning site: video lessons synced to real code, an AI tutor, and tracks for 44 languages, from Scratch to building an operating system. The name isn't decided yet; "the Academy" is a placeholder.
+The plan for CodeHub, ForgeCenter's learning site: video lessons synced to real code, an AI tutor, and tracks for 44 languages, from Scratch to building an operating system.
 
-This folder is the plan. No code gets written until the plan is finished.
+This folder is the plan. The plan is finished, and building has started (see the checklist below).
 
 ## The documents
 
@@ -27,7 +27,7 @@ When the owner says **continue**, do the first unchecked step below, update the 
 - [x] Document 6: the roadmap, with risks for each phase
 - [x] Final check: read every document for gaps and contradictions, and ask the owner about anything still open
 - [ ] Start building Phase 1 ([roadmap](06-roadmap.md)), once the owner has answered the open questions below, in this order:
-  - [ ] 1. Check whether ForgeCenter's bot runner isolates code from strangers well enough for student bots, and choose the launch approach
+  - [x] 1. Check whether ForgeCenter's bot runner isolates code from strangers well enough for student bots, and choose the launch approach (it doesn't; see [decision 4](decisions.md#4-student-discord-bots-at-launch-no-student-code-runs-on-forgecenters-server))
   - [ ] 2. The `/learn` section: tables for tracks, lessons, clips, video-to-code links, ratings and marks, and owner panel pages to add them
   - [ ] 3. The lesson page: YouTube clip with start and end times, the code viewer, and video-to-code sync
   - [ ] 4. The starting quiz and personal paths
@@ -35,7 +35,7 @@ When the owner says **continue**, do the first unchecked step below, update the 
   - [ ] 6. Docs pages in beginner, hobby and pro versions
   - [ ] 7. The browser playground: Python, JavaScript, HTML/CSS, SQL
   - [ ] 8. The AI tutor panel (from ForgeCenter's mentor), with lesson context, "explain it simpler" and homework-safe mode
-  - [ ] 9. Student Discord bot hosting, using the approach chosen in step 1
+  - [ ] 9. Student Discord bots, as chosen in step 1: the in-browser Discord simulator, hosted template bots built from settings, and the "deploy it yourself" lesson
   - [ ] 10. Staff roles granted only by the owner, the audit log, and required two-step login for staff
   - [ ] 11. Verified students through a school email code
   - [ ] 12. Plans in Stripe test mode ($1 first month, monthly, 3, 6 and 12 months)
@@ -44,15 +44,13 @@ When the owner says **continue**, do the first unchecked step below, update the 
 
 Each build step follows the repo's rules in `CLAUDE.md`: tests for everything new, `npm test` and `npm run check` before every commit.
 
-## Open questions for the owner
+## Decisions made so far
 
-Building waits for these:
+See [decisions.md](decisions.md): the name CodeHub, built inside ForgeCenter at `/learn`, first videos suggested for the owner to approve, and how student bots work at launch.
 
-1. **The name.** Use "ForgeCenter Learn" for now, or pick the real name?
-2. **Inside ForgeCenter or separate?** The roadmap recommends starting inside ForgeCenter at `/learn`.
-3. **Starting videos.** 20–30 good beginner videos (Python, websites, Discord bots) for the first lessons, or should the first lessons be picked from well-known coding channels?
+## Needed from the owner before launch
 
-Needed before launch, not before building:
+- Approval of the suggested first videos
 
 - A YouTube Data API key, an Anthropic API key, and the sign-in keys added on Render
 

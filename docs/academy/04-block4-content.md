@@ -1,6 +1,6 @@
 # 4, Block 4. Content
 
-How the Academy finds, sorts, rates and keeps alive about 2 million links (videos, docs, repos and example sites), how it handles uploads, and how its own lessons and docs stay correct.
+How CodeHub finds, sorts, rates and keeps alive about 2 million links (videos, docs, repos and example sites), how it handles uploads, and how its own lessons and docs stay correct.
 
 ## Where content comes from
 
@@ -80,7 +80,7 @@ About 500,000 non-YouTube links checked weekly is under one check per second, wh
 - Everything public can be reported, through the same report system as ForgeCenter (`registerReportTarget`). Moderators hide content and suspend accounts from the owner panel.
 - Content from suspended accounts is hidden everywhere.
 
-## The Academy's own lessons and docs
+## CodeHub's own lessons and docs
 
 The AI writes most first drafts, so nothing is published without being checked:
 
@@ -176,7 +176,7 @@ CREATE TABLE copyright_notices (
   created_at timestamptz NOT NULL DEFAULT now()
 );
 
-CREATE TABLE content_items (           -- the Academy's own lessons and docs
+CREATE TABLE content_items (           -- CodeHub's own lessons and docs
   id bigserial PRIMARY KEY,
   kind text NOT NULL,                  -- lesson|doc|quiz|project
   slug text UNIQUE NOT NULL,

@@ -42,7 +42,7 @@ Notes:
 
 ## 20 more languages
 
-Shorter tracks (the basics, what each is used for, and one real project), so the Academy covers every language people actually use:
+Shorter tracks (the basics, what each is used for, and one real project), so CodeHub covers every language people actually use:
 
 | Language | Used for |
 |---|---|
@@ -127,7 +127,7 @@ Shorter tracks (the basics, what each is used for, and one real project), so the
 
 ## Every field of coding
 
-The checklist that keeps the Academy covering everything. Every field has a track or a place in one; new fields get added here first.
+The checklist that keeps CodeHub covering everything. Every field has a track or a place in one; new fields get added here first.
 
 | Field | Where it's taught |
 |---|---|

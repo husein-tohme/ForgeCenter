@@ -1,6 +1,6 @@
 # 4, Block 3. Sandboxes
 
-Students run code all the time: playground snippets, Discord bots that stay online, hacking labs, their own operating systems. All of it is untrusted code from strangers, so it must never be able to reach the Academy's servers, its database, other students, or anything on the internet it shouldn't.
+Students run code all the time: playground snippets, Discord bots that stay online, hacking labs, their own operating systems. All of it is untrusted code from strangers, so it must never be able to reach CodeHub's servers, its database, other students, or anything on the internet it shouldn't.
 
 ## The two rules
 
@@ -22,7 +22,7 @@ Students run code all the time: playground snippets, Discord bots that stay onli
 | Minecraft server track | Real servers through ForgeCenter's hosting (Pterodactyl) | A lesson, or a paid plan |
 | GPU track | Short demos and cloud credits, never free GPU time | Minutes |
 
-At launch (Python, websites, Discord bots), the playground runs entirely in the browser, so the only server sandboxes needed on day one are for Discord bots.
+At launch (Python, websites, Discord bots), no server sandboxes are needed at all: the playground and the Discord simulator run in the browser, and hosted bots are template bots built from settings ([decision 4](decisions.md#4-student-discord-bots-at-launch-no-student-code-runs-on-forgecenters-server)).
 
 ## The sandbox technology
 
@@ -43,7 +43,7 @@ At launch (Python, websites, Discord bots), the playground runs entirely in the 
 2. **No secrets of ours inside.** The sandbox gets only the student's own code and settings, the same rule ForgeCenter's `botrunner.js` follows.
 3. **Strict limits:** CPU, memory, disk, number of processes, run time and output size.
 4. **Read-only system files**, running as a normal user, never as admin.
-5. **Network blocked by default.** Each workload only reaches what it needs (below). The cloud's internal addresses (like `169.254.169.254`) and the Academy's own servers are always blocked.
+5. **Network blocked by default.** Each workload only reaches what it needs (below). The cloud's internal addresses (like `169.254.169.254`) and CodeHub's own servers are always blocked.
 6. **Separate network and cloud account**, so even a full escape lands somewhere with nothing valuable.
 7. **Abuse detection:** crypto mining, network scanning, spam and DDoS patterns get the sandbox stopped automatically and flagged for a moderator.
 8. **A kill switch** for the owner and admins: stop one sandbox, one student's sandboxes, or all of them.
@@ -100,8 +100,8 @@ A bot that keeps crashing waits longer between each restart, and the student is 
 
 ## Student websites
 
-- **Websites without a server** (HTML, CSS, JavaScript) are published as static files to storage and a CDN, at an address like `name.<academy-sites domain>`.
-- **That domain is separate from the Academy's own domain**, so a student's JavaScript can never read Academy sign-in cookies or act as another user.
+- **Websites without a server** (HTML, CSS, JavaScript) are published as static files to storage and a CDN, at an address like `name.<codehub-sites domain>`.
+- **That domain is separate from CodeHub's own domain**, so a student's JavaScript can never read CodeHub sign-in cookies or act as another user.
 - **Websites with a server** (PHP, Python, Node and so on) run in a bot-style sandbox, with web traffic coming in through a gateway.
 - Every site gets HTTPS, size limits, and a report button. Phishing and fake login pages are taken down and the account suspended.
 

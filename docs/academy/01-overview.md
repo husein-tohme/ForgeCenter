@@ -15,7 +15,7 @@ It teaches everyone, from total beginners to professional developers, in 24 core
 
 ## Why it's better than every other coding site
 
-| Site | Its weak spot | What the Academy does instead |
+| Site | Its weak spot | What CodeHub does instead |
 |---|---|---|
 | YouTube | Too many videos, no order | Picks the best 2–3 clips per topic for your level |
 | Codecademy | Expensive, little video | Video, voice, AI tutor and practice together for $5 |

@@ -43,13 +43,13 @@ What's in it:
 - All tests pass, backups run daily, and restoring a backup has been tried once
 - Legal pages are up and the owner has read them
 
-**Owner provides:** the site name (or "ForgeCenter Learn" for now), a YouTube Data API key, the sign-in keys on Render, an Anthropic API key, and 20–30 good beginner videos to start the launch lessons.
+**Owner provides:** a YouTube Data API key, the sign-in keys on Render, an Anthropic API key, and 20–30 good beginner videos to start the launch lessons.
 
 **Risks:**
 
 | Risk | What we do |
 |---|---|
-| ForgeCenter's bot runner may not isolate code from strangers well enough | Check it before launch. If it isn't enough, give students a hosted sandbox service, or limit launch bots to approved templates, until the Phase 4 sandboxes exist |
+| ForgeCenter's bot runner doesn't isolate code from strangers (checked; see [decision 4](decisions.md#4-student-discord-bots-at-launch-no-student-code-runs-on-forgecenters-server)) | At launch, student code runs only in the browser's Discord simulator or on the student's own host; hosted bots are template bots built from settings, until the Phase 4 sandboxes exist |
 | Writing enough good lessons takes longer than the code | Launch with fewer, better lessons; the AI drafts and the owner reviews |
 | AI costs grow with users | Daily limits, short answers, cached answers for common questions |
 

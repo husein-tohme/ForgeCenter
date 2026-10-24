@@ -1,6 +1,6 @@
 # 5b. Accounts, roles, inboxes and messages in detail
 
-Builds on [document 5](05-money-and-legal.md). Where ForgeCenter already has a rule (verified emails only, age outcomes only, suspended accounts can still appeal), the Academy keeps it.
+Builds on [document 5](05-money-and-legal.md). Where ForgeCenter already has a rule (verified emails only, age outcomes only, suspended accounts can still appeal), CodeHub keeps it.
 
 ## One account, many ways in
 
@@ -97,7 +97,7 @@ One notifications system feeds every inbox:
 | Support | Ticket replies (AI first, then a person) |
 | Tutor history | Every past AI conversation, searchable |
 
-- **Where it's delivered:** on the site, by email (a weekly summary by default), and as browser or phone notifications. Discord DMs from the Academy bot are optional.
+- **Where it's delivered:** on the site, by email (a weekly summary by default), and as browser or phone notifications. Discord DMs from the CodeHub bot are optional.
 - **Each type can be turned off**, and quiet hours stop notifications at night.
 - **Under-18s never get marketing emails.** Their notifications are about learning only.
 
