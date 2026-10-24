@@ -84,6 +84,9 @@ The tutor uses Claude, like ForgeCenter's Forge mentor. A second AI provider can
 | "Top creator" badge | Later |
 | Creators earn from tips (ForgeCenter pay links) and later a share of subscriptions | Later |
 | 4K where the creator uploaded it, never forced (1080p default) | Launch |
+| Quick clips section: YouTube Shorts and other coding videos under 5 minutes, in a swipeable feed per topic and level, each linking to its full lesson | Launch |
+
+YouTube Shorts are at most 3 minutes long, so videos over 5 minutes are never Shorts; they go into the normal lessons. The quick clips feed takes Shorts plus any coding video under 5 minutes.
 
 The AI fully watches only videos posted on the site, or by creators who join. YouTube's rules forbid downloading, recording or scraping its videos, so other YouTube videos are organised by their title, description, chapters and student marks.
 

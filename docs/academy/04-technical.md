@@ -2,7 +2,7 @@
 
 - **Block 1: ingestion**, linking video moments to exact code lines. Done, below.
 - **Block 2: the learning screen.** Done, in [its own document](04-block2-learning-screen.md).
-- **Block 3: sandboxes** for bots, the playground, hacking labs and OS lessons. To do.
+- **Block 3: sandboxes** for bots, the playground, hacking labs and OS lessons. Done, in [its own document](04-block3-sandboxes.md).
 - **Block 4: content**, finding, rating and checking links, uploads and moderation. To do.
 
 ## Two facts that shape the design
