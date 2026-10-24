@@ -108,7 +108,7 @@ One notifications system feeds every inbox:
 | Sender ↓ / receiver → | Under 13 | 13–17 | Adult |
 |---|---|---|---|
 | Under 13 | Classmates only | Classmates only | Their teachers and parents only |
-| 13–17 | Classmates only | Accepted friends and classmates | Their teachers only |
+| 13–17 | Classmates only | Accepted friends and classmates | Their teachers and parents only |
 | Adult | Their own students or children only | Their own students only | Accepted friends |
 | Teacher | Their own students | Their own students | Anyone in their school |
 

@@ -29,7 +29,7 @@
 
 - Every AI answer costs money, so free use has a daily limit and the owner sees an AI cost dashboard.
 - Own videos are hosted on the owner's YouTube channel (free, 4K), not self-hosted.
-- Example from planning: 10,000 sign-ups at 2–5% paying is 200–500 paying users, roughly $1,000–$2,500 a month before fees and costs.
+- Example from planning: 10,000 sign-ups at 2–5% paying is 200–500 paying users, roughly $1,000–$2,500 a month before fees and costs if they all pay monthly. Yearly plans work out cheaper per month, so the real number is likely lower, and nothing comes in until real payments are on (Phase 7).
 
 ## Sign-in
 

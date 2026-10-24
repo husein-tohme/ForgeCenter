@@ -5,6 +5,8 @@
 - **Block 3: sandboxes** for bots, the playground, hacking labs and OS lessons. Done, in [its own document](04-block3-sandboxes.md).
 - **Block 4: content**, finding, rating and checking links, uploads and moderation. Done, in [its own document](04-block4-content.md).
 
+**When this stack is used:** the launch version runs on ForgeCenter's own stack (Node, Express, SQLite), with video-to-code links made by people. The stack below arrives in Phase 3, when the AI pipeline and the 2 million links start. See the [roadmap](06-roadmap.md).
+
 ## Two facts that shape the design
 
 1. **Big codebases aren't the hard part.** 500k lines is about 20 MB of source and 60–150k code units; one Postgres instance handles it. The hard part is the video side.

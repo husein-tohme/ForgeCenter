@@ -8,7 +8,7 @@ It teaches everyone, from total beginners to professional developers, in 24 core
 
 ## Who it's for
 
-- **Just started:** never coded before, often young. Starts with Scratch or Python.
+- **Just started:** never coded before, often young. Starts with Python, or Scratch once it arrives in wave 2.
 - **Hobby coder:** knows the basics and wants to build things like bots, mods and apps.
 - **Professional:** works or wants to work as a developer. Wants AI, security, system design and job prep.
 - **Teachers and schools:** run classes on it and track their students.

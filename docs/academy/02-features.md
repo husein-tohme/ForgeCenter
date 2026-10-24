@@ -17,7 +17,8 @@ Every feature is in the plan; the sorting only decides the order. The home page 
 | Levels: just started, hobby coder, professional, plus expert tracks | Launch |
 | Each track has "what to expect", "how to study it" and "what you'll make" | Launch |
 | Written docs for every topic, in beginner, hobby and pro versions, with runnable examples | Launch |
-| Code playground: run any of the 44 languages in the browser, nothing to install | Launch |
+| Code playground for Python, JavaScript, HTML/CSS and SQL, running in the browser with nothing to install | Launch |
+| Playground for every other language, through server sandboxes | Soon, growing with each language wave |
 | Quizzes that come back later so you don't forget | Launch |
 | Search across every lesson, video, doc and code file | Launch |
 | Bookmarks, notes and "continue where you left off" | Launch |
@@ -94,7 +95,9 @@ The AI fully watches only videos posted on the site, or by creators who join. Yo
 
 | Feature | When |
 |---|---|
-| Projects that go live: hosted Discord bots, websites, Minecraft and Roblox projects | Launch |
+| Projects that go live: hosted Discord bots and websites | Launch |
+| Projects that go live: Roblox and Minecraft projects | Soon |
+| Idea Engine: project and business ideas matched to what you've learned, with honest difficulty, time and earnings ranges, each linked to the lessons that teach it | Soon |
 | Certificates for finished tracks, shareable on LinkedIn | Soon |
 | Portfolio page showing everything a student built | Soon |
 | XP, levels, daily streaks and hidden Minecraft-themed achievements | Soon |
@@ -119,13 +122,13 @@ The AI fully watches only videos posted on the site, or by creators who join. Yo
 | AI tutor history, saved and searchable | Launch |
 | Class inbox for teachers and students | Soon |
 | Creator inbox: comments, requests and tips | Soon |
-| Direct messages, with the safety rules below | Soon |
 | Weekly progress email, which people can turn off | Soon |
+| Direct messages, only once the safety rules below are fully built and tested | Later |
 
-Message safety rules (not optional):
+Message safety rules (not optional; the full table is in [document 5b](05b-accounts-and-roles.md#messages)):
 
-- Under 18: messages only with accepted friends, their teachers and classmates. No strangers.
-- Adults can't message minors they don't know.
+- Under 18: no messages from strangers. Under-13s only with classmates, their teachers and their parents.
+- Adults can't message minors who aren't their own students or children.
 - The AI scans for scams, bullying and inappropriate messages, and anyone can report a message.
 - Block and mute everywhere.
 
@@ -133,9 +136,11 @@ Message safety rules (not optional):
 
 | Feature | When |
 |---|---|
-| Teacher and school accounts: classes, assignments, progress | Soon |
+| Teacher accounts: classes, assignments, progress | Soon |
+| School accounts: school admins and school billing | Later |
 | Exam mode for teachers, with copy detection | Later |
-| Parent view: progress and message controls | Soon |
+| Parent view: progress and message controls | Later |
+| Under-13 accounts through schools and parents, after a lawyer checks the consent flow | Later |
 
 ## Site and safety
 

@@ -25,10 +25,45 @@ When the owner says **continue**, do the first unchecked step below, update the 
 - [x] Block 4: content (finding, rating and checking 2 million links; uploads; moderation)
 - [x] Accounts and roles in detail (sign-in, roles, inboxes and message safety)
 - [x] Document 6: the roadmap, with risks for each phase
-- [ ] Final check: read every document for gaps and contradictions, and ask the owner about anything still open (the name first)
-- [ ] Then, and only then, start building, beginning with the launch features in document 2
+- [x] Final check: read every document for gaps and contradictions, and ask the owner about anything still open
+- [ ] Start building Phase 1 ([roadmap](06-roadmap.md)), once the owner has answered the open questions below, in this order:
+  - [ ] 1. Check whether ForgeCenter's bot runner isolates code from strangers well enough for student bots, and choose the launch approach
+  - [ ] 2. The `/learn` section: tables for tracks, lessons, clips, video-to-code links, ratings and marks, and owner panel pages to add them
+  - [ ] 3. The lesson page: YouTube clip with start and end times, the code viewer, and video-to-code sync
+  - [ ] 4. The starting quiz and personal paths
+  - [ ] 5. Ratings, "helped" and "skip" marks, ranking, and the quick clips feed
+  - [ ] 6. Docs pages in beginner, hobby and pro versions
+  - [ ] 7. The browser playground: Python, JavaScript, HTML/CSS, SQL
+  - [ ] 8. The AI tutor panel (from ForgeCenter's mentor), with lesson context, "explain it simpler" and homework-safe mode
+  - [ ] 9. Student Discord bot hosting, using the approach chosen in step 1
+  - [ ] 10. Staff roles granted only by the owner, the audit log, and required two-step login for staff
+  - [ ] 11. Verified students through a school email code
+  - [ ] 12. Plans in Stripe test mode ($1 first month, monthly, 3, 6 and 12 months)
+  - [ ] 13. Legal pages: terms, privacy, refunds
+  - [ ] 14. The first lessons for Python, websites and Discord bots, from the owner's starting videos
+
+Each build step follows the repo's rules in `CLAUDE.md`: tests for everything new, `npm test` and `npm run check` before every commit.
 
 ## Open questions for the owner
 
-- The site's name and domain
-- Whether it starts inside ForgeCenter (recommended in the roadmap) or as its own site
+Building waits for these:
+
+1. **The name.** Use "ForgeCenter Learn" for now, or pick the real name?
+2. **Inside ForgeCenter or separate?** The roadmap recommends starting inside ForgeCenter at `/learn`.
+3. **Starting videos.** 20–30 good beginner videos (Python, websites, Discord bots) for the first lessons, or should the first lessons be picked from well-known coding channels?
+
+Needed before launch, not before building:
+
+- A YouTube Data API key, an Anthropic API key, and the sign-in keys added on Render
+
+## Final check notes
+
+Fixed while checking:
+
+- The launch playground covers only the languages that run in the browser; the others come with the server sandboxes
+- Launch projects are bots and websites; Roblox and Minecraft projects follow
+- Direct messages, parent view, school billing and under-13 accounts moved to "later", to match the roadmap and the safety rules
+- The message summary in document 2 now matches the full table in document 5b, including parents
+- Document 4 says when its bigger stack arrives (Phase 3)
+- The income example notes that yearly plans lower the monthly number
+- Added the Idea Engine (project and business ideas), which was agreed early in planning but missing
