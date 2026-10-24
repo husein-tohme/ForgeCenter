@@ -22,7 +22,8 @@
 
 - Stripe, like ForgeCenter. Card numbers go straight to Stripe and are never stored or seen by the site, which only sees something like "Visa ending in 4242".
 - A card box on the site's own pages with **Stripe Elements**, and saved cards with SetupIntents.
-- **Stripe doesn't accept businesses based in Lebanon.** Until the owner moves to the US (possibly next year), everything is built and tested in Stripe test mode, and the free parts launch first. Turning on real payments is then mostly a settings change. Alternatives, if needed sooner: Paddle or Lemon Squeezy (check Lebanon payouts first), Stripe Atlas, or a trusted family member's account.
+- **Stripe doesn't accept businesses based in Lebanon.** Until the owner moves to Europe or North America (possibly next year), everything is built and tested in Stripe test mode, and the free parts launch first. Turning on real payments is then mostly a settings change.
+- **After the move: Stripe or Tebex.** Stripe fits subscriptions and schools best. Tebex is built for game stores (Minecraft servers and similar); check that it accepts a coding-school subscription before choosing it. Building the payment code behind one small module keeps either choice easy. Alternatives, if needed sooner: Paddle or Lemon Squeezy (check Lebanon payouts first), Stripe Atlas, or a trusted family member's account.
 
 ## Money planning
 

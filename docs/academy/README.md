@@ -11,7 +11,7 @@ This folder is the plan. No code gets written until the plan is finished.
 | 1 | [Overview](01-overview.md): what it is and why it's better | Done |
 | 2 | [Features](02-features.md): everything agreed, sorted into launch, soon and later | Done |
 | 3 | [Tracks and languages](03-tracks.md): every course, in order | Done |
-| 4 | [Technical design](04-technical.md): Blocks 1–4 | Block 1 done; Blocks 2–4 to do |
+| 4 | [Technical design](04-technical.md): Blocks 1–4 ([Block 2: the learning screen](04-block2-learning-screen.md)) | Blocks 1–2 done; Blocks 3–4 to do |
 | 5 | [Money, accounts and legal](05-money-and-legal.md) | Done |
 | 6 | [Roadmap](06-roadmap.md): what gets built when, and the risks | To do |
 
@@ -20,7 +20,7 @@ This folder is the plan. No code gets written until the plan is finished.
 When the owner says **continue**, do the first unchecked step below, update the documents, tick the step, commit and push, then say in a few lines what was done and what's next.
 
 - [x] Write documents 1, 2, 3 and 5 from the decisions made in chat, and Block 1 in document 4
-- [ ] Block 2: the learning screen (video, code and map together; Context Switcher; starting quiz; docs pages)
+- [x] Block 2: the learning screen (video, code and map together; Context Switcher; starting quiz; docs pages)
 - [ ] Block 3: sandboxes (Discord bots, code playground, hacking labs, OS lessons)
 - [ ] Block 4: content (finding, rating and checking 2 million links; uploads; moderation)
 - [ ] Accounts and roles in detail (sign-in, roles, inboxes and message safety)
