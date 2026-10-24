@@ -84,3 +84,5 @@ Only the owner gives or removes roles. Admins and staff can't.
 - **Look:** matches ForgeCenter's style.
 - **Help:** a support page with AI first (reusing Forge Support), and moderators, possibly volunteers from the first students.
 - **Marketing:** not part of the plan, by the owner's choice.
+
+The full detail for sign-in, roles, inboxes and messages is in [document 5b](05b-accounts-and-roles.md).

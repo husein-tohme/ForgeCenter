@@ -12,7 +12,7 @@ This folder is the plan. No code gets written until the plan is finished.
 | 2 | [Features](02-features.md): everything agreed, sorted into launch, soon and later | Done |
 | 3 | [Tracks and languages](03-tracks.md): every course, in order | Done |
 | 4 | [Technical design](04-technical.md): Blocks 1–4 ([Block 2: the learning screen](04-block2-learning-screen.md), [Block 3: sandboxes](04-block3-sandboxes.md), [Block 4: content](04-block4-content.md)) | Done |
-| 5 | [Money, accounts and legal](05-money-and-legal.md) | Done |
+| 5 | [Money, accounts and legal](05-money-and-legal.md), with [accounts, roles, inboxes and messages in detail](05b-accounts-and-roles.md) | Done |
 | 6 | [Roadmap](06-roadmap.md): what gets built when, and the risks | To do |
 
 ## How "start" and "continue" work
@@ -23,7 +23,7 @@ When the owner says **continue**, do the first unchecked step below, update the 
 - [x] Block 2: the learning screen (video, code and map together; Context Switcher; starting quiz; docs pages)
 - [x] Block 3: sandboxes (Discord bots, code playground, hacking labs, OS lessons)
 - [x] Block 4: content (finding, rating and checking 2 million links; uploads; moderation)
-- [ ] Accounts and roles in detail (sign-in, roles, inboxes and message safety)
+- [x] Accounts and roles in detail (sign-in, roles, inboxes and message safety)
 - [ ] Document 6: the roadmap, with risks for each phase
 - [ ] Final check: read every document for gaps and contradictions, and ask the owner about anything still open (the name first)
 - [ ] Then, and only then, start building, beginning with the launch features in document 2
