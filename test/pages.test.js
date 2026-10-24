@@ -53,29 +53,3 @@ test("the icon and preview image are served", async () => {
   const og = await fetch(url("/og.png"));
   assert.equal(og.headers.get("content-type"), "image/png");
 });
-
-test("the CodeHub owner page is served but kept out of search engines", async () => {
-  const page = await get("/learn-admin");
-  assert.equal(page.status, 200);
-  assert.match(page.text, /<meta name="robots" content="noindex">/);
-  assert.match((await get("/robots.txt")).text, /Disallow: \/learn-admin/);
-  assert.ok(!(await get("/sitemap.xml")).text.includes("/learn-admin"));
-});
-
-test("CodeHub pages are served, and only lesson pages let in YouTube's player", async () => {
-  const home = await fetch(url("/learn"));
-  assert.equal(home.status, 200);
-  assert.ok(!home.headers.get("content-security-policy").includes("youtube"));
-  assert.ok((await get("/sitemap.xml")).text.includes(`<loc>${url("")}/learn</loc>`));
-
-  const lesson = await fetch(url("/learn/lesson?id=1"));
-  assert.equal(lesson.status, 200);
-  const csp = lesson.headers.get("content-security-policy");
-  assert.match(csp, /script-src 'self' https:\/\/www\.youtube\.com/);
-  assert.match(csp, /frame-src https:\/\/www\.youtube-nocookie\.com https:\/\/www\.youtube\.com https:\/\/accounts\.google\.com/);
-  assert.match(await lesson.text(), /id="lesson"/);
-
-  // The file behind the lesson page isn't served at its own address, without that policy.
-  assert.equal((await get("/learn-lesson")).status, 404);
-  assert.ok(!(await fetch(url("/games"))).headers.get("content-security-policy").includes("youtube"));
-});

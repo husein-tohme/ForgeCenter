@@ -27,7 +27,6 @@ import { pagesRouter, notFound } from "./pages.js";
 import { donationsRouter, keepMonthlyDonors } from "./donations.js";
 import { payoutsRouter } from "./payouts.js";
 import { githubRouter } from "./github-repos.js";
-import { learnRouter, adminLearnRouter } from "./learn.js";
 
 export function createApp() {
   const app = express();
@@ -112,7 +111,7 @@ export function createApp() {
   app.delete("/api/me", keepMonthlyDonors);
   app.use("/api/me", meRouter);
   app.use("/api", ordersRouter);
-  app.use("/api/admin", adminOrdersRouter, adminShowcaseRouter, adminServicesRouter, adminWalletRouter, adminSupportRouter, adminGamesRouter, adminCreatorsRouter, adminAssistantsRouter, adminReportsRouter, adminLearnRouter);
+  app.use("/api/admin", adminOrdersRouter, adminShowcaseRouter, adminServicesRouter, adminWalletRouter, adminSupportRouter, adminGamesRouter, adminCreatorsRouter, adminAssistantsRouter, adminReportsRouter);
   app.use("/api/age", ageRouter);
   app.use("/api/wallet", walletRouter);
   app.use("/api/support", supportRouter);
@@ -128,7 +127,6 @@ export function createApp() {
   app.use("/api/assistants", assistantsRouter);
   app.use("/api/sites", sitesRouter);
   app.use("/api/reports", reportsRouter);
-  app.use("/api/learn", learnRouter);
 
   app.use("/api", toolsRouter);
 
