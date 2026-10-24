@@ -48,7 +48,7 @@ function structuredData(html, base, path) {
 export const pagesRouter = express.Router();
 
 pagesRouter.get("/robots.txt", (req, res) => {
-  res.type("text/plain").send(`User-agent: *\nDisallow: /api/\nDisallow: /account\nDisallow: /admin\n\nSitemap: ${baseUrl(req)}/sitemap.xml\n`);
+  res.type("text/plain").send(`User-agent: *\nDisallow: /api/\nDisallow: /account\nDisallow: /admin\nDisallow: /learn-admin\n\nSitemap: ${baseUrl(req)}/sitemap.xml\n`);
 });
 
 pagesRouter.get("/sitemap.xml", (req, res) => {

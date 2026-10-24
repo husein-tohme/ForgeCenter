@@ -53,3 +53,11 @@ test("the icon and preview image are served", async () => {
   const og = await fetch(url("/og.png"));
   assert.equal(og.headers.get("content-type"), "image/png");
 });
+
+test("the CodeHub owner page is served but kept out of search engines", async () => {
+  const page = await get("/learn-admin");
+  assert.equal(page.status, 200);
+  assert.match(page.text, /<meta name="robots" content="noindex">/);
+  assert.match((await get("/robots.txt")).text, /Disallow: \/learn-admin/);
+  assert.ok(!(await get("/sitemap.xml")).text.includes("/learn-admin"));
+});
