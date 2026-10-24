@@ -4,7 +4,7 @@
 
 A coding school in one site. Students watch the best videos on each topic, see exactly which code each moment explains, ask an AI tutor when they're stuck, and build real projects that go live: websites, Discord bots, Minecraft mods, Roblox games, all the way up to their own operating system.
 
-It teaches everyone, from total beginners to professional developers, in 23 languages, and it's cheap: $1 for the first month, $5 a month after, and free for verified students.
+It teaches everyone, from total beginners to professional developers, in 24 core languages and 20 more, and it's cheap: $1 for the first month, $5 a month after, and free for verified students.
 
 ## Who it's for
 
@@ -19,7 +19,7 @@ It teaches everyone, from total beginners to professional developers, in 23 lang
 |---|---|---|
 | YouTube | Too many videos, no order | Picks the best 2–3 clips per topic for your level |
 | Codecademy | Expensive, little video | Video, voice, AI tutor and practice together for $5 |
-| freeCodeCamp | Mostly text, mostly web | 23 languages with video |
+| freeCodeCamp | Mostly text, mostly web | 44 languages with video |
 | Udemy | Pay per course, often outdated | One cheap plan for everything, with outdated-video warnings |
 | Scrimba | Mostly web only | Video synced to code in every language |
 | Boot.dev | Backend only | Games, Minecraft, Roblox, bots, security, AI, operating systems |

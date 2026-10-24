@@ -1,6 +1,6 @@
 # The coding academy plan
 
-The plan for ForgeCenter's learning site: video lessons synced to real code, an AI tutor, and tracks for 23 languages, from Scratch to building an operating system. The name isn't decided yet; "the Academy" is a placeholder.
+The plan for ForgeCenter's learning site: video lessons synced to real code, an AI tutor, and tracks for 44 languages, from Scratch to building an operating system. The name isn't decided yet; "the Academy" is a placeholder.
 
 This folder is the plan. No code gets written until the plan is finished.
 

@@ -17,7 +17,7 @@ Every feature is in the plan; the sorting only decides the order. The home page 
 | Levels: just started, hobby coder, professional, plus expert tracks | Launch |
 | Each track has "what to expect", "how to study it" and "what you'll make" | Launch |
 | Written docs for every topic, in beginner, hobby and pro versions, with runnable examples | Launch |
-| Code playground: run any of the 23 languages in the browser, nothing to install | Launch |
+| Code playground: run any of the 44 languages in the browser, nothing to install | Launch |
 | Quizzes that come back later so you don't forget | Launch |
 | Search across every lesson, video, doc and code file | Launch |
 | Bookmarks, notes and "continue where you left off" | Launch |

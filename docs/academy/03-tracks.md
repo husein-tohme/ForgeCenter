@@ -11,7 +11,7 @@ Students learn by building. The basics (variables, loops, functions) are taught 
 
 Expert tracks unlock after the basics they need (for example, C before building an OS).
 
-## The 23 languages
+## The 24 core languages
 
 | Group | Languages | What students build |
 |---|---|---|
@@ -19,7 +19,7 @@ Expert tracks unlock after the basics they need (for example, C before building 
 | Websites | HTML, CSS, JavaScript, TypeScript, React, PHP | Personal sites, online stores, web apps |
 | Games | Luau (Roblox), C#, C++ | Roblox games, Unity games, game engines |
 | Apps | Swift, Kotlin, Java | iPhone apps, Android apps, Minecraft mods |
-| Backend and servers | Ruby, Elixir, Rust | APIs, chat servers, Discord bots |
+| Backend and servers | Go, Ruby, Elixir, Rust | APIs, chat servers, Discord bots |
 | Data | SQL, R | Databases, charts, data analysis |
 | Low-level | C, C++, Assembly, Rust | How computers really work, fast programs, security |
 | Functional | Haskell, F#, Elixir | A different way of thinking about code |
@@ -36,8 +36,36 @@ Notes:
 1. Launch: Python, HTML/CSS/JavaScript, Discord bots
 2. Wave 2: Luau, Java, C#, SQL, Scratch
 3. Wave 3: TypeScript, React, PHP, C, C++, Kotlin, Swift
-4. Wave 4: Rust, Ruby, R, Assembly
+4. Wave 4: Go, Rust, Ruby, R, Assembly
 5. Wave 5: Haskell, Elixir, F#
+6. Wave 6: the 20 more languages below
+
+## 20 more languages
+
+Shorter tracks (the basics, what each is used for, and one real project), so the Academy covers every language people actually use:
+
+| Language | Used for |
+|---|---|
+| Dart (Flutter) | Phone apps for iPhone and Android from one codebase |
+| Lua | Game mods, scripting inside games and tools (the parent of Luau) |
+| Bash | Automating Linux and servers |
+| PowerShell | Automating Windows |
+| Scala | Big data and backend systems |
+| Clojure | Functional programming on the Java platform |
+| Erlang | Systems that never go down (telecoms, chat) |
+| OCaml | Compilers, finance, tools |
+| Julia | Fast science and math |
+| MATLAB | Engineering and science at universities |
+| Perl | Text processing and older systems |
+| Zig | A modern, simpler alternative to C |
+| Nim | Fast programs with Python-like code |
+| Solidity | Smart contracts on blockchains |
+| GLSL / HLSL | Shaders: graphics effects that run on the GPU |
+| WebAssembly | Running fast code (C, C++, Rust) in the browser |
+| VBA | Automating Excel and Office |
+| COBOL | Banks and governments, which still run on it and pay well |
+| Fortran | Weather, physics and supercomputers |
+| Prolog and Lisp | Logic programming and classic AI, for the curious |
 
 ## Project tracks
 
@@ -96,6 +124,47 @@ Notes:
 - Tech ethics: privacy, AI safety, responsible hacking
 - Build your own PC
 - History of computing
+
+## Every field of coding
+
+The checklist that keeps the Academy covering everything. Every field has a track or a place in one; new fields get added here first.
+
+| Field | Where it's taught |
+|---|---|
+| Websites (front end) | Websites track, forms and payments |
+| Servers and APIs (back end) | Backend and servers, APIs, sign-in systems |
+| Phone apps | Apps and installers, Dart (Flutter), Swift, Kotlin |
+| Desktop apps | Apps and installers |
+| Games | Games group, game engine, Roblox, Minecraft, game art |
+| Graphics and shaders | GLSL/HLSL, game engine, math for coders |
+| Sound and music programming | Game art (game sound), plus a short audio track: synths, effects, music visualisers |
+| AI and machine learning | AI, make your own AI, AI research, GPUs |
+| Computer vision and speech | Make your own AI (image recogniser, voice) |
+| Data science and analysis | Data group (SQL, R), Julia |
+| Databases | SQL, make a database |
+| Cybersecurity | Cybersecurity, networking and hacking labs |
+| Networking | Networking and hacking labs, CS theory |
+| Operating systems | Make your own OS, Linux |
+| Compilers and languages | Make a programming language, OCaml |
+| Embedded and IoT | Electronics and robots |
+| Robotics | Electronics and robots |
+| Cloud, DevOps and servers | Cloud and DevOps, Linux, run a Minecraft server |
+| Distributed systems (apps used by millions) | System design, Erlang, Elixir |
+| Automation and scripting | Automation and webhooks, Bash, PowerShell, VBA |
+| Bots | Discord bots, Claude plugins |
+| Browser extensions and plugins | Browser extensions, Minecraft plugins, Claude plugins |
+| Blockchain and smart contracts | Solidity, with lessons on scams and risks |
+| Scientific computing | Julia, MATLAB, Fortran |
+| Finance and trading code | A short track: spreadsheets to trading bots, tested on fake money only |
+| Biology and medicine code (bioinformatics) | A short track using Python |
+| VR and AR | VR and AR |
+| Testing and quality | Software engineering |
+| Accessibility for developers | Software engineering, UI/UX |
+| Translating apps (localisation) | Software engineering |
+| Legacy systems | COBOL, Fortran, Perl |
+| Quantum computing | Quantum computing basics |
+| Algorithms and interviews | Data structures and algorithms, job prep |
+| Careers and business | Make money from your skills, startups, job prep |
 
 ## How tracks connect
 

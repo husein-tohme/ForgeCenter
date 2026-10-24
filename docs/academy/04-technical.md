@@ -20,7 +20,7 @@
 | Graph | Postgres edge tables first; Neo4j or Memgraph later, only if needed |
 | Long jobs | Temporal (Python) |
 | Events | Redpanda (Kafka API), for one event feeding several consumers |
-| Parsing code | tree-sitter (grammars for all 23 languages) |
+| Parsing code | tree-sitter (grammars for nearly all 44 languages; a simple fallback parser for the rest) |
 | Cross-references | SCIP indexers where they exist, stack-graphs or heuristics elsewhere; every link stores which method made it and how confident it is |
 | Code search | Zoekt |
 | Speech to text (uploads only) | faster-whisper with WhisperX and pyannote |
